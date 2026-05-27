@@ -5,7 +5,7 @@ import { useTravelStore } from '@/store/useTravelStore';
 
 export const InsuranceCalculatorWidget: React.FC = () => {
   const { insured_details, set_insured_details, premium_estimate, set_premium_estimate } = useInsuranceStore();
-  const { addToast, isLoggedIn, addReservation, setActivePage } = useTravelStore();
+  const { addToast, isLoggedIn, addReservation, openAuthModal } = useTravelStore();
 
   const [insuredName, setInsuredName] = useState('');
   const [gender, setGender] = useState<'M' | 'F'>('M');
@@ -100,19 +100,23 @@ export const InsuranceCalculatorWidget: React.FC = () => {
   };
 
   const handle_apply_policy = async () => {
+    // 1. Check Login state first
     if (!isLoggedIn) {
-      addToast("로그인 후에 보험에 가입해 주십시오.", "warning");
-      setActivePage('flight'); // Redirect to main for focus
+      addToast("로그인 후에 여행자 보험에 가입하실 수 있습니다.", "warning");
+      openAuthModal('login');
       return;
     }
+    // 2. Check Agreement (Signature) state second
+    if (!isAgreed) {
+      addToast("서명에 동의해주셔야 가입을 진행할 수 있습니다.", "warning");
+      return;
+    }
+    // 3. Check Name
     if (!insuredName.trim()) {
       addToast("피보험자 실명을 입력해 주십시오.", "warning");
       return;
     }
-    if (!isAgreed) {
-      addToast("보장 약관 동의가 필요합니다.", "warning");
-      return;
-    }
+    // 4. Check premium estimate
     if (!premium_estimate) {
       addToast("보험료를 먼저 산출해 주십시오.", "warning");
       return;
