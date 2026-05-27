@@ -1248,4 +1248,124 @@
             transform: scale(0.95);
         }
 
+        /* ==================================================== */
+        /* PREMIUM RESPONSIVE STYLE FOR MOBILE / TABLET         */
+        /* ==================================================== */
+        @media (max-width: 1024px) {
+            .navbar {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                grid-template-rows: auto auto;
+                row-gap: 1rem;
+                column-gap: 0.5rem;
+                padding: 1rem 1.5rem;
+            }
+            .logo {
+                grid-column: 1;
+                grid-row: 1;
+                justify-self: start;
+                font-size: 1.45rem;
+            }
+            .nav-actions {
+                grid-column: 2;
+                grid-row: 1;
+                justify-self: end;
+                gap: 0.8rem;
+            }
+            .nav-links {
+                grid-column: 1 / span 2;
+                grid-row: 2;
+                width: 100%;
+                justify-content: center; /* Center GNB category tabs on tablet */
+                display: flex;
+                overflow-x: auto;
+                padding: 0.3rem 0.5rem 0.5rem 0.5rem;
+                gap: 0.5rem;
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+            .nav-links::-webkit-scrollbar {
+                display: none;
+            }
+            .nav-item {
+                flex-shrink: 0;
+                padding: 0.45rem 1rem;
+                font-size: 0.88rem;
+            }
+            
+            /* Hero responsive */
+            .hero {
+                padding: 3rem 1.5rem 5rem 1.5rem !important;
+            }
+            .hero-title {
+                font-size: 2.4rem;
+                line-height: 1.3;
+            }
+            .hero-subtitle {
+                font-size: 0.95rem;
+                margin-bottom: 2rem;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .navbar {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                grid-template-rows: auto auto;
+                row-gap: 0.8rem;
+                column-gap: 0.5rem;
+                padding: 0.8rem;
+            }
+            .logo {
+                grid-column: 1;
+                grid-row: 1;
+                justify-self: start;
+            }
+            .nav-actions {
+                grid-column: 2;
+                grid-row: 1;
+                justify-self: end;
+                gap: 0.5rem;
+            }
+            .nav-links {
+                grid-column: 1 / span 2;
+                grid-row: 2;
+                margin-top: 0.1rem;
+            }
+            
+            /* Logo details */
+            .logo {
+                font-size: 1.35rem;
+                gap: 0.5rem;
+            }
+            .logo-box {
+                width: 32px;
+                height: 32px;
+                border-radius: 7px;
+            }
+            .logo-box-line {
+                font-size: 0.7rem;
+            }
+            
+            /* Auth Buttons */
+            .nav-actions .btn-primary,
+            .nav-actions .btn-secondary {
+                padding: 0.45rem 0.9rem !important;
+                font-size: 0.75rem !important;
+            }
+            
+            /* Hero mobile scale */
+            .hero {
+                padding: 2.5rem 1rem 4rem 1rem !important;
+            }
+            .hero-title {
+                font-size: 1.95rem;
+                line-height: 1.3;
+            }
+            .hero-subtitle {
+                font-size: 0.88rem;
+                margin-bottom: 1.5rem;
+            }
+        }
+
 
