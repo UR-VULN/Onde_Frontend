@@ -2,7 +2,7 @@
 
         @font-face {
             font-family: 'GmarketSansBold';
-            src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_one@1.0/GmarketSansBold.woff') format('woff');
+            src: url('@/assets/GmarketSansBold.otf') format('opentype');
             font-weight: 800;
             font-style: normal;
         }
