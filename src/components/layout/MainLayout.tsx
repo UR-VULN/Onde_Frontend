@@ -35,8 +35,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     return heroImages[activePage] || heroImages['home'];
   };
 
-  const isCompressedPadding = activePage !== 'flight' && activePage !== 'home';
-
   const getHeroTitle = () => {
     if (activePortal === 'sell') return 'ONDE 파트너 Extranet';
     if (activePortal === 'adm') return 'ONDE HQ 스태프 어드민';
@@ -61,8 +59,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           className="hero select-none"
           style={{
             backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.55)), url("${getBgImage()}")`,
-            paddingBottom: activePortal === 'cust' && isCompressedPadding ? '5rem' : '8rem',
-            transition: 'background-image 0.6s ease-in-out, padding-bottom 0.4s ease'
+            paddingBottom: '8rem',
+            transition: 'background-image 0.6s ease-in-out'
           }}
         >
           <div className="max-w-[1280px] mx-auto text-center relative z-10 flex flex-col items-center px-4">
