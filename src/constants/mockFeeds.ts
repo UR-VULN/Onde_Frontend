@@ -51,16 +51,6 @@ export const MOCK_FEEDS: FeedItem[] = [
     rating: 5
   },
   {
-    id: 'feed-5',
-    category: 'TIP',
-    author: '정우성',
-    location: '교토',
-    date: '2026. 05. 14',
-    img: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=800',
-    content: '교토의 히가시야마 보존지구를 한적하게 걸으며 인생 샷을 남기고 싶다면, 아침 6시 30분 산책을 초강력 추천합니다! 9시만 되어도 전 세계 인파로 꽉 들어차기 때문에, 조용한 편백나무 노천탕을 즐기고 이른 아침 골목을 거니는 게 꿀팁입니다.',
-    rating: 4.5
-  },
-  {
     id: 'feed-6',
     category: 'PHOTO',
     author: '차은우',

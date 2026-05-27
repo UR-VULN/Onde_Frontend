@@ -84,7 +84,10 @@ export const FeedPage: React.FC = () => {
 
       {/* 3. Feeds Grid Cards List (1 column on mobile/tablet, 3 columns on desktop) */}
       {filteredFeeds.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-slate-200 p-16 text-center select-none shadow-sm">
+        <div 
+          className="bg-white rounded-3xl border border-slate-200 text-center select-none shadow-sm flex flex-col items-center justify-center w-full"
+          style={{ paddingTop: '7rem', paddingBottom: '7rem', paddingLeft: '4rem', paddingRight: '4rem' }}
+        >
           <i className="fa-solid fa-folder-open text-5xl text-slate-300 mb-4 block animate-bounce"></i>
           <p className="text-base font-bold text-slate-500">선택하신 테마에 등록된 여행기가 아직 존재하지 않습니다.</p>
           <p className="text-xs text-slate-400 font-bold mt-1">첫 번째 소중한 이야기의 주인공이 되어보세요!</p>
