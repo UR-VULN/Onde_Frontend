@@ -28,7 +28,7 @@ export const FeedPage: React.FC = () => {
           {
             id: 'feed-1',
             title: '도쿄 3박 4일 미식 코스 공유합니다! 🍣✨',
-            author: '김현민',
+            author: '여행자',
             date: '2026.05.26',
             likes: 124,
             comments: 42,

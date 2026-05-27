@@ -23,73 +23,108 @@ export const WelcomeModal: React.FC = () => {
   return (
     <div 
       className="premium-popup-backdrop flex items-center justify-center p-4"
+      style={{ 
+        display: 'flex', 
+        position: 'fixed', 
+        top: 0, 
+        left: 0, 
+        width: '100vw', 
+        height: '100vh', 
+        zIndex: 99999,
+        background: 'rgba(0,0,0,0.6)',
+        backdropFilter: 'blur(8px)'
+      }}
     >      <div 
-        className="premium-popup-modal animate-[scaleUp_0.4s_cubic-bezier(0.34,1.56,0.64,1)] overflow-visible max-w-[440px] w-full"
+        className="animate-[scaleUp_0.4s_cubic-bezier(0.34,1.56,0.64,1)]"
         onClick={(e) => e.stopPropagation()}
-        style={{ position: 'relative', borderRadius: '32px', border: 'none', background: 'white' }}
+        style={{ 
+          position: 'relative', 
+          width: '100%',
+          maxWidth: '540px', 
+          borderRadius: '24px', 
+          background: 'white', 
+          boxShadow: '0 30px 80px rgba(0,0,0,0.25)',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
       >
-        {/* Close Button */}
-        <button 
-          onClick={closeWelcomePopup} 
-          className="absolute top-5 right-5 z-30 text-slate-300 hover:text-rose-500 transition-colors duration-200 text-2xl"
-        >
-          <i className="fa-solid fa-xmark"></i>
-        </button>
-
-        {/* Mascot Image Section - Redesigned for better integration */}
-        <div className="relative h-44 overflow-visible flex justify-center">
-           {/* Background decorative circle */}
-           <div className="absolute top-[-60px] w-64 h-64 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-full blur-2xl -z-10 animate-pulse"></div>
-           
-           <div className="absolute -top-24 w-52 h-52 drop-shadow-[0_25px_35px_rgba(0,0,0,0.18)] animate-[float_3s_ease-in-out_infinite]">
-             <img 
-               src={welcomeImg} 
-               alt="Welcome ONDE" 
-               className="w-full h-full object-contain transform scale-110"
-             />
-           </div>
-        </div>
-        
-        {/* Celebration Content */}
-        <div className="pb-12 px-10 text-center select-none bg-gradient-to-b from-white via-white to-primary/5 rounded-b-[32px]">
-          <h2 className="font-logo font-[900] text-[2.2rem] leading-tight mb-3 tracking-tighter text-[#1e293b]">
-            반가워요!<br/>
-            <span className="highlight-text">온데 ONDE</span>의 새로운 친구
-          </h2>
-          
-          <div className="w-16 h-1.5 bg-gradient-to-r from-primary to-secondary mx-auto mb-8 rounded-full opacity-80"></div>
-
-          <div className="space-y-2 mb-10">
-            <p className="text-[1.6rem] text-[#1e293b] font-extrabold tracking-tight">
-              온데에 오신 것을 환영합니다! 🎉
-            </p>
-            <p className="text-[1.05rem] leading-relaxed text-slate-500 font-medium">
-              세상의 모든 장소가 특별한 추억이 되는<br/>
-              온데만의 여정을 지금 바로 시작해보세요. ✨
-            </p>
+        {/* Top Image Section - Compact & High Speed Animation */}
+        <div style={{ background: '#f8faff', padding: '40px 0 15px 0', textAlign: 'center', position: 'relative' }}>
+          <div className="animate-[tilt_0.3s_ease-in-out_infinite_alternate]" style={{ display: 'inline-block' }}>
+            <img 
+              src={welcomeImg} 
+              alt="Welcome" 
+              style={{ width: '320px', height: '320px', objectFit: 'contain' }}
+            />
           </div>
           
-          {/* Decorative Message Card */}
-          <div className="bg-gradient-to-r from-primary/[0.03] to-secondary/[0.03] border border-primary/10 rounded-2xl p-5 mb-8 relative">
-             <p className="text-[0.9rem] text-slate-600 font-bold italic leading-relaxed">
-               "당신이 머문 모든 곳이<br/>아름다운 추억이 되도록 온데가 함께할게요."
-             </p>
-          </div>
-
           <button 
-            type="button"
-            className="btn-primary w-full py-4.5 text-[1.15rem] font-[900] shadow-[0_15px_35px_-5px_rgba(0,92,230,0.4)] hover:scale-[1.03] active:scale-[0.97] transition-all duration-300 rounded-2xl" 
-            onClick={closeWelcomePopup}
+            onClick={closeWelcomePopup} 
+            style={{ 
+              position: 'absolute', 
+              top: '16px', 
+              right: '16px', 
+              width: '36px', 
+              height: '36px', 
+              borderRadius: '50%', 
+              background: 'white', 
+              border: '1px solid #f0f0f0',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+              cursor: 'pointer',
+              color: '#bbb',
+              fontSize: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 10
+            }}
           >
-            기분 좋게 여정 시작하기 <i className="fa-solid fa-heart ml-2 animate-pulse"></i>
+            <i className="fa-solid fa-xmark"></i>
           </button>
+        </div>
+
+        {/* Content Section - Compact Padding */}
+        <div style={{ padding: '30px 50px 40px 50px', textAlign: 'center' }}>
+          <div style={{ marginBottom: '25px' }}>
+            <h2 className="font-logo" style={{ fontSize: '2.4rem', fontWeight: 900, lineHeight: 1.25, color: '#1a1a1a', letterSpacing: '-1.5px' }}>
+              반가워요!<br/>
+              <span className="highlight-text">온데 ONDE</span>와 시작해요
+            </h2>
+            <div style={{ width: '50px', height: '3px', background: '#005ce615', margin: '20px auto', borderRadius: '10px' }}></div>
+            <p style={{ fontSize: '1.2rem', color: '#94a3b8', fontWeight: 700 }}>
+              가입을 진심으로 축하드립니다! 🎉
+            </p>
+          </div>
+
+          <div style={{ marginBottom: '30px' }}>
+            <p style={{ fontSize: '1.4rem', color: '#334155', fontWeight: 800, lineHeight: 1.5 }}>
+              "당신이 머문 모든 곳이<br/>아름다운 추억이 되도록"
+            </p>
+          </div>
           
-          <div className="mt-8 flex items-center justify-center gap-3">
-            <div className="h-[1px] w-8 bg-slate-200"></div>
-            <span className="text-[0.7rem] text-slate-400 font-extrabold tracking-[0.3em] uppercase">
-              Start Your ONDE
-            </span>
-            <div className="h-[1px] w-8 bg-slate-200"></div>
+          <div style={{ padding: '0 10px' }}>
+            <button 
+              type="button"
+              className="btn-primary" 
+              style={{ 
+                width: '100%', 
+                padding: '18px', 
+                fontSize: '1.25rem', 
+                fontWeight: 900, 
+                borderRadius: '16px',
+                boxShadow: '0 10px 20px rgba(0, 92, 230, 0.2)'
+              }}
+              onClick={closeWelcomePopup}
+            >
+              여정 시작하기
+            </button>
+          </div>
+          
+          <div style={{ marginTop: '35px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', opacity: 0.15 }}>
+            <div style={{ height: '1px', flex: 1, background: '#444' }}></div>
+            <span style={{ fontSize: '0.7rem', fontWeight: 900, letterSpacing: '5px', color: '#111' }}>PREMIUM JOURNEY</span>
+            <div style={{ height: '1px', flex: 1, background: '#444' }}></div>
           </div>
         </div>
       </div>
@@ -97,12 +132,12 @@ export const WelcomeModal: React.FC = () => {
       {/* Custom Keyframe Animations */}
       <style>{`
         @keyframes scaleUp {
-          from { transform: scale(0.85); opacity: 0; }
+          from { transform: scale(0.95); opacity: 0; }
           to { transform: scale(1); opacity: 1; }
         }
-        @keyframes float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-20px); }
+        @keyframes tilt {
+          0% { transform: rotate(-3deg) scale(1); }
+          100% { transform: rotate(3deg) scale(1.05); }
         }
       `}</style>
     </div>

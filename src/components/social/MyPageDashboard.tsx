@@ -53,7 +53,7 @@ export const MyPageDashboard: React.FC = () => {
               ONDE MEMBERSHIP
             </span>
             <h3 className="font-logo font-black text-xl text-white flex items-center gap-2">
-              {username || '김현민'} <span className="text-xs font-bold text-slate-400">님, 반갑습니다! 🌟</span>
+              {username || '사용자'} <span className="text-xs font-bold text-slate-400">님, 반갑습니다! 🌟</span>
             </h3>
           </div>
           <div className="text-right">
@@ -86,11 +86,11 @@ export const MyPageDashboard: React.FC = () => {
             <div className="flex flex-col gap-3 text-xs">
               <div>
                 <span className="text-[10px] font-extrabold text-slate-400 block">이메일 계정</span>
-                <strong className="text-slate-800 font-bold">hyunmin@travel.com</strong>
+                <strong className="text-slate-800 font-bold">{username ? `${username.toLowerCase()}@example.com` : 'user@example.com'}</strong>
               </div>
               <div>
                 <span className="text-[10px] font-extrabold text-slate-400 block">휴대폰 번호</span>
-                <strong className="text-slate-800 font-bold">010-9876-5432</strong>
+                <strong className="text-slate-800 font-bold">010-0000-0000</strong>
               </div>
             </div>
 

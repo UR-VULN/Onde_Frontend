@@ -111,7 +111,9 @@ export const Header: React.FC = () => {
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               >
                 <i className="fa-solid fa-bars" style={{ color: 'var(--text-muted)' }}></i>
-                <div className="avatar" id="avatar-circle">HM</div>
+                <div className="avatar" id="avatar-circle">
+                  {username ? username.substring(0, 2).toUpperCase() : 'U'}
+                </div>
 
                 {/* Glassmorphism Dropdown Menu */}
                 {isDropdownOpen && (

@@ -3,7 +3,7 @@ import { useTravelStore } from '@/store/useTravelStore';
 import { MOCK_USERS } from '@/constants/mockUsers';
 
 export const useAuthForm = () => {
-  const { login, closeAuthModal, addToast, openWelcomePopup } = useTravelStore();
+  const { login, signupSuccess, closeAuthModal, addToast } = useTravelStore();
   const [isLoading, setIsLoading] = useState(false);
 
   // Email Regex
@@ -38,7 +38,7 @@ export const useAuthForm = () => {
 
     if (matchedUser) {
       login(matchedUser.username, matchedUser.role);
-      addToast(`🔑 ${matchedUser.username} 님 성공적으로 로그인되었습니다!`, "success");
+      addToast("🔑 로그인이 완료되었습니다!", "success");
       closeAuthModal();
     } else {
       addToast("이메일 또는 비밀번호가 올바르지 않습니다.", "warning");
@@ -79,13 +79,8 @@ export const useAuthForm = () => {
     setIsLoading(true);
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    login('김현민', role);
-    closeAuthModal();
-    addToast(`👥 환영합니다! 김현민 님 회원가입이 완료되었습니다!`, "success");
-
-    setTimeout(() => {
-      openWelcomePopup();
-    }, 400);
+    const username = email.split('@')[0];
+    signupSuccess(username, role);
   };
 
   const handleSocialLogin = (_platform: 'Kakao' | 'Google') => {
