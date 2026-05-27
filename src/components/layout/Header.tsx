@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
 
 export const Header: React.FC = () => {
@@ -12,16 +12,8 @@ export const Header: React.FC = () => {
     openAuthModal
   } = useTravelStore();
 
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
   const handlePageSwitch = (page: 'home' | 'flight' | 'car' | 'ins' | 'map' | 'feed' | 'mypage') => {
     setActivePage(page);
-    setIsDropdownOpen(false);
-  };
-
-  const handlePortalSwitch = (portal: 'cust' | 'sell' | 'adm') => {
-    useTravelStore.getState().setActivePortal(portal);
-    setIsDropdownOpen(false);
   };
 
   return (
@@ -83,80 +75,34 @@ export const Header: React.FC = () => {
           >
             <i className="fa-solid fa-route"></i>여행기
           </button>
-          
-          {/* MyPage tab appears ONLY when logged in! */}
-          {isLoggedIn && (
-            <button 
-              type="button"
-              className={`nav-item ${activePage === 'mypage' ? 'active' : ''}`}
-              onClick={() => handlePageSwitch('mypage')}
-            >
-              <i className="fa-solid fa-circle-user"></i>마이페이지
-            </button>
-          )}
         </nav>
 
         {/* Actions / Auth */}
         <div className="nav-actions flex items-center gap-3 relative">
           {isLoggedIn ? (
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-bold text-slate-600 hidden sm:block">
-                👑 <span className="text-primary">{username}</span> 님
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-black text-slate-700">
+                👑 <span className="text-primary">{username ? username.split('@')[0] : '사용자'}</span> 님
               </span>
               
-              {/* User Avatar Menu Trigger */}
-              <div 
-                className="user-menu border border-slate-200/80 rounded-full hover:shadow-sm relative" 
-                id="cust-user-trigger"
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              <button 
+                type="button"
+                className={`nav-item ${activePage === 'mypage' ? 'active' : ''}`}
+                onClick={() => handlePageSwitch('mypage')}
               >
-                <i className="fa-solid fa-bars" style={{ color: 'var(--text-muted)' }}></i>
-                <div className="avatar" id="avatar-circle">
-                  {username ? username.substring(0, 2).toUpperCase() : 'U'}
-                </div>
+                <i className="fa-solid fa-circle-user"></i>마이페이지
+              </button>
 
-                {/* Glassmorphism Dropdown Menu */}
-                {isDropdownOpen && (
-                  <div 
-                    className="absolute right-0 top-[120%] w-48 bg-white/95 backdrop-blur-md border border-slate-200/80 rounded-2xl shadow-xl py-2 flex flex-col z-50 animate-[fadeIn_0.15s_ease-out]"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button 
-                      type="button"
-                      className="px-4 py-2.5 text-left text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-primary transition-all flex items-center gap-2"
-                      onClick={() => handlePageSwitch('mypage')}
-                    >
-                      <i className="fa-solid fa-circle-user text-primary"></i> 마이페이지
-                    </button>
-                    <button 
-                      type="button"
-                      className="px-4 py-2.5 text-left text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-secondary transition-all flex items-center gap-2"
-                      onClick={() => handlePortalSwitch('sell')}
-                    >
-                      <i className="fa-solid fa-hotel text-secondary"></i> 판매자 백오피스
-                    </button>
-                    <button 
-                      type="button"
-                      className="px-4 py-2.5 text-left text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-all flex items-center gap-2"
-                      onClick={() => handlePortalSwitch('adm')}
-                    >
-                      <i className="fa-solid fa-users-gear text-emerald-500"></i> 본사 관리자
-                    </button>
-                    <div className="h-[1px] bg-slate-100 my-1"></div>
-                    <button 
-                      type="button"
-                      className="px-4 py-2.5 text-left text-xs font-bold text-rose-500 hover:bg-rose-50 transition-all flex items-center gap-2"
-                      onClick={() => {
-                        logout();
-                        setIsDropdownOpen(false);
-                        addToast("안전하게 로그아웃되었습니다.", "info");
-                      }}
-                    >
-                      <i className="fa-solid fa-arrow-right-from-bracket"></i> 로그아웃
-                    </button>
-                  </div>
-                )}
-              </div>
+              <button 
+                type="button"
+                className="text-sm font-black text-rose-500 px-2 py-1 hover:text-rose-600 transition-all"
+                onClick={() => {
+                  logout();
+                  addToast("안전하게 로그아웃되었습니다.", "info");
+                }}
+              >
+                로그아웃
+              </button>
             </div>
           ) : (
             <>
