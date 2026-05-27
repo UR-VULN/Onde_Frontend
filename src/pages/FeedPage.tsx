@@ -11,7 +11,7 @@ import { FeedDetailModal } from '@/components/feed/FeedDetailModal';
 import { FeedWriteModal } from '@/components/feed/FeedWriteModal';
 
 export const FeedPage: React.FC = () => {
-  const { addToast } = useTravelStore();
+  const { addToast, isLoggedIn, openAuthModal } = useTravelStore();
 
   // Feeds list state initialized with mock constants
   const [feeds, setFeeds] = useState<FeedItem[]>(MOCK_FEEDS);
@@ -20,6 +20,16 @@ export const FeedPage: React.FC = () => {
   // Lightbox & Creation Modals State
   const [selectedFeed, setSelectedFeed] = useState<FeedItem | null>(null);
   const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
+
+  // Guard write review option with login status check
+  const handleWriteClick = () => {
+    if (!isLoggedIn) {
+      addToast("여행 후기 기록은 로그인이 필요한 서비스입니다.", "warning");
+      openAuthModal();
+      return;
+    }
+    setIsWriteModalOpen(true);
+  };
 
   // Filter feeds dynamically
   const filteredFeeds = selectedTag === 'ALL'
@@ -66,7 +76,7 @@ export const FeedPage: React.FC = () => {
         <button
           type="button"
           className="btn-primary h-10 px-5 flex items-center justify-center gap-2 text-xs font-black shadow-md hover:scale-[1.03] transition-all select-none shrink-0 self-start lg:self-auto"
-          onClick={() => setIsWriteModalOpen(true)}
+          onClick={handleWriteClick}
         >
           <i className="fa-solid fa-pen-nib"></i> 나의 여행 이야기 기록하기
         </button>

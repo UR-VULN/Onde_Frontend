@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
 
 interface FeedWriteModalProps {
@@ -16,6 +16,21 @@ export const FeedWriteModal: React.FC<FeedWriteModalProps> = ({ isOpen, onClose,
   const [newRating, setNewRating] = useState<number>(5);
   const [newContent, setNewContent] = useState('');
   const [newImg, setNewImg] = useState('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=800');
+
+  // Gracefully close on Escape keydown
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -36,30 +51,50 @@ export const FeedWriteModal: React.FC<FeedWriteModalProps> = ({ isOpen, onClose,
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Strict Validations with beautiful Custom Toast Messages
     if (!newLocation.trim()) {
-      addToast("여행지를 입력해 주세요.", "warning");
+      addToast("📍 여행지(도시명)를 입력해 주세요.", "warning");
       return;
     }
     if (!newContent.trim()) {
-      addToast("여행 이야기를 작성해 주세요.", "warning");
+      addToast("✍️ 소중한 여행 이야기를 채워주세요.", "warning");
+      return;
+    }
+    // Force a required photo upload
+    if (!newImg || newImg === 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=800') {
+      addToast("📷 감성 여행 사진을 필수로 첨부해 주세요.", "warning");
       return;
     }
 
-    onSubmit(newCategory, newLocation, newRating, newContent, newImg);
-    
-    // Reset fields
-    setNewLocation('');
-    setNewContent('');
-    setNewCategory('PHOTO');
-    setNewRating(5);
-    setNewImg('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=800');
+    // Call the custom Confirm Modal matching our premium global UI
+    const { openConfirmPopup } = useTravelStore.getState();
+    openConfirmPopup((confirmed) => {
+      if (confirmed) {
+        onSubmit(newCategory, newLocation, newRating, newContent, newImg);
+        
+        // Reset fields upon successful confirmation and submit
+        setNewLocation('');
+        setNewContent('');
+        setNewCategory('PHOTO');
+        setNewRating(5);
+        setNewImg('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=800');
+      } else {
+        addToast("등록이 취소 되었습니다!", "info");
+      }
+    }, {
+      title: "후기를 등록하시겠습니까?",
+      description: "작성하신 소중한 온데 여행 이야기와 평점 사진이 광장에 실시간으로 전체 공개됩니다.",
+      yesLabel: "등록하기",
+      noLabel: "취소"
+    });
   };
 
   return (
     <div 
       className="premium-popup-backdrop"
       style={{ display: 'flex' }}
-      onClick={onClose}
+      // onClick={onClose} has been completely removed to prevent accidental close on backdrop click!
     >
       <div 
         className="app-modal max-w-[500px] w-full p-8 select-none animate-[zoomIn_0.25s_ease]" 
@@ -82,14 +117,17 @@ export const FeedWriteModal: React.FC<FeedWriteModalProps> = ({ isOpen, onClose,
           회원님의 온데 여행 이야기를 남겨주세요. 공유는 다른 여행자들에게 큰 힘이 됩니다!
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* noValidate is added to completely disable native browser bubble tooltips */}
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           
           <div className="form-group flex flex-col gap-1.5">
             <label className="text-xs font-bold text-slate-700">여행 테마 카테고리</label>
+            {/* style={{ paddingLeft: '10px' }} overrides the default browser padding-left to force perfect left-alignment */}
             <select 
-              className="form-input border border-slate-200 p-2.5 rounded-lg text-sm bg-white"
+              className="form-input border border-slate-200 py-2.5 rounded-lg text-sm bg-white cursor-pointer"
               value={newCategory}
               onChange={(e) => setNewCategory(e.target.value as any)}
+              style={{ paddingLeft: '10px', paddingRight: '2rem' }}
             >
               <option value="STAY">🏡 감성숙소 리뷰</option>
               <option value="FOOD">🍳 로컬 맛집탐방</option>
@@ -99,23 +137,26 @@ export const FeedWriteModal: React.FC<FeedWriteModalProps> = ({ isOpen, onClose,
           </div>
 
           <div className="form-group flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-slate-700">여행지 (도시명)</label>
+            <label className="text-xs font-bold text-slate-700">
+              여행지 (도시명) <span className="text-[#ff5a5f] font-bold">* 필수</span>
+            </label>
             <input 
               type="text" 
               className="form-input border border-slate-200 p-2.5 rounded-lg text-sm bg-white"
               value={newLocation}
               onChange={(e) => setNewLocation(e.target.value)}
               placeholder="예: 도쿄, 파리, 스위스"
-              required
             />
           </div>
 
           <div className="form-group flex flex-col gap-1.5">
             <label className="text-xs font-bold text-slate-700">만족 평점 (별점 선택)</label>
+            {/* style={{ paddingLeft: '10px' }} overrides the default browser padding-left to force perfect left-alignment */}
             <select 
-              className="form-input border border-slate-200 p-2.5 rounded-lg text-sm bg-white cursor-pointer"
+              className="form-input border border-slate-200 py-2.5 rounded-lg text-sm bg-white cursor-pointer"
               value={newRating}
               onChange={(e) => setNewRating(Number(e.target.value))}
+              style={{ paddingLeft: '10px', paddingRight: '2rem' }}
             >
               <option value="5">⭐⭐⭐⭐⭐ 5.0 (최고의 경험)</option>
               <option value="4">⭐⭐⭐⭐ 4.0 (만족스러움)</option>
@@ -126,18 +167,21 @@ export const FeedWriteModal: React.FC<FeedWriteModalProps> = ({ isOpen, onClose,
           </div>
 
           <div className="form-group flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-slate-700">여행 이야기</label>
+            <label className="text-xs font-bold text-slate-700">
+              여행 이야기 <span className="text-[#ff5a5f] font-bold">* 필수</span>
+            </label>
             <textarea 
               className="form-input border border-slate-200 p-2.5 rounded-lg text-sm bg-white h-24"
               value={newContent}
               onChange={(e) => setNewContent(e.target.value)}
               placeholder="공유하고 싶은 상세 여행 일기나 정보를 넉넉하게 써보세요."
-              required
             />
           </div>
 
           <div className="form-group flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-slate-700">감성 사진 첨부 (Mock Upload)</label>
+            <label className="text-xs font-bold text-slate-700">
+              감성 사진 첨부 (Mock Upload) <span className="text-[#ff5a5f] font-bold">* 필수</span>
+            </label>
             <div 
               style={{ border: '2px dashed var(--border-color)', padding: '1.2rem', borderRadius: '12px', textAlign: 'center', background: 'var(--bg-body)', cursor: 'pointer' }}
               onClick={handleMockUpload}
@@ -145,8 +189,10 @@ export const FeedWriteModal: React.FC<FeedWriteModalProps> = ({ isOpen, onClose,
             >
               <i className="fa-solid fa-cloud-arrow-up text-slate-400 text-2xl mb-1.5 block"></i>
               <span className="text-xs text-slate-400 font-bold block">드래그 앤 드롭 하거나 클릭하여 사진 첨부</span>
-              {newImg && newImg !== 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=800' && (
-                <span className="text-[10px] text-primary font-bold block mt-1.5">✓ 이미지 가상 업로드 완료</span>
+              {newImg && newImg !== 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=800' ? (
+                <span className="text-[10px] text-emerald-600 font-bold block mt-1.5">✓ 이미지 가상 업로드 완료</span>
+              ) : (
+                <span className="text-[10px] text-[#ff5a5f] font-bold block mt-1.5">⚠ 사진 업로드 필요 (미등록 상태)</span>
               )}
             </div>
           </div>
