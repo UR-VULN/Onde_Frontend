@@ -103,13 +103,11 @@ export const useTravelStore = create<TravelState>((set) => ({
   
   login: (username, role = 'cust') => set(() => {
     const activePortal = role;
-    const activePage = 'home'; // Default to home (stay) as main page
     return { 
       isLoggedIn: true, 
       username, 
       mileage: 35050,
       activePortal,
-      activePage,
       isAuthModalOpen: false
     };
   }),
@@ -165,13 +163,11 @@ export const useTravelStore = create<TravelState>((set) => ({
   signupSuccess: (username, role) => {
     // 1. Perform Login
     const activePortal = role;
-    const activePage = 'home'; // Default focus on stay/home
     set({ 
       isLoggedIn: true, 
       username, 
       mileage: 35050,
       activePortal,
-      activePage,
       isAuthModalOpen: false 
     });
 
