@@ -30,7 +30,7 @@ export const LoginForm: React.FC = () => {
         <input 
           type="email" 
           className="form-input" 
-          placeholder="example@example.com"
+          placeholder="example@travel.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -44,7 +44,7 @@ export const LoginForm: React.FC = () => {
         <input 
           type="password" 
           className="form-input" 
-          placeholder="******"
+          placeholder="비밀번호를 입력해주세요"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
