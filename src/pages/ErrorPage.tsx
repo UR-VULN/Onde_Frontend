@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import errorImg from '@/assets/error.png';
+import error404 from '@/assets/404.png';
+import error500 from '@/assets/500.png';
+import error503 from '@/assets/503.png';
 
 type ErrorType = '404' | '500' | '503';
 
@@ -33,7 +35,7 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({ errorCode }) => {
               {/* Mascot overlaid center */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <img
-                  src={errorImg}
+                  src={error404}
                   alt="404 마스코트"
                   style={{ width: '320px', height: '320px', objectFit: 'contain', filter: 'drop-shadow(0 12px 32px rgba(0,0,0,0.14))' }}
                 />
@@ -86,7 +88,7 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({ errorCode }) => {
               </span>
               <div className="absolute inset-0 flex items-center justify-center">
                 <img
-                  src={errorImg}
+                  src={error500}
                   alt="500 마스코트"
                   style={{ width: '320px', height: '320px', objectFit: 'contain', filter: 'drop-shadow(0 12px 32px rgba(0,0,0,0.14)) grayscale(30%)' }}
                 />
@@ -137,7 +139,7 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({ errorCode }) => {
               </span>
               <div className="absolute inset-0 flex items-center justify-center">
                 <img
-                  src={errorImg}
+                  src={error503}
                   alt="점검 마스코트"
                   style={{ width: '320px', height: '320px', objectFit: 'contain', filter: 'drop-shadow(0 12px 32px rgba(0,0,0,0.14)) sepia(20%)' }}
                 />
