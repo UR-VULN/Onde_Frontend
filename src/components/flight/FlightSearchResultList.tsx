@@ -24,7 +24,7 @@ export const FlightSearchResultList: React.FC<FlightSearchResultListProps> = ({ 
   };
 
   return (
-    <div className="max-w-none w-full mt-10 px-0 animate-[fadeIn_0.4s_ease]">
+    <div className="max-w-none w-full mt-10 px-0">
       <div className="section-header border-b border-slate-100 pb-3 mb-6">
         <h3 className="font-logo font-extrabold text-xl text-slate-800 flex items-center gap-2">
           <i className="fa-solid fa-plane-departure text-primary"></i> 실시간 운항 스케줄 검색 결과

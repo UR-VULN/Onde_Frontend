@@ -83,7 +83,7 @@ interface TravelState {
 
 export const useTravelStore = create<TravelState>((set) => ({
   activePortal: 'cust',
-  activePage: 'flight',
+  activePage: 'home',
   
   isLoggedIn: false,
   username: '',
@@ -103,7 +103,7 @@ export const useTravelStore = create<TravelState>((set) => ({
   
   login: (username, role = 'cust') => set(() => {
     const activePortal = role;
-    const activePage = role === 'cust' ? 'flight' : 'flight'; // Default to flight for B-team focus
+    const activePage = 'home'; // Default to home (stay) as main page
     return { 
       isLoggedIn: true, 
       username, 
@@ -117,7 +117,7 @@ export const useTravelStore = create<TravelState>((set) => ({
   logout: () => set({ 
     isLoggedIn: false, 
     username: '', 
-    activePage: 'flight',
+    activePage: 'home',
     activePortal: 'cust'
   }),
   
@@ -165,7 +165,7 @@ export const useTravelStore = create<TravelState>((set) => ({
   signupSuccess: (username, role) => {
     // 1. Perform Login
     const activePortal = role;
-    const activePage = 'flight'; // Default focus
+    const activePage = 'home'; // Default focus on stay/home
     set({ 
       isLoggedIn: true, 
       username, 

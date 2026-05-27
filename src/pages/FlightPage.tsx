@@ -8,7 +8,7 @@ export const FlightPage: React.FC = () => {
   const [selectedSeat, setSelectedSeat] = useState<any>(null);
 
   return (
-    <div className="w-full">
+    <div className="w-full transition-all duration-300 animate-[fadeIn_0.35s_ease]">
       {/* Flight search widget with inputs and calendar configurations */}
       <FlightSearchForm />
 

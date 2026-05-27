@@ -89,10 +89,10 @@ export const FlightSearchForm: React.FC = () => {
   const returnDate = datesArray[1] || new Date(new Date(departureDate).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
   return (
-    <div className="w-full max-w-[1100px] mx-auto !-mt-[40px] relative z-20 px-4 md:px-0 transition-all duration-300">
+    <div className="w-full !-mt-[40px] relative z-20 transition-all duration-300">
       
       {/* Main Search Card */}
-      <div className="w-full bg-white border border-slate-200/80 rounded-2xl p-4 md:p-5 shadow-[0_20px_50px_rgba(0,0,0,0.15)] flex flex-col select-none animate-[fadeIn_0.3s_ease]">
+      <div className="w-full bg-white border border-slate-200/80 rounded-2xl p-4 md:p-5 shadow-[0_20px_50px_rgba(0,0,0,0.15)] flex flex-col select-none">
         <form onSubmit={handle_search} className="w-full">
           
           {/* Main search layout: Inputs grid and the standalone action button side-by-side */}
