@@ -56,7 +56,7 @@ export const FeedPage: React.FC = () => {
     };
 
     setFeeds([newFeed, ...feeds]);
-    addToast("✨ 소중한 온데 여행 후기가 정상적으로 실시간 등록 완료되었습니다!", "success");
+    addToast("소중한 온데 여행 후기가 정상적으로 등록 완료되었습니다!", "success");
     setIsWriteModalOpen(false);
   };
 

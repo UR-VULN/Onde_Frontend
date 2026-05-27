@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
+import { MOCK_FEED_IMAGES, DEFAULT_FEED_PLACEHOLDER_IMG } from '@/constants/mockFeeds';
 
 interface FeedWriteModalProps {
   isOpen: boolean;
@@ -15,7 +16,7 @@ export const FeedWriteModal: React.FC<FeedWriteModalProps> = ({ isOpen, onClose,
   const [newLocation, setNewLocation] = useState('');
   const [newRating, setNewRating] = useState<number>(5);
   const [newContent, setNewContent] = useState('');
-  const [newImg, setNewImg] = useState('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=800');
+  const [newImg, setNewImg] = useState(DEFAULT_FEED_PLACEHOLDER_IMG);
 
   // Gracefully close on Escape keydown
   useEffect(() => {
@@ -36,17 +37,9 @@ export const FeedWriteModal: React.FC<FeedWriteModalProps> = ({ isOpen, onClose,
 
   // Process Mock Image Upload
   const handleMockUpload = () => {
-    const sampleImages = [
-      'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=800',
-      'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&q=80&w=800',
-      'https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&q=80&w=800',
-      'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&q=80&w=800',
-      'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=800',
-      'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=800'
-    ];
-    const randomImg = sampleImages[Math.floor(Math.random() * sampleImages.length)];
+    const randomImg = MOCK_FEED_IMAGES[Math.floor(Math.random() * MOCK_FEED_IMAGES.length)];
     setNewImg(randomImg);
-    addToast("📷 감성 모바일 사진 파일 탐색기가 열려 이미지가 임시 가상 업로드되었습니다! (S3 Multi-part Upload)", "success");
+    addToast("📷 이미지가 업로드되었습니다!", "success");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -62,7 +55,7 @@ export const FeedWriteModal: React.FC<FeedWriteModalProps> = ({ isOpen, onClose,
       return;
     }
     // Force a required photo upload
-    if (!newImg || newImg === 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=800') {
+    if (!newImg || newImg === DEFAULT_FEED_PLACEHOLDER_IMG) {
       addToast("📷 감성 여행 사진을 필수로 첨부해 주세요.", "warning");
       return;
     }
@@ -78,13 +71,13 @@ export const FeedWriteModal: React.FC<FeedWriteModalProps> = ({ isOpen, onClose,
         setNewContent('');
         setNewCategory('PHOTO');
         setNewRating(5);
-        setNewImg('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=800');
+        setNewImg(DEFAULT_FEED_PLACEHOLDER_IMG);
       } else {
         addToast("등록이 취소 되었습니다!", "info");
       }
     }, {
       title: "후기를 등록하시겠습니까?",
-      description: "작성하신 소중한 온데 여행 이야기와 평점 사진이 광장에 실시간으로 전체 공개됩니다.",
+      description: "작성하신 소중한 온데 여행 이야기와 평점 사진이 광장에 공개됩니다.",
       yesLabel: "등록하기",
       noLabel: "취소"
     });
@@ -180,7 +173,7 @@ export const FeedWriteModal: React.FC<FeedWriteModalProps> = ({ isOpen, onClose,
 
           <div className="form-group flex flex-col gap-1.5">
             <label className="text-xs font-bold text-slate-700">
-              감성 사진 첨부 (Mock Upload) <span className="text-[#ff5a5f] font-bold">* 필수</span>
+              감성 사진 첨부 <span className="text-[#ff5a5f] font-bold">* 필수</span>
             </label>
             <div 
               style={{ border: '2px dashed var(--border-color)', padding: '1.2rem', borderRadius: '12px', textAlign: 'center', background: 'var(--bg-body)', cursor: 'pointer' }}
@@ -189,8 +182,8 @@ export const FeedWriteModal: React.FC<FeedWriteModalProps> = ({ isOpen, onClose,
             >
               <i className="fa-solid fa-cloud-arrow-up text-slate-400 text-2xl mb-1.5 block"></i>
               <span className="text-xs text-slate-400 font-bold block">드래그 앤 드롭 하거나 클릭하여 사진 첨부</span>
-              {newImg && newImg !== 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=800' ? (
-                <span className="text-[10px] text-emerald-600 font-bold block mt-1.5">✓ 이미지 가상 업로드 완료</span>
+              {newImg && newImg !== DEFAULT_FEED_PLACEHOLDER_IMG ? (
+                <span className="text-[10px] text-emerald-600 font-bold block mt-1.5">✓ 이미지 업로드 완료</span>
               ) : (
                 <span className="text-[10px] text-[#ff5a5f] font-bold block mt-1.5">⚠ 사진 업로드 필요 (미등록 상태)</span>
               )}
