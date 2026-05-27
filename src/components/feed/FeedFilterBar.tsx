@@ -8,12 +8,12 @@ interface FeedFilterBarProps {
 
 export const FeedFilterBar: React.FC<FeedFilterBarProps> = ({ selectedTag, onSelectTag }) => {
   return (
-    <div className="feed-filter-bar flex flex-wrap gap-2 justify-center mb-10 select-none">
+    <div className="flex flex-wrap gap-2 justify-center lg:justify-start w-full lg:w-auto select-none">
       {(['ALL', 'STAY', 'FOOD', 'PHOTO', 'TIP'] as const).map(tag => (
         <button
           key={tag}
           type="button"
-          className={`feed-filter-btn px-5 py-2.5 rounded-full text-xs font-black transition-all ${
+          className={`feed-filter-btn h-10 px-5 rounded-full text-xs font-black flex items-center justify-center transition-all ${
             selectedTag === tag ? 'active' : ''
           }`}
           onClick={() => onSelectTag(tag)}
