@@ -8,6 +8,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // https://vite.dev/config/
 export default defineConfig({
+  // 'spa' mode: serves index.html for all routes — required for React Router BrowserRouter
+  appType: 'spa',
   plugins: [
     tailwindcss(),
     react()
@@ -16,5 +18,5 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src')
     }
-  }
+  },
 })

@@ -1,28 +1,38 @@
 import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTravelStore } from '@/store/useTravelStore';
 
 export const Header: React.FC = () => {
-  const { 
-    activePage, 
-    isLoggedIn, 
-    username, 
-    setActivePage,
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const {
+    isLoggedIn,
+    username,
     logout,
     addToast,
-    openAuthModal
+    openAuthModal,
   } = useTravelStore();
 
-  const handlePageSwitch = (page: 'home' | 'flight' | 'car' | 'ins' | 'map' | 'feed' | 'mypage') => {
-    setActivePage(page);
+  // Active check by current URL pathname
+  const isActive = (path: string) => {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname.startsWith(path);
+  };
+
+  const handleLogout = () => {
+    logout();
+    addToast('안전하게 로그아웃되었습니다.', 'info');
+    navigate('/');
   };
 
   return (
     <header className="header select-none">
       <div className="navbar">
-        {/* Brand Logo (Matching GmarketSans / Montserrat style) */}
-        <div 
+        {/* Brand Logo */}
+        <div
           className="logo select-none"
-          onClick={() => handlePageSwitch('home')}
+          onClick={() => navigate('/')}
         >
           <div className="logo-box">
             <span className="logo-box-line">ON</span>
@@ -31,90 +41,87 @@ export const Header: React.FC = () => {
           <span>온데</span>
         </div>
 
-        {/* Navigation links (matching GNB capsule tab navigation) */}
+        {/* Navigation links */}
         <nav className="nav-links">
-          <button 
+          <button
             type="button"
-            className={`nav-item ${activePage === 'home' ? 'active' : ''}`}
-            onClick={() => handlePageSwitch('home')}
+            className={`nav-item ${isActive('/') ? 'active' : ''}`}
+            onClick={() => navigate('/')}
           >
             <i className="fa-solid fa-hotel"></i>숙소
           </button>
-          <button 
+          <button
             type="button"
-            className={`nav-item ${activePage === 'flight' ? 'active' : ''}`}
-            onClick={() => handlePageSwitch('flight')}
+            className={`nav-item ${isActive('/flight') ? 'active' : ''}`}
+            onClick={() => navigate('/flight')}
           >
             <i className="fa-solid fa-plane"></i>항공권
           </button>
-          <button 
+          <button
             type="button"
-            className={`nav-item ${activePage === 'car' ? 'active' : ''}`}
-            onClick={() => handlePageSwitch('car')}
+            className={`nav-item ${isActive('/car') ? 'active' : ''}`}
+            onClick={() => navigate('/car')}
           >
             <i className="fa-solid fa-car"></i>렌터카
           </button>
-          <button 
+          <button
             type="button"
-            className={`nav-item ${activePage === 'ins' ? 'active' : ''}`}
-            onClick={() => handlePageSwitch('ins')}
+            className={`nav-item ${isActive('/insurance') ? 'active' : ''}`}
+            onClick={() => navigate('/insurance')}
           >
             <i className="fa-solid fa-shield-halved"></i>여행자 보험
           </button>
-          <button 
+          <button
             type="button"
-            className={`nav-item ${activePage === 'map' ? 'active' : ''}`}
-            onClick={() => handlePageSwitch('map')}
+            className={`nav-item ${isActive('/map') ? 'active' : ''}`}
+            onClick={() => navigate('/map')}
           >
             <i className="fa-solid fa-map-location-dot"></i>지도 탐색
           </button>
-          <button 
+          <button
             type="button"
-            className={`nav-item ${activePage === 'feed' ? 'active' : ''}`}
-            onClick={() => handlePageSwitch('feed')}
+            className={`nav-item ${isActive('/feed') ? 'active' : ''}`}
+            onClick={() => navigate('/feed')}
           >
             <i className="fa-solid fa-route"></i>여행기
           </button>
         </nav>
 
-        {/* Actions / Auth */}
+        {/* Auth Actions */}
         <div className="nav-actions flex items-center gap-3 relative">
           {isLoggedIn ? (
             <div className="flex items-center gap-4">
               <span className="text-sm font-black text-slate-700">
                 👑 <span className="text-primary">{username ? username.split('@')[0] : '사용자'}</span> 님
               </span>
-              
-              <button 
+
+              <button
                 type="button"
-                className={`nav-item ${activePage === 'mypage' ? 'active' : ''}`}
-                onClick={() => handlePageSwitch('mypage')}
+                className={`nav-item ${isActive('/mypage') ? 'active' : ''}`}
+                onClick={() => navigate('/mypage')}
               >
                 <i className="fa-solid fa-circle-user"></i>마이페이지
               </button>
 
-              <button 
+              <button
                 type="button"
                 className="text-sm font-black text-rose-500 px-2 py-1 hover:text-rose-600 transition-all"
-                onClick={() => {
-                  logout();
-                  addToast("안전하게 로그아웃되었습니다.", "info");
-                }}
+                onClick={handleLogout}
               >
                 로그아웃
               </button>
             </div>
           ) : (
             <>
-              <button 
+              <button
                 type="button"
-                className="btn-primary cursor-pointer active:scale-95 transition-all" 
+                className="btn-primary cursor-pointer active:scale-95 transition-all"
                 style={{ padding: '0.6rem 1.3rem', fontSize: '0.82rem', fontWeight: 800 }}
                 onClick={() => openAuthModal('login')}
               >
                 로그인
               </button>
-              <button 
+              <button
                 type="button"
                 className="btn-secondary cursor-pointer active:scale-95 transition-all"
                 style={{ padding: '0.6rem 1.3rem', fontSize: '0.82rem', fontWeight: 800 }}

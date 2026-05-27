@@ -19,9 +19,8 @@ export interface ToastItem {
 }
 
 interface TravelState {
-  // Portal & Page Navigation
+  // Portal Navigation (page routing is now handled by React Router URL)
   activePortal: 'cust' | 'sell' | 'adm';
-  activePage: 'home' | 'flight' | 'car' | 'ins' | 'map' | 'feed' | 'mypage';
   
   // User Authentication
   isLoggedIn: boolean;
@@ -49,7 +48,6 @@ interface TravelState {
 
   // Actions
   setActivePortal: (portal: 'cust' | 'sell' | 'adm') => void;
-  setActivePage: (page: 'home' | 'flight' | 'car' | 'ins' | 'map' | 'feed' | 'mypage') => void;
   login: (username: string, role?: 'cust' | 'sell' | 'adm') => void;
   logout: () => void;
   
@@ -83,8 +81,7 @@ interface TravelState {
 
 export const useTravelStore = create<TravelState>((set) => ({
   activePortal: 'cust',
-  activePage: 'home',
-  
+
   isLoggedIn: false,
   username: '',
   mileage: 35000,
@@ -99,8 +96,7 @@ export const useTravelStore = create<TravelState>((set) => ({
   authModalTab: 'login',
 
   setActivePortal: (portal) => set({ activePortal: portal }),
-  setActivePage: (page) => set({ activePage: page }),
-  
+
   login: (username, role = 'cust') => set(() => {
     const activePortal = role;
     return { 
@@ -112,11 +108,10 @@ export const useTravelStore = create<TravelState>((set) => ({
     };
   }),
   
-  logout: () => set({ 
-    isLoggedIn: false, 
-    username: '', 
-    activePage: 'home',
-    activePortal: 'cust'
+  logout: () => set({
+    isLoggedIn: false,
+    username: '',
+    activePortal: 'cust',
   }),
   
   addToast: (message, type = 'success') => set((state) => {
