@@ -58,7 +58,7 @@ const CarCard: React.FC<CarCardProps> = ({ car, index }) => {
       onClick={() => addToast(`🚗 ${car.name} 예약 화면이 로드됩니다.`, 'info')}
     >
       {/* Image Wrapper */}
-      <div className="w-full aspect-[4/3] rounded-xl overflow-hidden relative mb-3 border border-slate-100">
+      <div className="w-full aspect-[16/10] rounded-xl overflow-hidden relative mb-3 border border-slate-100">
         <img
           src={car.imageUrl}
           alt={car.name}
@@ -151,7 +151,7 @@ export const CarRecommendationList: React.FC<CarRecommendationListProps> = ({ se
   };
 
   return (
-    <div style={{ paddingBottom: '4rem' }}>
+    <div className="!px-5 lg:!px-0" style={{ paddingBottom: '4rem' }}>
       {/* Section Header */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingBottom: '2rem', borderBottom: '1.5px solid #e2e8f0' }}>
         {isSearchMode ? (

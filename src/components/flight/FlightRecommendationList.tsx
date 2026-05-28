@@ -203,7 +203,7 @@ export const FlightRecommendationList: React.FC<FlightRecommendationListProps> =
   const retDate = datesArray[1] ?? returnDay;
 
   return (
-    <div style={{ paddingBottom: '4rem' }}>
+    <div className="!px-5 lg:!px-0" style={{ paddingBottom: '4rem' }}>
       {/* Section Header */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingBottom: '2rem', borderBottom: '1.5px solid #e2e8f0' }}>
         {isSearchMode ? (
