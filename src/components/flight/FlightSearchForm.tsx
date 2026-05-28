@@ -1,9 +1,16 @@
 import React from 'react';
 import { useFlightStore } from '@/store/useFlightStore';
+import type { FlightSearchQuery } from '@/store/useFlightStore';
 import { search_flights_api } from '@/api/flightApi';
 import { useTravelStore } from '@/store/useTravelStore';
 
-export const FlightSearchForm: React.FC = () => {
+export type FlightSearchParams = FlightSearchQuery;
+
+interface FlightSearchFormProps {
+  onSearch?: (params: FlightSearchParams) => void;
+}
+
+export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch }) => {
   const { search_query, set_search_query, set_search_results } = useFlightStore();
   const { addToast } = useTravelStore();
 
@@ -49,13 +56,15 @@ export const FlightSearchForm: React.FC = () => {
       set_search_query({ tripType: 'OW', dates: depDate });
     } else {
       const depDate = search_query.dates.split(',')[0] || today;
-      const nextWeek = new Date(new Date(depDate).getTime() + 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const nextWeek = new Date(new Date(depDate).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       set_search_query({ tripType: 'RT', dates: `${depDate},${nextWeek}` });
     }
   };
 
   const handle_search = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Notify parent immediately so mock filter updates even if API fails
+    onSearch?.(search_query);
     try {
       addToast("실시간 항공 운항편을 조회 중입니다...", "info");
       

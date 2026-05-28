@@ -1,28 +1,28 @@
 import React, { useState } from 'react';
-import { FlightSearchForm } from '@/components/flight/FlightSearchForm';
-import { FlightSearchResultList } from '@/components/flight/FlightSearchResultList';
+import { FlightSearchForm, type FlightSearchParams } from '@/components/flight/FlightSearchForm';
+import { FlightRecommendationList } from '@/components/flight/FlightRecommendationList';
 import { FlightReservationModal } from '@/components/flight/FlightReservationModal';
 
 export const FlightPage: React.FC = () => {
+  const [searchParams, setSearchParams] = useState<FlightSearchParams | null>(null);
   const [selectedFlight, setSelectedFlight] = useState<any>(null);
   const [selectedSeat, setSelectedSeat] = useState<any>(null);
 
   return (
     <div className="w-full transition-all duration-300 animate-[fadeIn_0.35s_ease]">
-      {/* Flight search widget with inputs and calendar configurations */}
-      <FlightSearchForm />
 
-      {/* Flight search result cards listing available schedules & seats */}
-      <FlightSearchResultList 
-        on_select_seat={(flight, seat) => {
-          setSelectedFlight(flight);
-          setSelectedSeat(seat);
-        }}
-      />
+      {/* Flight search form */}
+      <FlightSearchForm onSearch={setSearchParams} />
 
-      {/* Global reservation hold & passenger manifest form modal */}
+      {/* Spacer */}
+      <div style={{ height: '4rem' }} />
+
+      {/* Flight recommendation list — mock data, filtered by search params */}
+      <FlightRecommendationList searchParams={searchParams} />
+
+      {/* Reservation modal */}
       {selectedFlight && selectedSeat && (
-        <FlightReservationModal 
+        <FlightReservationModal
           flight={selectedFlight}
           seat={selectedSeat}
           onClose={() => {

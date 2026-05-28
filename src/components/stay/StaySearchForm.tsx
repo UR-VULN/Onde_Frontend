@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
+import { search_stays_api } from '@/api/stayApi';
 
 export interface StaySearchParams {
   destination: string;
@@ -33,19 +34,27 @@ export const StaySearchForm: React.FC<StaySearchFormProps> = ({ onSearch }) => {
     setRoomCount(prev => Math.max(1, prev + amount));
   };
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    addToast(
-      `🏨 [${destination}] 숙소 검색 중: ${checkInDate} ~ ${checkOutDate} (${guestCount}명, 객실 ${roomCount}개)`,
-      "info"
-    );
-    onSearch?.({
+    const params = {
       destination,
       checkIn: checkInDate,
       checkOut: checkOutDate,
       guests: guestCount,
       rooms: roomCount,
-    });
+    };
+    onSearch?.(params);
+    try {
+      addToast("실시간 숙소를 조회 중입니다...", "info");
+      const res = await search_stays_api(params);
+      if (res.success && res.data) {
+        addToast("숙소 검색이 완료되었습니다.", "success");
+      } else {
+        addToast(res.message || "검색 결과가 없습니다.", "warning");
+      }
+    } catch (err: any) {
+      addToast(err?.error?.message || "숙소 실시간 검색 중 오류가 발생했습니다.", "warning");
+    }
   };
 
   return (

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
 import type { CarType } from '@/constants/mockCars';
+import { search_cars_api } from '@/api/carApi';
 
 export interface CarSearchParams {
   pickupSpot: string;
@@ -33,15 +34,21 @@ export const CarSearchForm: React.FC<CarSearchFormProps> = ({ onSearch }) => {
     EV: '전기차'
   };
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const typeLabel = typeLabelMap[carType];
-
-    addToast(
-      `🚗 [${pickupSpot}] 렌터카 검색 중: ${pickupDate} ~ ${returnDate} (${typeLabel})`,
-      "info"
-    );
-    onSearch?.({ pickupSpot, pickupDate, returnDate, carType });
+    const params = { pickupSpot, pickupDate, returnDate, carType };
+    onSearch?.(params);
+    try {
+      addToast("실시간 렌터카를 조회 중입니다...", "info");
+      const res = await search_cars_api(params);
+      if (res.success && res.data) {
+        addToast("렌터카 검색이 완료되었습니다.", "success");
+      } else {
+        addToast(res.message || "검색 결과가 없습니다.", "warning");
+      }
+    } catch (err: any) {
+      addToast(err?.error?.message || "렌터카 실시간 검색 중 오류가 발생했습니다.", "warning");
+    }
   };
 
   return (

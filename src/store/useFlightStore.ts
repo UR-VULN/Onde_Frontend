@@ -68,10 +68,10 @@ let timerInterval: any = null;
 
 export const useFlightStore = create<FlightState>((set, get) => ({
   search_query: {
-    tripType: 'OW',
+    tripType: 'RT',
     departures: 'ICN',
     arrivals: 'NRT',
-    dates: new Date().toISOString().split('T')[0],
+    dates: `${new Date().toISOString().split('T')[0]},${new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}`,
     seatClass: 'ALL',
     passengerCount: 1
   },
