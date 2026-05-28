@@ -174,17 +174,21 @@ export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approv
 
   return (
     <div className="admin-panel">
-      {/* Header & Tab Switcher */}
-      <div className="section-header" style={{ flexWrap: 'wrap', gap: '1rem' }}>
+      {/* Header – title + description only, consistent with all other panels */}
+      <div className="section-header">
         <div>
           <h2 className="section-title">
             본사 관리자 통제 허브
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            입점 상품 승인 심사 및 통합 예약/보험 관제 시스템 <span style={{ fontSize: '0.8rem' }}>(B/C/D팀 공용)</span>
+            입점 상품 승인 심사 및 통합 예약/보험 관제 시스템{' '}
+            <span style={{ fontSize: '0.8rem' }}>(B/C/D팀 공용)</span>
           </p>
         </div>
+      </div>
 
+      {/* Tab Switcher – separate element below the header */}
+      <div style={{ display: 'flex', marginBottom: '2rem' }}>
         <div style={{ display: 'flex', background: 'var(--bg-light)', padding: '0.35rem', borderRadius: 'var(--radius-full)', border: '1px solid var(--border-color)' }}>
           <button
             type="button"

@@ -1,27 +1,18 @@
 import React, { useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
+import { request_monthly_settlement_api } from '@/api/sellerApi';
 import {
-  request_monthly_settlement_api,
-} from '@/api/sellerApi';
-
-// ─── 목(Mock) 데이터 ───────────────────────────────
-const MOCK_SETTLEMENT_HISTORY = [
-  { settlementMonth: '2026-05', netAmount: 11205000, status: 'PENDING_REVIEW', requestedAt: '2026-05-31' },
-  { settlementMonth: '2026-04', netAmount: 9840000, status: 'PAID', requestedAt: '2026-04-30' },
-  { settlementMonth: '2026-03', netAmount: 8320000, status: 'PAID', requestedAt: '2026-03-31' },
-];
-
-const MOCK_DAILY_SALES = [420000, 680000, 520000, 890000, 760000, 1200000, 980000];
-const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
+  MOCK_SETTLEMENT_HISTORY,
+  MOCK_DAILY_SALES,
+  MOCK_STAT_METRICS,
+} from '@/constants/mockSellerData';
+import { DAYS_OF_WEEK } from '@/constants/shared';
 
 export const SellerStatPanel: React.FC = () => {
   const { addToast } = useTravelStore();
   const [isRequesting, setIsRequesting] = useState(false);
 
-  const totalSales = 12450000;
-  const completedBookings = 158;
-  const settlementPending = 11205000;
-  const commissionRate = 0.10;
+  const { totalSales, completedBookings, settlementPending, commissionRate } = MOCK_STAT_METRICS;
   const maxBar = Math.max(...MOCK_DAILY_SALES);
 
   const handle_request_settlement = async () => {
@@ -118,7 +109,7 @@ export const SellerStatPanel: React.FC = () => {
                           transition: 'all 0.7s ease',
                         }}
                       ></div>
-                      <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)' }}>{DAYS[idx]}</span>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)' }}>{DAYS_OF_WEEK[idx]}</span>
                     </div>
                   );
                 })}

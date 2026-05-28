@@ -1,38 +1,21 @@
 import React, { useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
-
-const MAIL_TEMPLATES = [
-  { id: 'booking', label: '[공통] 예약 확인서 HTML 자동 발송 폼' },
-  { id: 'receipt', label: '[영수증] 발권 완료 자동 빌드 PDF 영수증' },
-  { id: 'notice',  label: '[공지] 서비스 점검 안내 푸시 템플릿' },
-];
-
-const DEFAULT_HTML = `<div style="font-family:'Pretendard'; max-width:600px; margin:0 auto; padding:40px; border:1px solid #eee;">
-  <h2 style="color:#005ce6;">ONDE 예약 성공 안내</h2>
-  <p>안녕하세요, <strong>{{userName}}</strong> 고객님!</p>
-  <p>온데를 통해 예약하신 <strong>{{productName}}</strong> 상품의 결제가 정상적으로 완료되었습니다.</p>
-  <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
-  <ul style="list-style:none; padding:0;">
-    <li>- 예약 번호: {{bookingCode}}</li>
-    <li>- 일정: {{dateRange}}</li>
-  </ul>
-  <p style="font-size:12px; color:#999; margin-top:30px;">본 메일은 발신전용입니다.</p>
-</div>`;
-
-const REPORTED_POSTS = [
-  { id: 1, content: '부적절한 광고성 댓글 (스팸 의심)', reportedAt: '2026-05-28 09:12', isBlinded: false },
-  { id: 2, content: '욕설 포함 의심 게시글 (S3 봇 감지)', reportedAt: '2026-05-28 08:45', isBlinded: false },
-];
+import {
+  MAIL_TEMPLATES,
+  DEFAULT_MAIL_HTML,
+  MOCK_REPORTED_POSTS,
+  MOCK_LBS_DEFAULTS,
+} from '@/constants/mockAdminData';
 
 export const AdminLBSPanel: React.FC = () => {
   const { addToast } = useTravelStore();
 
-  const [markerName, setMarkerName] = useState('도쿄 신주쿠 스시로타운');
-  const [latitude, setLatitude] = useState('35.6905');
-  const [longitude, setLongitude] = useState('139.7001');
+  const [markerName, setMarkerName] = useState(MOCK_LBS_DEFAULTS.markerName);
+  const [latitude, setLatitude] = useState(MOCK_LBS_DEFAULTS.latitude);
+  const [longitude, setLongitude] = useState(MOCK_LBS_DEFAULTS.longitude);
   const [selectedTemplate, setSelectedTemplate] = useState('booking');
-  const [htmlContent, setHtmlContent] = useState(DEFAULT_HTML);
-  const [posts, setPosts] = useState(REPORTED_POSTS);
+  const [htmlContent, setHtmlContent] = useState(DEFAULT_MAIL_HTML);
+  const [posts, setPosts] = useState(MOCK_REPORTED_POSTS);
 
   const handle_deploy_marker = () => {
     if (!markerName.trim() || !latitude || !longitude) {

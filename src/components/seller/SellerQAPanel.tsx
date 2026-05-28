@@ -5,43 +5,7 @@ import {
   update_seller_review_reply_api,
   delete_seller_review_reply_api,
 } from '@/api/sellerApi';
-
-// ─── Mock 데이터 ────────────────────────────────────
-const MOCK_REVIEWS = [
-  {
-    reviewId: 1,
-    guestName: '서지우 게스트',
-    guestInitials: 'SJ',
-    guestColor: '#005ce6',
-    rating: 5,
-    productName: '도쿄 신주쿠 펜트하우스',
-    content: '온데 숙소가 너무 좋았어요! 신주쿠 역이랑도 가깝고 특히 밤에 보이는 야경이 펜트하우스 이름값 하네요. 다음에도 꼭 이용하고 싶습니다.',
-    reviewedAt: '2026-10-15 14:20',
-    hostReply: '서지우 고객님, 소중한 후기 감사드립니다! 야경을 만족해하셔서 저희도 정말 기쁩니다. 다음에 방문하시면 더 좋은 서비스로 보답하겠습니다.',
-  },
-  {
-    reviewId: 2,
-    guestName: '민경훈 게스트',
-    guestInitials: 'MK',
-    guestColor: '#ff5a5f',
-    rating: 4,
-    productName: '아사쿠사 에코 료칸',
-    content: '전반적으로 좋았는데 엘리베이터 점검 시간이랑 겹쳐서 조금 기다렸네요. 미리 공지해주셨으면 좋았을 것 같아요.',
-    reviewedAt: '2026-10-14 09:12',
-    hostReply: undefined,
-  },
-  {
-    reviewId: 3,
-    guestName: '이채현 게스트',
-    guestInitials: 'CH',
-    guestColor: '#008a05',
-    rating: 5,
-    productName: '제네시스 G90',
-    content: '차가 정말 깔끔하고 연비도 좋았어요. 렌트 과정도 간편하고 직원분들도 친절하셨습니다.',
-    reviewedAt: '2026-10-12 18:45',
-    hostReply: undefined,
-  },
-];
+import { MOCK_REVIEWS } from '@/constants/mockSellerData';
 
 const StarRating: React.FC<{ rating: number }> = ({ rating }) => (
   <div style={{ color: '#f5b041', fontSize: '0.8rem' }}>

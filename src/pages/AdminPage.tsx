@@ -23,8 +23,8 @@ export const AdminPage: React.FC = () => {
   const renderPanel = () => {
     switch (activeTab) {
       case 'stat':    return <AdminDashboardPanel />;
-      case 'approve': return <AdminHQPanel defaultTab="approval" />;
-      case 'book':    return <AdminHQPanel defaultTab="booking" />;
+      case 'approve': return <AdminHQPanel key="approve" defaultTab="approval" />;
+      case 'book':    return <AdminHQPanel key="book" defaultTab="booking" />;
       case 'user':    return <AdminUserPanel />;
       case 'lbs':     return <AdminLBSPanel />;
       default:        return <AdminDashboardPanel />;

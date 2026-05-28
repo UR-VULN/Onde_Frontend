@@ -1,19 +1,6 @@
 import React, { useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
-
-// ─── Mock 데이터 ────────────────────────────────────
-const MOCK_USERS = [
-  { id: 1023, email: 'buyer_shinjuku@gmail.com', role: 'ROLE_USER',   status: 'ACTIVE',    isBlacklisted: false },
-  { id: 944,  email: 'seller_official@onde.com', role: 'ROLE_SELLER', status: 'ACTIVE',    isBlacklisted: false },
-  { id: 1105, email: 'traveler_kim@naver.com',   role: 'ROLE_USER',   status: 'ACTIVE',    isBlacklisted: false },
-  { id: 881,  email: 'spammer_bad@mail.xyz',     role: 'ROLE_USER',   status: 'BLACKLIST', isBlacklisted: true  },
-];
-
-const ROLE_BADGE_CLASS: Record<string, string> = {
-  ROLE_USER:       'bg-blue-50 text-primary border-blue-100',
-  ROLE_SELLER:     'bg-amber-50 text-amber-700 border-amber-100',
-  ROLE_ADMIN:      'bg-emerald-50 text-emerald-700 border-emerald-100',
-};
+import { MOCK_USERS, ROLE_BADGE_CLASS } from '@/constants/mockAdminData';
 
 export const AdminUserPanel: React.FC = () => {
   const { addToast, openConfirmPopup } = useTravelStore();

@@ -1,33 +1,15 @@
 import React, { useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
+import { MOCK_STAYS, MOCK_CARS, MOCK_CALENDAR_INITIAL } from '@/constants/mockSellerData';
 
-// ─── Mock 데이터 ─────────────────────────────────────────
-const MOCK_STAYS = [
-  { propertyId: 1, name: '도쿄 신주쿠 펜트하우스', status: 'ACTIVE', basePrice: 245000 },
-  { propertyId: 2, name: '아사쿠사 에코 료칸', status: 'PENDING', basePrice: 125000 },
-];
-
-const MOCK_CARS = [
-  { propertyId: 101, name: '제네시스 G90', stock: 4, basePrice: 180000 },
-  { propertyId: 102, name: '테슬라 모델 Y', stock: 12, basePrice: 120000 },
-];
-
-// ─── 컴포넌트 ─────────────────────────────────────────────
 export const SellerStayCarPanel: React.FC = () => {
   const { addToast } = useTravelStore();
-  const [selectedProperty, setSelectedProperty] = useState('도쿄 신주쿠 펜트하우스');
+  const [selectedProperty, setSelectedProperty] = useState(MOCK_STAYS[0].name);
   const [overrideTarget, setOverrideTarget] = useState<{ day: number; stock: number; price: number } | null>(null);
 
-  // 캘린더 데이터 (샘플)
-  const [dailyData, setDailyData] = useState<Record<number, { stock: number; price: number; isClosed?: boolean }>>({
-    24: { stock: 5, price: 245000 },
-    25: { stock: 4, price: 245000 },
-    26: { stock: 0, price: 0, isClosed: true },
-    27: { stock: 2, price: 294000 }, // 성수기/할증
-    28: { stock: 5, price: 245000 },
-    29: { stock: 5, price: 294000 },
-    30: { stock: 5, price: 294000 },
-  });
+  const [dailyData, setDailyData] = useState<Record<number, { stock: number; price: number; isClosed?: boolean }>>(
+    MOCK_CALENDAR_INITIAL
+  );
 
   const handle_override_save = (day: number, stock: number, price: number) => {
     setDailyData({ ...dailyData, [day]: { stock, price, isClosed: stock === 0 } });
@@ -177,10 +159,8 @@ export const SellerStayCarPanel: React.FC = () => {
             className="form-input"
             style={{ width: '220px', padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}
           >
-            <option>도쿄 신주쿠 펜트하우스</option>
-            <option>아사쿠사 에코 료칸</option>
-            <option>제네시스 G90</option>
-            <option>테슬라 모델 Y</option>
+            {MOCK_STAYS.map((s) => <option key={s.propertyId}>{s.name}</option>)}
+            {MOCK_CARS.map((c) => <option key={c.propertyId}>{c.name}</option>)}
           </select>
         </div>
 

@@ -1,24 +1,15 @@
 import React, { useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
-import {
-  verify_business_api,
-  save_seller_profile_api,
-} from '@/api/sellerApi';
-
-// 한국 주요 은행 목록
-const KOREAN_BANKS = [
-  '신한은행', '국민은행', '우리은행', '하나은행', 'IBK기업은행',
-  '농협은행', '카카오뱅크', '토스뱅크', 'SC제일은행', '씨티은행',
-  '대구은행', '부산은행', '경남은행', '광주은행', '전북은행'
-];
+import { verify_business_api, save_seller_profile_api } from '@/api/sellerApi';
+import { KOREAN_BANKS, MOCK_ACCOUNT_DEFAULTS } from '@/constants/mockSellerData';
 
 export const SellerAccountPanel: React.FC = () => {
   const { addToast } = useTravelStore();
 
   // ─── 기본 업체 정보 ───────────────────────────
-  const [businessName, setBusinessName] = useState('온데 글로벌 리조트 파트너즈 주식회사');
-  const [contactPhone, setContactPhone] = useState('02-1234-5678');
-  const [address] = useState('서울특별시 강남구 테헤란로 123');
+  const [businessName, setBusinessName] = useState(MOCK_ACCOUNT_DEFAULTS.businessName);
+  const [contactPhone, setContactPhone] = useState(MOCK_ACCOUNT_DEFAULTS.contactPhone);
+  const [address] = useState(MOCK_ACCOUNT_DEFAULTS.address);
 
   // ─── 사업자 진위 확인 ─────────────────────────
   const [businessNumber, setBusinessNumber] = useState('');
@@ -28,7 +19,7 @@ export const SellerAccountPanel: React.FC = () => {
   const [isBusinessVerified, setIsBusinessVerified] = useState(false);
 
   // ─── 정산 계좌 관리 ───────────────────────────
-  const [bankName, setBankName] = useState('신한은행');
+  const [bankName, setBankName] = useState(MOCK_ACCOUNT_DEFAULTS.bankName);
   const [accountNumber, setAccountNumber] = useState('');
   const [accountHolder, setAccountHolder] = useState('');
   const [showAccount, setShowAccount] = useState(false);
