@@ -32,7 +32,10 @@ export const CarSearchForm: React.FC = () => {
   };
 
   return (
-    <div className="w-full bg-white border border-slate-200/80 rounded-2xl p-4 md:p-5 shadow-[0_20px_50px_rgba(0,0,0,0.15)] flex flex-col select-none">
+    <div className="w-full bg-white border border-slate-200/80 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] flex flex-col select-none overflow-hidden">
+      {/* Gradient accent bar — mobile/tablet only */}
+      <div className="lg:hidden h-1 w-full" style={{ background: 'linear-gradient(135deg, #005ce6 0%, #ff5a5f 100%)' }} />
+      <div className="p-4 md:p-5 flex flex-col">
       <form onSubmit={handleSearchSubmit} className="w-full">
         
         {/* Main search layout: Inputs grid and the standalone action button side-by-side */}
@@ -64,7 +67,8 @@ export const CarSearchForm: React.FC = () => {
             </div>
 
             {/* Divider */}
-            <div className="w-[1px] bg-slate-200 hidden lg:block my-2.5"></div>
+            <div className="lg:hidden" style={{ height: '1px', background: '#e2e8f0', margin: '0 0.75rem' }}></div>
+            <div className="hidden lg:block" style={{ width: '1px', background: '#e2e8f0', margin: '0.625rem 0' }}></div>
 
             {/* 2. Pickup Date */}
             <div className="flex-1 min-w-[125px] flex flex-col justify-center items-center text-center py-2 px-3 relative">
@@ -84,7 +88,8 @@ export const CarSearchForm: React.FC = () => {
             </div>
 
             {/* Divider */}
-            <div className="w-[1px] bg-slate-200 hidden lg:block my-2.5"></div>
+            <div className="lg:hidden" style={{ height: '1px', background: '#e2e8f0', margin: '0 0.75rem' }}></div>
+            <div className="hidden lg:block" style={{ width: '1px', background: '#e2e8f0', margin: '0.625rem 0' }}></div>
 
             {/* 3. Return Date */}
             <div className="flex-1 min-w-[125px] flex flex-col justify-center items-center text-center py-2 px-3 relative">
@@ -105,7 +110,8 @@ export const CarSearchForm: React.FC = () => {
             </div>
 
             {/* Divider */}
-            <div className="w-[1px] bg-slate-200 hidden lg:block my-2.5"></div>
+            <div className="lg:hidden" style={{ height: '1px', background: '#e2e8f0', margin: '0 0.75rem' }}></div>
+            <div className="hidden lg:block" style={{ width: '1px', background: '#e2e8f0', margin: '0.625rem 0' }}></div>
 
             {/* 4. Car Type */}
             <div className="flex-1 min-w-0 flex flex-col justify-center items-center text-center py-2 px-3 relative">
@@ -147,6 +153,7 @@ export const CarSearchForm: React.FC = () => {
 
         </div>
       </form>
+      </div>
     </div>
   );
 };
