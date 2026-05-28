@@ -1,8 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { MOCK_FLIGHT_ROUTES, SHUFFLED_FLIGHT_ROUTES, type MockFlightRoute } from '@/constants/mockFlightRoutes';
 import type { FlightSearchParams } from './FlightSearchForm';
-import { useTravelStore } from '@/store/useTravelStore';
-
 function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
@@ -27,7 +25,6 @@ interface FlightRouteCardProps {
 }
 
 const FlightRouteCard: React.FC<FlightRouteCardProps> = ({ route, index }) => {
-  const { addToast } = useTravelStore();
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -69,7 +66,7 @@ const FlightRouteCard: React.FC<FlightRouteCardProps> = ({ route, index }) => {
         (e.currentTarget as HTMLDivElement).style.boxShadow = '0 2px 16px rgba(0,0,0,0.06)';
         (e.currentTarget as HTMLDivElement).style.transform = '';
       }}
-      onClick={() => addToast(`✈️ ${route.flightNumber} (${route.departureAirport} → ${route.arrivalAirport}) 예약 화면이 로드됩니다.`, 'info')}
+      onClick={() => {}}
     >
       {/* Header band: airline info + price */}
       <div

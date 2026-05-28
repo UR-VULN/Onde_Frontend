@@ -1,8 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { MOCK_STAYS, type MockStay } from '@/constants/mockStays';
 import type { StaySearchParams } from './StaySearchForm';
-import { useTravelStore } from '@/store/useTravelStore';
-
 function shuffleArray<T>(array: T[]): T[] {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
@@ -27,7 +25,6 @@ interface StayCardProps {
 }
 
 const StayCard: React.FC<StayCardProps> = ({ stay, index }) => {
-  const { addToast } = useTravelStore();
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -58,7 +55,7 @@ const StayCard: React.FC<StayCardProps> = ({ stay, index }) => {
       style={{ transitionDelay: `${delayMs}ms` }}
       className={`flex flex-col cursor-pointer group transition-all duration-500 ease-out
         ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
-      onClick={() => addToast(`🏨 ${stay.title} 숙소 상세 조회가 로드됩니다.`, 'info')}
+      onClick={() => {}}
     >
       {/* Image Wrapper */}
       <div className="w-full aspect-[16/10] rounded-xl overflow-hidden relative mb-3 border border-slate-100">
