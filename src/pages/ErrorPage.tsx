@@ -167,13 +167,6 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({ errorCode }) => {
               >
                 <i className="fa-solid fa-house mr-2"></i> 홈페이지 둘러보기
               </button>
-              <button
-                type="button"
-                onClick={() => alert('정기 점검 중에는 실시간 공지 채널만 이용이 가능합니다.')}
-                className="btn-secondary w-full sm:flex-1 py-4 px-8 rounded-full text-sm font-black hover:scale-105 transition-all select-none bg-white"
-              >
-                <i className="fa-solid fa-bullhorn mr-2"></i> 긴급 공지 확인
-              </button>
             </div>
           </div>
         );

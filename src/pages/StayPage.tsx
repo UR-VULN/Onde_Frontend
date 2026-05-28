@@ -1,79 +1,15 @@
 import React from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
+import { StaySearchForm } from '@/components/stay/StaySearchForm';
 
 export const StayPage: React.FC = () => {
   const { addToast } = useTravelStore();
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    addToast("실시간 온데 프리미엄 숙소 매칭 엔진을 구동 중입니다... (C도메인 연동)", "info");
-  };
 
   return (
     <div className="w-full !-mt-[40px] relative z-20 transition-all duration-300 animate-[fadeIn_0.35s_ease]">
       
       {/* Hotel/Stay Search Bar Capsule */}
-      <div className="w-full bg-white border border-slate-200/80 rounded-2xl p-4 md:p-5 shadow-[0_20px_50px_rgba(0,0,0,0.15)] flex flex-col select-none">
-        <form onSubmit={handleSearchSubmit} className="w-full">
-          <div className="flex flex-col lg:flex-row items-stretch gap-4">
-            
-            {/* Inputs Wrapper */}
-            <div className="flex-1 bg-slate-50 border border-slate-200/80 rounded-xl flex flex-col lg:flex-row items-stretch min-h-[64px] lg:h-[68px] relative overflow-visible">
-              
-              {/* 1. Destination */}
-              <div className="flex-1 lg:min-w-[240px] min-w-0 flex flex-col justify-center items-center text-center py-2 px-4">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">여행 목적지 또는 숙소명</span>
-                <div className="flex items-center justify-center w-full">
-                  <i className="fa-solid fa-location-dot text-[#005ce6] text-xs mr-2 shrink-0"></i>
-                  <input
-                    type="text"
-                    className="bg-transparent border-none text-sm font-extrabold text-slate-800 focus:outline-none w-full placeholder:text-slate-400 p-0 text-center"
-                    placeholder="도쿄, 제주, 서울 등 어디로 떠나시나요?"
-                    defaultValue="도쿄 신주쿠"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Divider */}
-              <div className="w-[1px] bg-slate-200 hidden lg:block my-2.5"></div>
-
-              {/* 2. Check-in Check-out */}
-              <div className="flex-1 lg:min-w-[280px] min-w-0 flex flex-col justify-center items-center text-center py-2 px-4 relative">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">체크인 ~ 체크아웃 일정</span>
-                <div className="flex items-center justify-center text-sm font-extrabold text-slate-800 relative cursor-pointer select-none w-full">
-                  <i className="fa-regular fa-calendar text-slate-400 text-sm mr-2 pointer-events-none"></i>
-                  <span>2026-10-24 (토) ~ 2026-10-27 (화)</span>
-                </div>
-              </div>
-
-              {/* Divider */}
-              <div className="w-[1px] bg-slate-200 hidden lg:block my-2.5"></div>
-
-              {/* 3. Guests / Rooms */}
-              <div className="flex-1 lg:min-w-[200px] min-w-0 flex flex-col justify-center items-center text-center py-2 px-4">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">인원 및 객실 수</span>
-                <div className="flex items-center justify-center w-full text-sm font-extrabold text-slate-800">
-                  <i className="fa-solid fa-user-group text-slate-400 text-xs mr-2 shrink-0"></i>
-                  <span>성인 2명, 객실 1개</span>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Coral Gradient Signature Search Button */}
-            <button
-              type="submit"
-              className="h-[48px] lg:h-[68px] w-full lg:w-[68px] rounded-xl flex items-center justify-center cursor-pointer flex-shrink-0"
-              style={{ background: 'linear-gradient(135deg, #005ce6 0%, #ff5a5f 100%)', color: '#ffffff' }}
-              title="숙소 검색"
-            >
-              <i className="fa-solid fa-magnifying-glass text-lg text-white"></i>
-            </button>
-
-          </div>
-        </form>
-      </div>
+      <StaySearchForm />
 
       {/* Featured stays showcases to make it look hyper premium */}
       <div className="mt-16 mb-20 px-4 md:px-0">

@@ -103,15 +103,15 @@ export const FlightSearchForm: React.FC = () => {
               
               {/* 1. Trip Type Toggle Box integrated inside (Direct Toggle UX) */}
               <div className="flex-1 lg:min-w-[110px] min-w-0 flex flex-col justify-center items-center text-center py-2 px-3 relative">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">여정 구분</span>
+                <span className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">여정 구분</span>
                 <button
                   type="button"
                   onClick={handle_toggle_trip_type}
-                  className="bg-transparent border-none text-sm font-extrabold text-slate-800 focus:outline-none w-full text-center flex items-center justify-center cursor-pointer select-none p-0 hover:scale-[1.03] active:scale-[0.97] transition-all"
+                  className="bg-transparent border-none text-base font-extrabold text-slate-800 focus:outline-none w-full text-center flex items-center justify-center cursor-pointer select-none p-0 hover:scale-[1.03] active:scale-[0.97] transition-all"
                   title="클릭하여 편도/왕복 전환"
                 >
                   <div className="flex items-center justify-center">
-                    <i className="fa-solid fa-plane-departure text-[#005ce6] text-xs mr-2"></i>
+                    <i className="fa-solid fa-plane-departure text-[#005ce6] text-xs" style={{ marginRight: '6px' }}></i>
                     <span>{search_query.tripType === 'RT' ? '왕복 여정' : '편도 여정'}</span>
                   </div>
                 </button>
@@ -122,13 +122,13 @@ export const FlightSearchForm: React.FC = () => {
 
               {/* 2. Departures */}
               <div className="flex-1 lg:min-w-[160px] min-w-0 flex flex-col justify-center items-center text-center py-2 px-3">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">출발 공항</span>
+                <span className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">출발 공항</span>
                 <input
                   type="text"
                   name="departures"
                   value={search_query.departures}
                   onChange={handle_change}
-                  className="bg-transparent border-none text-sm font-extrabold text-slate-800 focus:outline-none w-full placeholder:text-slate-400 p-0 text-center"
+                  className="bg-transparent border-none text-base font-extrabold text-slate-800 focus:outline-none w-full placeholder:text-slate-400 p-0 text-center"
                   placeholder="인천 국제공항 (ICN)"
                   required
                 />
@@ -148,13 +148,13 @@ export const FlightSearchForm: React.FC = () => {
 
               {/* 3. Arrivals */}
               <div className="flex-1 lg:min-w-[160px] min-w-0 flex flex-col justify-center items-center text-center py-2 px-3">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">도착 공항</span>
+                <span className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">도착 공항</span>
                 <input
                   type="text"
                   name="arrivals"
                   value={search_query.arrivals}
                   onChange={handle_change}
-                  className="bg-transparent border-none text-sm font-extrabold text-slate-800 focus:outline-none w-full placeholder:text-slate-400 p-0 text-center"
+                  className="bg-transparent border-none text-base font-extrabold text-slate-800 focus:outline-none w-full placeholder:text-slate-400 p-0 text-center"
                   placeholder="도쿄 나리타 공항 (NRT)"
                   required
                 />
@@ -165,8 +165,8 @@ export const FlightSearchForm: React.FC = () => {
 
               {/* 4. Departure Date */}
               <div className="flex-1 min-w-[125px] flex flex-col justify-center items-center text-center py-2 px-3 relative">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">출발 일시</span>
-                <div className="flex items-center justify-center text-sm font-extrabold text-slate-800 relative cursor-pointer select-none w-full">
+                <span className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">출발 일시</span>
+                <div className="flex items-center justify-center text-base font-extrabold text-slate-800 relative cursor-pointer select-none w-full">
                   <i className="fa-regular fa-calendar text-slate-400 text-sm mr-2 pointer-events-none"></i>
                   <span className="pointer-events-none">{departureDate}</span>
                   <input
@@ -187,14 +187,14 @@ export const FlightSearchForm: React.FC = () => {
               <div className={`flex-1 min-w-[125px] flex flex-col justify-center items-center text-center py-2 px-3 relative transition-all duration-300 ${
                 search_query.tripType === 'OW' ? 'bg-slate-100/40 opacity-40 cursor-not-allowed' : ''
               }`}>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">오는 일시</span>
+                <span className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">오는 일시</span>
                 {search_query.tripType === 'OW' ? (
-                  <div className="flex items-center justify-center text-sm font-extrabold text-slate-400 select-none">
+                  <div className="flex items-center justify-center text-base font-extrabold text-slate-400 select-none">
                     <i className="fa-regular fa-calendar text-slate-300 text-sm mr-2"></i>
                     <span>편도 여정</span>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center text-sm font-extrabold text-slate-800 relative cursor-pointer select-none w-full">
+                  <div className="flex items-center justify-center text-base font-extrabold text-slate-800 relative cursor-pointer select-none w-full">
                     <i className="fa-regular fa-calendar text-slate-400 text-sm mr-2 pointer-events-none"></i>
                     <span className="pointer-events-none">{returnDate}</span>
                     <input
@@ -215,7 +215,7 @@ export const FlightSearchForm: React.FC = () => {
 
               {/* 6. Passengers */}
               <div className="flex-1 lg:min-w-[180px] min-w-0 flex flex-col justify-center items-center text-center py-2 px-5 relative">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">탑승 인원</span>
+                <span className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">탑승 인원</span>
                 <div className="flex items-center justify-center gap-3">
                   <button
                     type="button"
@@ -226,7 +226,7 @@ export const FlightSearchForm: React.FC = () => {
                   </button>
                   
                   <div className="flex items-center justify-center min-w-[60px]">
-                    <span className="text-sm font-extrabold text-slate-800 whitespace-nowrap">성인 {search_query.passengerCount}명</span>
+                    <span className="text-base font-extrabold text-slate-800 whitespace-nowrap">성인 {search_query.passengerCount}명</span>
                   </div>
 
                   <button
