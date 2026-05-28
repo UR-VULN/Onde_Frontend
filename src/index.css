@@ -151,6 +151,7 @@
         .logo span {
             background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
             font-weight: 900;
             font-family: var(--font-logo);
@@ -354,6 +355,7 @@
         .highlight-text {
             background: linear-gradient(120deg, #6699ff 0%, #ff5a5f 50%, #feb47b 100%);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
             font-weight: 900;
             text-shadow: none;
@@ -726,6 +728,7 @@
             margin-bottom: 1.2rem;
             display: -webkit-box;
             -webkit-line-clamp: 3;
+            line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
             text-overflow: ellipsis;
