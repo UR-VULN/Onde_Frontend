@@ -37,6 +37,12 @@ export const useAuthForm = () => {
     );
 
     if (matchedUser) {
+      // 판매자 중 미승인(pending) 계정은 로그인 차단
+      if (matchedUser.role === 'sell' && matchedUser.status === 'pending') {
+        addToast("⏳ 관리자가 계정을 승인하기 전까지 로그인할 수 없습니다. 잠시만 기다려 주세요.", "warning");
+        setIsLoading(false);
+        return;
+      }
       login(matchedUser.email, matchedUser.role);
       addToast("🔑 로그인이 완료되었습니다!", "success");
       closeAuthModal();

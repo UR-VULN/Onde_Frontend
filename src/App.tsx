@@ -5,6 +5,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { ToastContainer } from '@/components/ui/ToastContainer';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { WelcomeModal } from '@/components/ui/WelcomeModal';
+import { SellerPendingModal } from '@/components/ui/SellerPendingModal';
 import { AuthModal } from '@/components/auth/AuthModal';
 
 // Pages
@@ -93,6 +94,7 @@ const App: React.FC = () => {
       <ToastContainer />
       <ConfirmModal />
       <WelcomeModal />
+      <SellerPendingModal />
       {isAuthModalOpen && <AuthModal />}
 
       {/* Global CSS Transition Animations */}

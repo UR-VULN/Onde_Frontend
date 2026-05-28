@@ -35,6 +35,7 @@ interface TravelState {
   
   // Custom Global Popups
   isWelcomePopupOpen: boolean;
+  isSellerPendingPopupOpen: boolean;
   isConfirmPopupOpen: boolean;
   confirmCallback: ((choice: boolean) => void) | null;
   confirmTitle?: string;
@@ -58,6 +59,10 @@ interface TravelState {
   // Common Welcome Modal Actions
   openWelcomePopup: () => void;
   closeWelcomePopup: () => void;
+
+  // Seller Pending Approval Popup
+  openSellerPendingPopup: () => void;
+  closeSellerPendingPopup: () => void;
   
   // Common Confirm Dialog Utility
   openConfirmPopup: (
@@ -90,6 +95,7 @@ export const useTravelStore = create<TravelState>((set) => ({
   
   toastStack: [],
   isWelcomePopupOpen: false,
+  isSellerPendingPopupOpen: false,
   isConfirmPopupOpen: false,
   confirmCallback: null,
   isAuthModalOpen: false,
@@ -128,6 +134,9 @@ export const useTravelStore = create<TravelState>((set) => ({
   
   openWelcomePopup: () => set({ isWelcomePopupOpen: true }),
   closeWelcomePopup: () => set({ isWelcomePopupOpen: false }),
+
+  openSellerPendingPopup: () => set({ isSellerPendingPopupOpen: true }),
+  closeSellerPendingPopup: () => set({ isSellerPendingPopupOpen: false }),
   
   openConfirmPopup: (callback, options) => set({ 
     isConfirmPopupOpen: true, 
@@ -156,28 +165,31 @@ export const useTravelStore = create<TravelState>((set) => ({
   setAuthModalTab: (tab) => set({ authModalTab: tab }),
   
   signupSuccess: (username, role) => {
-    // 1. Perform Login
-    const activePortal = role;
-    set({ 
-      isLoggedIn: true, 
-      username, 
+    // 판매자는 관리자 승인이 필요하므로 로그인 처리하지 않고 팝업만 표시
+    if (role === 'sell') {
+      set({ isAuthModalOpen: false });
+      setTimeout(() => set({ isSellerPendingPopupOpen: true }), 450);
+      return;
+    }
+
+    // 일반 회원 / 관리자 → 즉시 로그인 처리
+    set({
+      isLoggedIn: true,
+      username,
       mileage: 35050,
-      activePortal,
-      isAuthModalOpen: false 
+      activePortal: role,
+      isAuthModalOpen: false,
     });
 
-    // 2. Add Toast Notification
     const toastId = Math.random().toString();
     set((state) => ({
       toastStack: [...state.toastStack, { id: toastId, message: "👥 회원가입이 완료되었습니다!", type: 'success' }]
     }));
     setTimeout(() => useTravelStore.getState().removeToast(toastId), 4500);
 
-    // 3. Trigger Welcome Popup ONLY for regular customers (cust), not sellers or admins
+    // 일반 고객에게만 웰컴 팝업 표시
     if (role === 'cust') {
-      setTimeout(() => {
-        set({ isWelcomePopupOpen: true });
-      }, 450);
+      setTimeout(() => set({ isWelcomePopupOpen: true }), 450);
     }
   },
   
