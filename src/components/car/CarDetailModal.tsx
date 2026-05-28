@@ -11,6 +11,7 @@ import {
   resolveValidStayRange,
 } from '@/utils/calendarUtils';
 import { useTravelStore } from '@/store/useTravelStore';
+import { MileageUsagePanel, clampMileageUsage } from '@/components/common/MileageUsagePanel';
 
 // ─── constants ───────────────────────────────────────────────
 const PRIMARY = '#005ce6';
@@ -32,7 +33,7 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
   defaultReturn,
   onClose,
 }) => {
-  const { addToast, isLoggedIn, openAuthModal } = useTravelStore();
+  const { addToast, isLoggedIn, openAuthModal, mileage: userMileage } = useTravelStore();
 
   // car.unavailableDays를 Set으로 변환 (백엔드 연동 시 API 응답값으로 대체)
   const unavailableDaysSet = useMemo(() => new Set(car.unavailableDays), [car.unavailableDays]);
@@ -51,6 +52,7 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
   const [pickupDate, setPickupDate] = useState<string>(initPickup);
   const [returnDate, setReturnDate] = useState<string>(initReturn);
   const [selecting, setSelecting] = useState<'pickup' | 'return' | null>(null);
+  const [mileageUsed, setMileageUsed] = useState(0);
 
   // Calendar month navigation
   const [calYear, setCalYear] = useState(today.getFullYear());
@@ -68,7 +70,13 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
   // Days rented
   const rentalDays = countNights(pickupDate, returnDate);
   const rawTotal = rentalDays * car.pricePerDay;
-  const finalTotal = rawTotal;
+  const finalTotal = Math.max(0, rawTotal - mileageUsed);
+
+  useEffect(() => {
+    setMileageUsed((prev) =>
+      clampMileageUsage(prev, userMileage, rawTotal),
+    );
+  }, [userMileage, rawTotal]);
 
   function getCellStyle(cell: { dateStr: string; disabled: boolean; isEmpty: boolean; isWeekend: boolean }) {
     if (cell.isEmpty) return {};
@@ -145,6 +153,7 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
 
   function handleBook() {
     if (!isLoggedIn) {
+      addToast('로그인 후에 렌터카를 예약하실 수 있습니다.', 'warning');
       onClose();
       openAuthModal('login');
       return;
@@ -336,6 +345,12 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
             </div>
           </div>
 
+          <MileageUsagePanel
+            availableBalance={userMileage}
+            orderTotal={rawTotal}
+            value={mileageUsed}
+            onChange={setMileageUsed}
+          />
 
         </div>
 
@@ -354,6 +369,12 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
             <div style={{ fontSize: '0.75rem', color: '#717171', marginBottom: '0.35rem', paddingLeft: '0.4rem' }}>
               ₩{car.pricePerDay.toLocaleString('ko-KR')} × {rentalDays}일
             </div>
+            {mileageUsed > 0 && rawTotal > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#008a05', marginBottom: '0.35rem', borderTop: '1px solid rgba(0,0,0,0.04)', paddingTop: '0.35rem' }}>
+                <span>마일리지 차감 적용</span>
+                <span>− ₩{mileageUsed.toLocaleString('ko-KR')}</span>
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '0.55rem', fontWeight: 800, fontSize: '1.05rem', color: '#1a1a1a' }}>
               <span>최종 결제 합계</span>
               <span style={{ color: SECONDARY, fontSize: '1.22rem', fontFamily: 'GmarketSansBold, Pretendard, sans-serif' }}>

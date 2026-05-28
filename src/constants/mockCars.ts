@@ -13,6 +13,8 @@ export interface MockCar {
   tags: string[];
   /** 해당 차량의 예약 불가 날짜 목록 (일(day-of-month) 기준). 백엔드 연동 시 대체 */
   unavailableDays: number[];
+  /** 마일리지 최대 적용 가능 금액 (원). 백엔드 연동 시 대체 */
+  mileageDiscount: number;
 }
 
 export const MOCK_CARS: MockCar[] = [
@@ -28,6 +30,7 @@ export const MOCK_CARS: MockCar[] = [
     fuel: '가솔린',
     tags: ['럭셔리', '비즈니스', '대형'],
     unavailableDays: [5, 12, 18, 25],
+    mileageDiscount: 25000,
   },
   {
     id: 'car-tesla-model-y',
@@ -41,6 +44,7 @@ export const MOCK_CARS: MockCar[] = [
     fuel: '전기',
     tags: ['전기차', '친환경', 'SUV'],
     unavailableDays: [3, 10, 17, 24],
+    mileageDiscount: 18000,
   },
   {
     id: 'car-porsche-911',
@@ -54,6 +58,7 @@ export const MOCK_CARS: MockCar[] = [
     fuel: '가솔린',
     tags: ['스포츠', '수입', '럭셔리'],
     unavailableDays: [7, 14, 21, 28],
+    mileageDiscount: 45000,
   },
   {
     id: 'car-carnival',
@@ -67,6 +72,7 @@ export const MOCK_CARS: MockCar[] = [
     fuel: '디젤',
     tags: ['가족', '대형', '미니밴'],
     unavailableDays: [2, 9, 16, 23],
+    mileageDiscount: 20000,
   },
   {
     id: 'car-mercedes-eclass',
@@ -80,6 +86,7 @@ export const MOCK_CARS: MockCar[] = [
     fuel: '디젤',
     tags: ['럭셔리', '비즈니스', '수입'],
     unavailableDays: [4, 11, 18, 25],
+    mileageDiscount: 30000,
   },
   {
     id: 'car-bmw-x5',
@@ -93,6 +100,7 @@ export const MOCK_CARS: MockCar[] = [
     fuel: '디젤',
     tags: ['SUV', '럭셔리', '수입'],
     unavailableDays: [6, 13, 20, 27],
+    mileageDiscount: 38000,
   },
   {
     id: 'car-tesla-model3',
@@ -106,6 +114,7 @@ export const MOCK_CARS: MockCar[] = [
     fuel: '전기',
     tags: ['전기차', '친환경', '세단'],
     unavailableDays: [1, 8, 15, 22, 29],
+    mileageDiscount: 15000,
   },
   {
     id: 'car-mini-cooper',
@@ -119,6 +128,7 @@ export const MOCK_CARS: MockCar[] = [
     fuel: '가솔린',
     tags: ['소형', '오픈카', '감성'],
     unavailableDays: [5, 12, 19, 26],
+    mileageDiscount: 12000,
   },
   {
     id: 'car-gv80',
@@ -132,6 +142,7 @@ export const MOCK_CARS: MockCar[] = [
     fuel: '가솔린',
     tags: ['SUV', '럭셔리', '대형'],
     unavailableDays: [3, 11, 17, 24],
+    mileageDiscount: 28000,
   },
   {
     id: 'car-ioniq6',
@@ -145,6 +156,7 @@ export const MOCK_CARS: MockCar[] = [
     fuel: '전기',
     tags: ['전기차', '친환경', '세단'],
     unavailableDays: [7, 14, 21],
+    mileageDiscount: 14000,
   },
   {
     id: 'car-ferrari-roma',
@@ -158,6 +170,7 @@ export const MOCK_CARS: MockCar[] = [
     fuel: '가솔린',
     tags: ['슈퍼카', '수입', '럭셔리'],
     unavailableDays: [2, 8, 14, 20, 26],
+    mileageDiscount: 80000,
   },
   {
     id: 'car-range-rover',
@@ -171,6 +184,7 @@ export const MOCK_CARS: MockCar[] = [
     fuel: '디젤',
     tags: ['SUV', '수입', '오프로드'],
     unavailableDays: [4, 10, 16, 22],
+    mileageDiscount: 42000,
   },
   {
     id: 'car-kia-ev6',
@@ -184,6 +198,7 @@ export const MOCK_CARS: MockCar[] = [
     fuel: '전기',
     tags: ['전기차', '고성능', 'SUV'],
     unavailableDays: [1, 6, 11, 16, 21],
+    mileageDiscount: 18000,
   },
   {
     id: 'car-audi-a6',
@@ -197,6 +212,7 @@ export const MOCK_CARS: MockCar[] = [
     fuel: '가솔린',
     tags: ['수입', '비즈니스', '세단'],
     unavailableDays: [5, 13, 21, 29],
+    mileageDiscount: 32000,
   },
   {
     id: 'car-santafe',
@@ -210,6 +226,7 @@ export const MOCK_CARS: MockCar[] = [
     fuel: '하이브리드',
     tags: ['SUV', '가족', '하이브리드'],
     unavailableDays: [3, 9, 15, 21, 27],
+    mileageDiscount: 15000,
   },
   {
     id: 'car-lamborghini-urus',
@@ -223,5 +240,6 @@ export const MOCK_CARS: MockCar[] = [
     fuel: '가솔린',
     tags: ['슈퍼카', '럭셔리', 'SUV'],
     unavailableDays: [8, 15, 22],
+    mileageDiscount: 90000,
   },
 ];

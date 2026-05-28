@@ -11,6 +11,7 @@ import {
   resolveValidFlightDates,
 } from '@/utils/calendarUtils';
 import { useTravelStore } from '@/store/useTravelStore';
+import { MileageUsagePanel, clampMileageUsage } from '@/components/common/MileageUsagePanel';
 
 // ─── constants ───────────────────────────────────────────────
 const PRIMARY = '#005ce6';
@@ -48,7 +49,7 @@ export const FlightDetailModal: React.FC<FlightDetailModalProps> = ({
   defaultReturn,
   onClose,
 }) => {
-  const { addToast, isLoggedIn, openAuthModal } = useTravelStore();
+  const { addToast, isLoggedIn, openAuthModal, mileage: userMileage } = useTravelStore();
 
   // route.unavailableDays를 Set으로 변환 (백엔드 연동 시 API 응답값으로 대체)
   const unavailableDaysSet = useMemo(() => new Set(route.unavailableDays), [route.unavailableDays]);
@@ -70,7 +71,7 @@ export const FlightDetailModal: React.FC<FlightDetailModalProps> = ({
   const [selecting, setSelecting] = useState<'depart' | 'return' | null>(null);
   const [seatClass, setSeatClass] = useState<SeatClass>('ECONOMY');
   const [passengerCount, setPassengerCount] = useState(1);
-  const [baggageEnabled, setBaggageEnabled] = useState(false);
+  const [mileageUsed, setMileageUsed] = useState(0);
 
   // Calendar month navigation
   const [calYear, setCalYear] = useState(today.getFullYear());
@@ -128,8 +129,14 @@ export const FlightDetailModal: React.FC<FlightDetailModalProps> = ({
   const classInfo = CLASS_INFO[seatClass];
   const basePrice = Math.round((route.priceFrom * classInfo.multiplier) / 1000) * 1000;
   const tripMultiplier = tripType === 'RT' ? 2 : 1;
-  const baggageFee = baggageEnabled ? route.baggageFeePerPerson * passengerCount : 0;
-  const finalTotal = basePrice * passengerCount * tripMultiplier + baggageFee;
+  const rawTotal = basePrice * passengerCount * tripMultiplier;
+  const finalTotal = Math.max(0, rawTotal - mileageUsed);
+
+  useEffect(() => {
+    setMileageUsed((prev) =>
+      clampMileageUsage(prev, userMileage, rawTotal),
+    );
+  }, [userMileage, rawTotal]);
 
   const tripDays = tripType === 'RT' && returnDate ? countNights(departDate, returnDate) : 0;
 
@@ -178,6 +185,7 @@ export const FlightDetailModal: React.FC<FlightDetailModalProps> = ({
 
   function handleBook() {
     if (!isLoggedIn) {
+      addToast('로그인 후에 항공권을 예약하실 수 있습니다.', 'warning');
       onClose();
       openAuthModal('login');
       return;
@@ -447,48 +455,12 @@ export const FlightDetailModal: React.FC<FlightDetailModalProps> = ({
             </div>
           </div>
 
-          {/* Baggage Toggle */}
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            padding: '0.7rem 0.9rem',
-            background: 'rgba(0,92,230,0.03)',
-            border: '1px solid rgba(0,92,230,0.12)',
-            borderRadius: '12px',
-            marginBottom: '0.4rem',
-          }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: PRIMARY, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <i className="fa-solid fa-suitcase-rolling" /> 위탁 수하물 추가
-              </span>
-              <span style={{ fontSize: '0.7rem', color: '#717171' }}>
-                인당 15kg 수하물 (<strong>+₩{route.baggageFeePerPerson.toLocaleString('ko-KR')}</strong>)
-              </span>
-            </div>
-            <label style={{ position: 'relative', display: 'inline-block', width: '40px', height: '20px', flexShrink: 0 }}>
-              <input
-                type="checkbox"
-                checked={baggageEnabled}
-                onChange={(e) => setBaggageEnabled(e.target.checked)}
-                style={{ opacity: 0, width: 0, height: 0 }}
-              />
-              <span style={{
-                position: 'absolute', cursor: 'pointer',
-                top: 0, left: 0, right: 0, bottom: 0,
-                borderRadius: '20px',
-                background: baggageEnabled ? `linear-gradient(135deg, ${PRIMARY} 0%, ${SECONDARY} 100%)` : '#ccc',
-                transition: '0.3s',
-              }}>
-                <span style={{
-                  position: 'absolute', height: '14px', width: '14px',
-                  left: '3px', bottom: '3px',
-                  background: '#fff', borderRadius: '50%',
-                  transition: '0.3s',
-                  transform: baggageEnabled ? 'translateX(20px)' : 'translateX(0)',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
-                }} />
-              </span>
-            </label>
-          </div>
+          <MileageUsagePanel
+            availableBalance={userMileage}
+            orderTotal={rawTotal}
+            value={mileageUsed}
+            onChange={setMileageUsed}
+          />
 
         </div>
 
@@ -505,16 +477,16 @@ export const FlightDetailModal: React.FC<FlightDetailModalProps> = ({
                 항공권 운임 ({passengerCount}명 · {seatClass}{tripType === 'RT' ? ' · 왕복' : ' · 편도'})
               </span>
               <span style={{ fontWeight: 700, color: '#1a1a1a' }}>
-                ₩{(basePrice * passengerCount * tripMultiplier).toLocaleString('ko-KR')}
+                ₩{rawTotal.toLocaleString('ko-KR')}
               </span>
             </div>
             <div style={{ fontSize: '0.75rem', color: '#717171', marginBottom: '0.35rem', paddingLeft: '0.4rem' }}>
               ₩{basePrice.toLocaleString('ko-KR')} × {passengerCount}명{tripType === 'RT' ? ' × 왕복 2편' : ''}
             </div>
-            {baggageEnabled && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: PRIMARY, marginBottom: '0.35rem', borderTop: '1px solid rgba(0,0,0,0.04)', paddingTop: '0.35rem' }}>
-                <span>수하물 추가 요금</span>
-                <span>+ ₩{baggageFee.toLocaleString('ko-KR')}</span>
+            {mileageUsed > 0 && rawTotal > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#008a05', marginBottom: '0.35rem', borderTop: '1px solid rgba(0,0,0,0.04)', paddingTop: '0.35rem' }}>
+                <span>마일리지 차감 적용</span>
+                <span>− ₩{mileageUsed.toLocaleString('ko-KR')}</span>
               </div>
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '0.55rem', fontWeight: 800, fontSize: '1.05rem', color: '#1a1a1a' }}>
