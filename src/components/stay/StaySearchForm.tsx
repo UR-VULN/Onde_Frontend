@@ -135,7 +135,7 @@ export const StaySearchForm: React.FC<StaySearchFormProps> = ({ onSearch }) => {
 
             {/* 4. Guests */}
             <div className="flex-1 min-w-0 flex flex-col justify-center items-center text-center py-2 px-3 relative">
-              <span className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">투스크 인원</span>
+              <span className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">투숙 인원</span>
               <div className="flex items-center justify-center gap-2.5">
                 <button
                   type="button"

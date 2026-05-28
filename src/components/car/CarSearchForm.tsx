@@ -1,7 +1,19 @@
 import React, { useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
+import type { CarType } from '@/constants/mockCars';
 
-export const CarSearchForm: React.FC = () => {
+export interface CarSearchParams {
+  pickupSpot: string;
+  pickupDate: string;
+  returnDate: string;
+  carType: CarType;
+}
+
+interface CarSearchFormProps {
+  onSearch?: (params: CarSearchParams) => void;
+}
+
+export const CarSearchForm: React.FC<CarSearchFormProps> = ({ onSearch }) => {
   const { addToast } = useTravelStore();
 
   // Local state for interactive search values
@@ -10,9 +22,9 @@ export const CarSearchForm: React.FC = () => {
   const [pickupDate, setPickupDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [returnDate, setReturnDate] = useState(() => new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
   
-  const [carType, setCarType] = useState('ALL');
+  const [carType, setCarType] = useState<CarType>('ALL');
 
-  const typeLabelMap: Record<string, string> = {
+  const typeLabelMap: Record<CarType, string> = {
     ALL: '전체 차량',
     MINI: '경형/소형',
     SEDAN: '중형/대형',
@@ -29,6 +41,7 @@ export const CarSearchForm: React.FC = () => {
       `🚗 [${pickupSpot}] 렌터카 검색 중: ${pickupDate} ~ ${returnDate} (${typeLabel})`,
       "info"
     );
+    onSearch?.({ pickupSpot, pickupDate, returnDate, carType });
   };
 
   return (

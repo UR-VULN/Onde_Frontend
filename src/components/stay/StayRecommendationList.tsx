@@ -73,17 +73,17 @@ const StayCard: React.FC<StayCardProps> = ({ stay, index }) => {
       {/* Card Body */}
       <div className="px-1">
         {/* Location */}
-        <span className="font-bold text-[0.95rem] text-slate-800 leading-snug block truncate mb-0.5">
+        <span className="font-bold text-[1.45rem] lg:text-[0.95rem] text-slate-800 leading-snug block truncate">
           {stay.location}
         </span>
 
         {/* Description */}
-        <p className="text-[0.83rem] text-slate-400 font-medium truncate mb-1 leading-snug">
+        <p className="text-[1.25rem] lg:text-[0.83rem] text-slate-400 font-medium truncate leading-snug">
           {stay.description}
         </p>
 
         {/* Price */}
-        <div className="text-[0.9rem] text-slate-700 mt-0.5">
+        <div className="text-[1.3rem] lg:text-[0.9rem] text-slate-700">
           <span className="font-bold text-slate-900">₩{formattedPrice}</span>
           <span className="text-slate-400 font-normal"> / per Day</span>
         </div>
