@@ -51,7 +51,7 @@ export const WelcomeModal: React.FC = () => {
       >
         {/* Top Image Section - Compact & High Speed Animation */}
         <div style={{ background: '#f8faff', padding: '40px 0 15px 0', textAlign: 'center', position: 'relative' }}>
-          <div className="animate-[tilt_0.3s_ease-in-out_infinite_alternate]" style={{ display: 'inline-block' }}>
+          <div className="animate-[tilt_0.2s_ease-in-out_infinite_alternate]" style={{ display: 'inline-block' }}>
             <img 
               src={welcomeImg} 
               alt="Welcome" 
