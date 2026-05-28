@@ -77,10 +77,10 @@ export const AdminUserPanel: React.FC = () => {
       <div className="section-header">
         <div>
           <h2 className="section-title">
-            <i className="fa-solid fa-users-gear" style={{ color: 'var(--primary)', marginRight: '0.5rem' }}></i> 전사 가입자 권한 조정 및 블랙리스트 관리
+            전사 가입자 권한 조정 및 블랙리스트 관리
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            회원 마스터 데이터베이스를 조회하고 권한 및 규제를 직권 처리합니다. <span style={{ fontSize: '0.8rem' }}>(A팀)</span>
+            회원 마스터 데이터베이스를 조회하고 권한 및 규제를 직권 처리합니다.
           </p>
         </div>
       </div>

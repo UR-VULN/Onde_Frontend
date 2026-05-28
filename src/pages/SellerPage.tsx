@@ -10,11 +10,11 @@ import { BackOfficeLayout } from '@/components/layout/BackOfficeLayout';
 type SellerTab = 'stay' | 'flight' | 'stat' | 'qa' | 'account';
 
 const SIDEBAR_ITEMS = [
-  { id: 'stay',    icon: 'fa-solid fa-hotel',          label: '숙소/렌터카 재고',      team: 'C팀' },
-  { id: 'flight',  icon: 'fa-solid fa-plane',           label: '항공/보험 상품',        team: 'B팀' },
-  { id: 'stat',    icon: 'fa-solid fa-chart-line',      label: '매출 및 정산 대금',     team: 'D팀' },
-  { id: 'qa',      icon: 'fa-solid fa-reply-all',       label: '문의 및 리뷰',          team: 'E팀' },
-  { id: 'account', icon: 'fa-solid fa-id-card',         label: '계정 및 계좌 설정',     team: 'A팀' },
+  { id: 'stay',    icon: 'fa-solid fa-hotel',          label: '숙소/렌터카 재고'    },
+  { id: 'flight',  icon: 'fa-solid fa-plane',           label: '항공/보험 상품'      },
+  { id: 'stat',    icon: 'fa-solid fa-chart-line',      label: '매출 및 정산 대금'   },
+  { id: 'qa',      icon: 'fa-solid fa-reply-all',       label: '문의 및 리뷰'        },
+  { id: 'account', icon: 'fa-solid fa-id-card',         label: '계정 및 계좌 설정'   },
 ];
 
 export const SellerPage: React.FC = () => {

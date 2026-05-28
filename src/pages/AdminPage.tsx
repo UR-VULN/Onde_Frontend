@@ -9,11 +9,11 @@ import { BackOfficeLayout } from '@/components/layout/BackOfficeLayout';
 type AdminTab = 'stat' | 'approve' | 'book' | 'user' | 'lbs';
 
 const SIDEBAR_ITEMS = [
-  { id: 'stat',    icon: 'fa-solid fa-chart-line',         label: '종합 대시보드',         team: 'D팀' },
-  { id: 'approve', icon: 'fa-solid fa-stamp',              label: '상품 검수 관리',         team: 'B/C팀' },
-  { id: 'book',    icon: 'fa-solid fa-book-bookmark',      label: '전사 예약 및 직권취소',  team: '' },
-  { id: 'user',    icon: 'fa-solid fa-users-gear',         label: '회원 권한 및 블랙리스트', team: 'A팀' },
-  { id: 'lbs',     icon: 'fa-solid fa-location-crosshairs', label: 'LBS 마커 및 알림 에디터', team: 'E팀' },
+  { id: 'stat',    icon: 'fa-solid fa-chart-line',          label: '종합 대시보드'           },
+  { id: 'approve', icon: 'fa-solid fa-stamp',               label: '상품 검수 관리'           },
+  { id: 'book',    icon: 'fa-solid fa-book-bookmark',       label: '전사 예약 및 직권취소'    },
+  { id: 'user',    icon: 'fa-solid fa-users-gear',          label: '회원 권한 및 블랙리스트'  },
+  { id: 'lbs',     icon: 'fa-solid fa-location-crosshairs', label: 'LBS 마커 및 알림 에디터'  },
 ];
 
 export const AdminPage: React.FC = () => {

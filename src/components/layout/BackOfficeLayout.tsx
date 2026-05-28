@@ -5,7 +5,6 @@ interface SidebarItem {
   id: string;
   icon: string;
   label: string;
-  team?: string;
 }
 
 interface BackOfficeLayoutProps {

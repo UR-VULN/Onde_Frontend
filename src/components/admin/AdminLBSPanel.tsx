@@ -42,11 +42,10 @@ export const AdminLBSPanel: React.FC = () => {
       <div className="section-header">
         <div>
           <h2 className="section-title">
-            <i className="fa-solid fa-location-crosshairs" style={{ color: 'var(--primary)', marginRight: '0.5rem' }}></i>
             LBS 마커 및 알림 에디터
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            지도 마커 수동 매핑 및 시스템 자동 안내 메일 템플릿 실시간 배포 관리 <span style={{ fontSize: '0.8rem' }}>(E팀 전용)</span>
+            지도 마커 수동 매핑 및 시스템 자동 안내 메일 템플릿 실시간 배포 관리
           </p>
         </div>
       </div>
