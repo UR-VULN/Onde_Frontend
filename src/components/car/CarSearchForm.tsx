@@ -7,11 +7,8 @@ export const CarSearchForm: React.FC = () => {
   // Local state for interactive search values
   const [pickupSpot, setPickupSpot] = useState('도쿄 나리타 공항 (NRT) 지점');
   
-  const today = new Date().toISOString().split('T')[0];
-  const fiveDaysLater = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-  
-  const [pickupDate, setPickupDate] = useState(today);
-  const [returnDate, setReturnDate] = useState(fiveDaysLater);
+  const [pickupDate, setPickupDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [returnDate, setReturnDate] = useState(() => new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
   
   const [carType, setCarType] = useState('ALL');
 
