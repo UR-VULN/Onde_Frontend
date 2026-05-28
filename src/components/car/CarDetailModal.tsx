@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import type { MockCar } from '@/constants/mockCars';
 import {
@@ -31,7 +31,7 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
   defaultReturn,
   onClose,
 }) => {
-  const { addToast } = useTravelStore();
+  const { addToast, isLoggedIn, openAuthModal } = useTravelStore();
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -137,7 +137,18 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
     }
   }
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   function handleBook() {
+    if (!isLoggedIn) {
+      onClose();
+      openAuthModal('login');
+      return;
+    }
     if (rentalDays === 0) {
       addToast('대여/반납 일정을 선택해 주세요.', 'warning');
       return;
@@ -160,7 +171,6 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: '1rem',
       }}
-      onClick={onClose}
     >
       <div
         style={{
@@ -174,7 +184,6 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
           boxShadow: '0 8px 30px rgba(0,0,0,0.18)',
           animation: 'zoomIn 0.22s ease',
         }}
-        onClick={(e) => e.stopPropagation()}
       >
         {/* Close */}
         <button

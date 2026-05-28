@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import type { MockFlightRoute } from '@/constants/mockFlightRoutes';
 import {
@@ -49,7 +49,7 @@ export const FlightDetailModal: React.FC<FlightDetailModalProps> = ({
   defaultReturn,
   onClose,
 }) => {
-  const { addToast } = useTravelStore();
+  const { addToast, isLoggedIn, openAuthModal } = useTravelStore();
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -171,7 +171,18 @@ export const FlightDetailModal: React.FC<FlightDetailModalProps> = ({
     };
   }
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   function handleBook() {
+    if (!isLoggedIn) {
+      onClose();
+      openAuthModal('login');
+      return;
+    }
     if (!departDate) {
       addToast('출발일을 선택해 주세요.', 'warning');
       return;
@@ -203,7 +214,6 @@ export const FlightDetailModal: React.FC<FlightDetailModalProps> = ({
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: '1rem',
       }}
-      onClick={onClose}
     >
       <div
         style={{
@@ -217,7 +227,6 @@ export const FlightDetailModal: React.FC<FlightDetailModalProps> = ({
           boxShadow: '0 8px 30px rgba(0,0,0,0.18)',
           animation: 'zoomIn 0.22s ease',
         }}
-        onClick={(e) => e.stopPropagation()}
       >
         {/* Close */}
         <button

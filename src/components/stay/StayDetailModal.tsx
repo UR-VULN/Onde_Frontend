@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import type { MockStay } from '@/constants/mockStays';
 import {
@@ -32,7 +32,7 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
   defaultCheckOut,
   onClose,
 }) => {
-  const { addToast } = useTravelStore();
+  const { addToast, isLoggedIn, openAuthModal } = useTravelStore();
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -182,7 +182,18 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
   const bannerNights = countNights(bannerStart, bannerEnd);
 
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   function handleBook() {
+    if (!isLoggedIn) {
+      onClose();
+      openAuthModal('login');
+      return;
+    }
     if (nights === 0) {
       addToast('체크인/체크아웃 일정을 선택해 주세요.', 'warning');
       return;
@@ -203,7 +214,6 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
         justifyContent: 'center',
         padding: '1rem',
       }}
-      onClick={onClose}
     >
       <div
         style={{
@@ -219,7 +229,6 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
           boxShadow: '0 8px 30px rgba(0,0,0,0.18)',
           animation: 'zoomIn 0.22s ease',
         }}
-        onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
