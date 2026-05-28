@@ -35,14 +35,18 @@ function durationLabel(min: number): string {
 // ─── props ───────────────────────────────────────────────────
 interface FlightDetailModalProps {
   route: MockFlightRoute;
-  defaultDate?: string; // YYYY-MM-DD
+  tripType?: 'RT' | 'OW'; // fixed from search; defaults to RT
+  defaultDate?: string;    // YYYY-MM-DD departure
+  defaultReturn?: string;  // YYYY-MM-DD return (for RT)
   onClose: () => void;
 }
 
 // ─── component ───────────────────────────────────────────────
 export const FlightDetailModal: React.FC<FlightDetailModalProps> = ({
   route,
+  tripType = 'RT',
   defaultDate,
+  defaultReturn,
   onClose,
 }) => {
   const { addToast } = useTravelStore();
@@ -52,11 +56,10 @@ export const FlightDetailModal: React.FC<FlightDetailModalProps> = ({
   const threeDaysLater = new Date(today.getTime() + 3 * 86400000);
 
   const initDepart = defaultDate ?? route.date ?? toDateStr(today);
-  const initReturn = toDateStr(threeDaysLater);
+  const initReturn = defaultReturn ?? toDateStr(threeDaysLater);
 
-  const [tripType, setTripType] = useState<'RT' | 'OW'>('RT');
   const [departDate, setDepartDate] = useState<string>(initDepart);
-  const [returnDate, setReturnDate] = useState<string>(initReturn);
+  const [returnDate, setReturnDate] = useState<string>(tripType === 'RT' ? initReturn : '');
   const [selecting, setSelecting] = useState<'depart' | 'return' | null>(null);
   const [seatClass, setSeatClass] = useState<SeatClass>('ECONOMY');
   const [passengerCount, setPassengerCount] = useState(1);
@@ -184,7 +187,7 @@ export const FlightDetailModal: React.FC<FlightDetailModalProps> = ({
   // Banner text
   const bannerText = tripType === 'RT'
     ? `${departDate} ➔ ${returnDate || '귀국일 선택'}`
-    : `${departDate} (편도)`;
+    : departDate;
 
   const bannerBadge = tripType === 'RT'
     ? (tripDays > 0 ? `왕복 ${tripDays}박` : '왕복')
@@ -262,38 +265,6 @@ export const FlightDetailModal: React.FC<FlightDetailModalProps> = ({
         {/* ── Scrollable Body ── */}
         <div style={{ overflowY: 'auto', flex: 1, paddingRight: '0.4rem', marginBottom: '0.8rem' }}>
 
-          {/* Trip Type Toggle */}
-          <div style={{
-            display: 'flex', gap: '0.5rem', marginBottom: '0.8rem',
-            background: '#f0f2f5', padding: '0.4rem',
-            borderRadius: '12px', border: '1px solid #ddd',
-          }}>
-            {(['RT', 'OW'] as const).map((t) => {
-              const active = tripType === t;
-              return (
-                <button
-                  key={t}
-                  onClick={() => {
-                    setTripType(t);
-                    setSelecting(null);
-                    if (t === 'OW') setReturnDate('');
-                  }}
-                  style={{
-                    flex: 1, padding: '0.5rem',
-                    fontSize: '0.8rem', fontWeight: 700,
-                    borderRadius: '8px', border: 'none', cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    background: active ? '#fff' : 'transparent',
-                    color: active ? PRIMARY : '#717171',
-                    boxShadow: active ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
-                  }}
-                >
-                  {t === 'RT' ? '✈️ 왕복' : '→ 편도'}
-                </button>
-              );
-            })}
-          </div>
-
           {/* Date Banner */}
           <div style={{
             background: 'linear-gradient(135deg, rgba(0,92,230,0.04) 0%, rgba(255,90,95,0.04) 100%)',
@@ -361,7 +332,6 @@ export const FlightDetailModal: React.FC<FlightDetailModalProps> = ({
           }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
               <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1a1a1a' }}>탑승객 (Passengers)</span>
-              <span style={{ fontSize: '0.7rem', color: '#717171' }}>만 2세 이상</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <button
@@ -559,7 +529,7 @@ export const FlightDetailModal: React.FC<FlightDetailModalProps> = ({
               letterSpacing: '-0.2px',
             }}
           >
-            항공권 예약 신청
+            항공권 예약하기
           </button>
         </div>
       </div>

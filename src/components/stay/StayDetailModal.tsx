@@ -45,7 +45,6 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
   const [checkOut, setCheckOut] = useState<string>(initCheckOut);
   const [selecting, setSelecting] = useState<'in' | 'out' | null>(null);
   const [adultCount, setAdultCount] = useState(2);
-  const [childCount, setChildCount] = useState(0);
   const [mileage, setMileage] = useState(true);
 
   // Calendar month navigation
@@ -182,8 +181,6 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
   const bannerEnd = checkOut || toDateStr(tomorrow);
   const bannerNights = countNights(bannerStart, bannerEnd);
 
-  // Guests
-  const totalGuests = adultCount + childCount;
 
   function handleBook() {
     if (nights === 0) {
@@ -262,11 +259,6 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
               {stay.title}
             </h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', fontSize: '0.78rem', color: '#717171' }}>
-              <span>
-                <i className="fa-solid fa-star" style={{ color: '#f5b041' }} />{' '}
-                {stay.rating.toFixed(2)} · 리뷰 {stay.reviewCount}개
-              </span>
-              <span>•</span>
               <span>
                 <i className="fa-solid fa-location-dot" />{' '}{stay.location}
               </span>
@@ -402,9 +394,8 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
           }}>
             {/* Adults */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1a1a1a' }}>성인 (Adults)</span>
-                <span style={{ fontSize: '0.7rem', color: '#717171' }}>만 13세 이상</span>
+              <div>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1a1a1a' }}>투숙객</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <button
@@ -432,41 +423,9 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
                 >+</button>
               </div>
             </div>
-            {/* Children */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '8px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1a1a1a' }}>아동 (Children)</span>
-                <span style={{ fontSize: '0.7rem', color: '#717171' }}>만 2세 ~ 12세</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <button
-                  onClick={() => setChildCount(c => Math.max(0, c - 1))}
-                  disabled={childCount <= 0}
-                  style={{
-                    width: '26px', height: '26px', borderRadius: '50%',
-                    border: childCount <= 0 ? '1.5px solid #ddd' : `1.5px solid ${PRIMARY}`,
-                    color: childCount <= 0 ? '#ddd' : PRIMARY,
-                    background: '#fff', cursor: childCount <= 0 ? 'not-allowed' : 'pointer',
-                    fontSize: '0.85rem', fontWeight: 800,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}
-                >−</button>
-                <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1a1a', minWidth: '14px', textAlign: 'center' }}>{childCount}</span>
-                <button
-                  onClick={() => setChildCount(c => Math.min(10, c + 1))}
-                  style={{
-                    width: '26px', height: '26px', borderRadius: '50%',
-                    border: `1.5px solid ${PRIMARY}`, color: PRIMARY,
-                    background: '#fff', cursor: 'pointer',
-                    fontSize: '0.85rem', fontWeight: 800,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}
-                >+</button>
-              </div>
-            </div>
-            {totalGuests > 1 && (
+            {adultCount > 1 && (
               <p style={{ fontSize: '0.7rem', color: '#717171', marginTop: '2px' }}>
-                총 {totalGuests}명 · 객실 1개 기준
+                총 {adultCount}명 · 객실 1개 기준
               </p>
             )}
           </div>
@@ -558,7 +517,7 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
               letterSpacing: '-0.2px',
             }}
           >
-            복합 마일리지 결제하기
+            숙소 예약하기
           </button>
         </div>
       </div>

@@ -237,7 +237,9 @@ export const FlightRecommendationList: React.FC<FlightRecommendationListProps> =
       {selectedRoute && (
         <FlightDetailModal
           route={selectedRoute}
+          tripType={(searchParams?.tripType as 'RT' | 'OW') ?? 'RT'}
           defaultDate={depDate}
+          defaultReturn={retDate}
           onClose={() => setSelectedRoute(null)}
         />
       )}
