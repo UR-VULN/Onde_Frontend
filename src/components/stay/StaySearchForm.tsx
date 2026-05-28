@@ -20,7 +20,7 @@ export const StaySearchForm: React.FC<StaySearchFormProps> = ({ onSearch }) => {
   const [destination, setDestination] = useState('도쿄 신주쿠');
   
   const [checkInDate, setCheckInDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [checkOutDate, setCheckOutDate] = useState(() => new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+  const [checkOutDate, setCheckOutDate] = useState(() => new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
   
   const [guestCount, setGuestCount] = useState(2);
   const [roomCount, setRoomCount] = useState(1);

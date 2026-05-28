@@ -20,7 +20,7 @@ export const CarSearchForm: React.FC<CarSearchFormProps> = ({ onSearch }) => {
   const [pickupSpot, setPickupSpot] = useState('도쿄 나리타 공항 (NRT) 지점');
   
   const [pickupDate, setPickupDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [returnDate, setReturnDate] = useState(() => new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+  const [returnDate, setReturnDate] = useState(() => new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
   
   const [carType, setCarType] = useState<CarType>('ALL');
 

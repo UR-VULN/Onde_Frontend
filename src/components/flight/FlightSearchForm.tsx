@@ -49,7 +49,7 @@ export const FlightSearchForm: React.FC = () => {
       set_search_query({ tripType: 'OW', dates: depDate });
     } else {
       const depDate = search_query.dates.split(',')[0] || today;
-      const nextWeek = new Date(new Date(depDate).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const nextWeek = new Date(new Date(depDate).getTime() + 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       set_search_query({ tripType: 'RT', dates: `${depDate},${nextWeek}` });
     }
   };
