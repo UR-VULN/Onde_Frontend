@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { MOCK_STAYS, type MockStay } from '@/constants/mockStays';
 import type { StaySearchParams } from './StaySearchForm';
+import { StayDetailModal } from './StayDetailModal';
 function shuffleArray<T>(array: T[]): T[] {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
@@ -22,9 +23,10 @@ const TOMORROW = formatDate(new Date(Date.now() + 24 * 60 * 60 * 1000));
 interface StayCardProps {
   stay: MockStay;
   index: number;
+  onSelect: (stay: MockStay) => void;
 }
 
-const StayCard: React.FC<StayCardProps> = ({ stay, index }) => {
+const StayCard: React.FC<StayCardProps> = ({ stay, index, onSelect }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -55,7 +57,7 @@ const StayCard: React.FC<StayCardProps> = ({ stay, index }) => {
       style={{ transitionDelay: `${delayMs}ms` }}
       className={`flex flex-col cursor-pointer group transition-all duration-500 ease-out
         ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
-      onClick={() => {}}
+      onClick={() => onSelect(stay)}
     >
       {/* Image Wrapper */}
       <div className="w-full aspect-[16/10] rounded-xl overflow-hidden relative mb-3 border border-slate-100">
@@ -94,6 +96,7 @@ interface StayRecommendationListProps {
 }
 
 export const StayRecommendationList: React.FC<StayRecommendationListProps> = ({ searchParams }) => {
+  const [selectedStay, setSelectedStay] = useState<MockStay | null>(null);
   const displayedStays = useMemo(() => {
     if (!searchParams || !searchParams.destination.trim()) {
       return SHUFFLED_STAYS;
@@ -154,9 +157,18 @@ export const StayRecommendationList: React.FC<StayRecommendationListProps> = ({ 
         style={{ paddingTop: '2rem' }}
       >
         {displayedStays.map((stay, index) => (
-          <StayCard key={stay.id} stay={stay} index={index} />
+          <StayCard key={stay.id} stay={stay} index={index} onSelect={setSelectedStay} />
         ))}
       </div>
+
+      {selectedStay && (
+        <StayDetailModal
+          stay={selectedStay}
+          defaultCheckIn={searchParams?.checkIn}
+          defaultCheckOut={searchParams?.checkOut}
+          onClose={() => setSelectedStay(null)}
+        />
+      )}
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { MOCK_FLIGHT_ROUTES, SHUFFLED_FLIGHT_ROUTES, type MockFlightRoute } from '@/constants/mockFlightRoutes';
 import type { FlightSearchParams } from './FlightSearchForm';
+import { FlightDetailModal } from './FlightDetailModal';
 function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
@@ -22,9 +23,10 @@ const AIRLINE_COLORS: Record<string, string> = {
 interface FlightRouteCardProps {
   route: MockFlightRoute;
   index: number;
+  onSelect: (route: MockFlightRoute) => void;
 }
 
-const FlightRouteCard: React.FC<FlightRouteCardProps> = ({ route, index }) => {
+const FlightRouteCard: React.FC<FlightRouteCardProps> = ({ route, index, onSelect }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -66,7 +68,7 @@ const FlightRouteCard: React.FC<FlightRouteCardProps> = ({ route, index }) => {
         (e.currentTarget as HTMLDivElement).style.boxShadow = '0 2px 16px rgba(0,0,0,0.06)';
         (e.currentTarget as HTMLDivElement).style.transform = '';
       }}
-      onClick={() => {}}
+      onClick={() => onSelect(route)}
     >
       {/* Header band: airline info + price */}
       <div
@@ -169,6 +171,7 @@ interface FlightRecommendationListProps {
 }
 
 export const FlightRecommendationList: React.FC<FlightRecommendationListProps> = ({ searchParams }) => {
+  const [selectedRoute, setSelectedRoute] = useState<MockFlightRoute | null>(null);
   const today = new Date().toISOString().split('T')[0];
   const returnDay = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
@@ -227,9 +230,17 @@ export const FlightRecommendationList: React.FC<FlightRecommendationListProps> =
       {/* 2-col grid on desktop, 1-col on mobile */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5" style={{ paddingTop: '2rem' }}>
         {displayedRoutes.map((route, index) => (
-          <FlightRouteCard key={route.id} route={route} index={index} />
+          <FlightRouteCard key={route.id} route={route} index={index} onSelect={setSelectedRoute} />
         ))}
       </div>
+
+      {selectedRoute && (
+        <FlightDetailModal
+          route={selectedRoute}
+          defaultDate={depDate}
+          onClose={() => setSelectedRoute(null)}
+        />
+      )}
     </div>
   );
 };

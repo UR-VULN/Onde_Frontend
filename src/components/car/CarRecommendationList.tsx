@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { MOCK_CARS, type MockCar } from '@/constants/mockCars';
 import type { CarSearchParams } from './CarSearchForm';
+import { CarDetailModal } from './CarDetailModal';
 function shuffleArray<T>(array: T[]): T[] {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
@@ -21,9 +22,10 @@ const TOMORROW = formatDate(new Date(Date.now() + 24 * 60 * 60 * 1000));
 interface CarCardProps {
   car: MockCar;
   index: number;
+  onSelect: (car: MockCar) => void;
 }
 
-const CarCard: React.FC<CarCardProps> = ({ car, index }) => {
+const CarCard: React.FC<CarCardProps> = ({ car, index, onSelect }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -52,7 +54,7 @@ const CarCard: React.FC<CarCardProps> = ({ car, index }) => {
       style={{ transitionDelay: `${delayMs}ms` }}
       className={`flex flex-col cursor-pointer group transition-all duration-500 ease-out
         ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
-      onClick={() => {}}
+      onClick={() => onSelect(car)}
     >
       {/* Image Wrapper */}
       <div className="w-full aspect-[16/10] rounded-xl overflow-hidden relative mb-3 border border-slate-100">
@@ -98,6 +100,7 @@ interface CarRecommendationListProps {
 }
 
 export const CarRecommendationList: React.FC<CarRecommendationListProps> = ({ searchParams }) => {
+  const [selectedCar, setSelectedCar] = useState<MockCar | null>(null);
   const displayedCars = useMemo(() => {
     if (!searchParams) return SHUFFLED_CARS;
 
@@ -180,7 +183,7 @@ export const CarRecommendationList: React.FC<CarRecommendationListProps> = ({ se
         style={{ paddingTop: '2rem' }}
       >
         {displayedCars.map((car, index) => (
-          <CarCard key={car.id} car={car} index={index} />
+          <CarCard key={car.id} car={car} index={index} onSelect={setSelectedCar} />
         ))}
       </div>
 
@@ -190,9 +193,18 @@ export const CarRecommendationList: React.FC<CarRecommendationListProps> = ({ se
         style={{ paddingTop: '2rem' }}
       >
         {displayedCars.map((car, index) => (
-          <CarCard key={car.id} car={car} index={index} />
+          <CarCard key={car.id} car={car} index={index} onSelect={setSelectedCar} />
         ))}
       </div>
+
+      {selectedCar && (
+        <CarDetailModal
+          car={selectedCar}
+          defaultPickup={searchParams?.pickupDate}
+          defaultReturn={searchParams?.returnDate}
+          onClose={() => setSelectedCar(null)}
+        />
+      )}
     </div>
   );
 };
