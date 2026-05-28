@@ -37,7 +37,7 @@ export const useAuthForm = () => {
     );
 
     if (matchedUser) {
-      login(matchedUser.username, matchedUser.role);
+      login(matchedUser.email, matchedUser.role);
       addToast("🔑 로그인이 완료되었습니다!", "success");
       closeAuthModal();
     } else {
@@ -79,8 +79,7 @@ export const useAuthForm = () => {
     setIsLoading(true);
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const username = email.split('@')[0];
-    signupSuccess(username, role);
+    signupSuccess(email, role);
   };
 
   const handleSocialLogin = (_platform: 'Kakao' | 'Google') => {

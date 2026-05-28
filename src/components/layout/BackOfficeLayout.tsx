@@ -26,6 +26,7 @@ export const BackOfficeLayout: React.FC<BackOfficeLayoutProps> = ({
   activeTab,
   onTabChange,
   children,
+  username,
   logout,
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -60,7 +61,16 @@ export const BackOfficeLayout: React.FC<BackOfficeLayoutProps> = ({
             </div>
           </div>
           <div className="nav-actions">
-            {/* Empty for back-office as requested */}
+            {username && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1.35 }}>
+                <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
+                  {portalType === 'sell' ? '판매자' : '관리자'} 접속 계정
+                </span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-dark)' }}>
+                  {username}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </header>
