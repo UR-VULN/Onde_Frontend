@@ -5,7 +5,10 @@ import {
   buildCalendarMonth,
   countNights,
   monthLabel,
-  toDateStr,
+  todayStr,
+  addDaysStr,
+  isStayRangeAvailable,
+  resolveValidStayRange,
 } from '@/utils/calendarUtils';
 import { useTravelStore } from '@/store/useTravelStore';
 
@@ -13,8 +16,6 @@ import { useTravelStore } from '@/store/useTravelStore';
 const PRIMARY = '#005ce6';
 const SECONDARY = '#ff5a5f';
 
-// Some random unavailable days
-const UNAVAILABLE_DAYS = new Set([5, 12, 18, 25]);
 
 // ─── props ───────────────────────────────────────────────────
 interface CarDetailModalProps {
@@ -33,12 +34,19 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
 }) => {
   const { addToast, isLoggedIn, openAuthModal } = useTravelStore();
 
+  // car.unavailableDays를 Set으로 변환 (백엔드 연동 시 API 응답값으로 대체)
+  const unavailableDaysSet = useMemo(() => new Set(car.unavailableDays), [car.unavailableDays]);
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today.getTime() + 86400000);
 
-  const initPickup = defaultPickup ?? toDateStr(today);
-  const initReturn = defaultReturn ?? toDateStr(tomorrow);
+  const preferredPickup = defaultPickup ?? todayStr();
+  const preferredReturn = defaultReturn ?? addDaysStr(preferredPickup, 1);
+  const { checkIn: initPickup, checkOut: initReturn } = resolveValidStayRange(
+    preferredPickup,
+    preferredReturn,
+    car.unavailableDays,
+  );
 
   const [pickupDate, setPickupDate] = useState<string>(initPickup);
   const [returnDate, setReturnDate] = useState<string>(initReturn);
@@ -51,7 +59,7 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
   const cells = useMemo(
     () => buildCalendarMonth(calYear, calMonth, car.pricePerDay, {
       weekendSurchargeRate: 0.15,
-      disabledDays: UNAVAILABLE_DAYS,
+      disabledDays: unavailableDaysSet,
       disableBeforeToday: true,
     }),
     [calYear, calMonth, car.pricePerDay]
@@ -97,16 +105,8 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
     };
   }
 
-  // Check if any sold-out day-of-month falls strictly between start and end
   function hasSoldOutInRange(start: string, end: string): boolean {
-    const s = new Date(start);
-    const e = new Date(end);
-    const cur = new Date(s.getTime() + 86400000);
-    while (cur < e) {
-      if (UNAVAILABLE_DAYS.has(cur.getDate())) return true;
-      cur.setDate(cur.getDate() + 1);
-    }
-    return false;
+    return !isStayRangeAvailable(start, end, car.unavailableDays);
   }
 
   function handleCellClick(dateStr: string, disabled: boolean) {
@@ -157,8 +157,8 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
     onClose();
   }
 
-  const bannerPickup = pickupDate || toDateStr(today);
-  const bannerReturn = returnDate || toDateStr(tomorrow);
+  const bannerPickup = pickupDate || todayStr();
+  const bannerReturn = returnDate || addDaysStr(bannerPickup, 1);
   const bannerDays = countNights(bannerPickup, bannerReturn);
 
   return ReactDOM.createPortal(

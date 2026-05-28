@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { MOCK_FLIGHT_ROUTES, SHUFFLED_FLIGHT_ROUTES, type MockFlightRoute } from '@/constants/mockFlightRoutes';
 import type { FlightSearchParams } from './FlightSearchForm';
 import { FlightDetailModal } from './FlightDetailModal';
+import { addDaysStr, isFlightTripAvailable, todayStr } from '@/utils/calendarUtils';
 function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
@@ -172,11 +173,21 @@ interface FlightRecommendationListProps {
 
 export const FlightRecommendationList: React.FC<FlightRecommendationListProps> = ({ searchParams }) => {
   const [selectedRoute, setSelectedRoute] = useState<MockFlightRoute | null>(null);
-  const today = new Date().toISOString().split('T')[0];
-  const returnDay = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const today = todayStr();
+  const returnDay = addDaysStr(today, 3);
+  const tripType = (searchParams?.tripType as 'RT' | 'OW') ?? 'RT';
+
+  const datesArray = searchParams?.dates?.split(',') ?? [];
+  const depDate = searchParams ? (datesArray[0] ?? today) : today;
+  const retDate = searchParams
+    ? (tripType === 'RT' ? (datesArray[1] ?? returnDay) : '')
+    : returnDay;
+
+  const filterByAvailability = (routes: MockFlightRoute[]) =>
+    routes.filter((route) => isFlightTripAvailable(depDate, retDate, route.unavailableDays, tripType));
 
   const displayedRoutes = useMemo(() => {
-    if (!searchParams) return SHUFFLED_FLIGHT_ROUTES;
+    if (!searchParams) return filterByAvailability(SHUFFLED_FLIGHT_ROUTES);
 
     const dep = searchParams.departures.trim().toUpperCase();
     const arr = searchParams.arrivals.trim().toUpperCase();
@@ -188,8 +199,9 @@ export const FlightRecommendationList: React.FC<FlightRecommendationListProps> =
       return depMatch && arrMatch;
     });
 
-    return filtered.length > 0 ? filtered : SHUFFLED_FLIGHT_ROUTES;
-  }, [searchParams]);
+    const available = filterByAvailability(filtered);
+    return available.length > 0 ? available : filterByAvailability(SHUFFLED_FLIGHT_ROUTES);
+  }, [searchParams, depDate, retDate, tripType]);
 
   const isSearchMode = !!searchParams;
   const hasNoResults = isSearchMode && displayedRoutes === SHUFFLED_FLIGHT_ROUTES &&
@@ -197,10 +209,6 @@ export const FlightRecommendationList: React.FC<FlightRecommendationListProps> =
       const arr = searchParams!.arrivals.trim().toUpperCase();
       return r.arrivalAirport.includes(arr) || r.arrivalCity.includes(arr);
     }).length === 0;
-
-  const datesArray = searchParams?.dates?.split(',') ?? [];
-  const depDate = datesArray[0] ?? today;
-  const retDate = datesArray[1] ?? returnDay;
 
   return (
     <div className="!px-5 lg:!px-0" style={{ paddingBottom: '4rem' }}>
@@ -237,7 +245,7 @@ export const FlightRecommendationList: React.FC<FlightRecommendationListProps> =
       {selectedRoute && (
         <FlightDetailModal
           route={selectedRoute}
-          tripType={(searchParams?.tripType as 'RT' | 'OW') ?? 'RT'}
+          tripType={tripType}
           defaultDate={depDate}
           defaultReturn={retDate}
           onClose={() => setSelectedRoute(null)}

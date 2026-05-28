@@ -30,6 +30,10 @@ export interface MockFlightRoute {
   durationMinutes: number;
   priceFrom: number;
   tags: string[];
+  /** 해당 노선의 예약 불가 날짜 목록 (일(day-of-month) 기준). 백엔드 연동 시 대체 */
+  unavailableDays: number[];
+  /** 1인당 수하물 추가 요금 (원). 백엔드 연동 시 대체 */
+  baggageFeePerPerson: number;
 }
 
 const d = formatDate(new Date());
@@ -52,6 +56,8 @@ export const MOCK_FLIGHT_ROUTES: MockFlightRoute[] = [
     durationMinutes: 130,
     priceFrom: 320000,
     tags: ['일본', '도쿄', '아시아'],
+    unavailableDays: [6, 13, 20, 27],
+    baggageFeePerPerson: 50000,
   },
   {
     id: 'route-icn-hnd-1',
@@ -69,6 +75,8 @@ export const MOCK_FLIGHT_ROUTES: MockFlightRoute[] = [
     durationMinutes: 125,
     priceFrom: 350000,
     tags: ['일본', '도쿄', '아시아'],
+    unavailableDays: [3, 10, 17, 24],
+    baggageFeePerPerson: 50000,
   },
   {
     id: 'route-icn-pvg-1',
@@ -86,6 +94,8 @@ export const MOCK_FLIGHT_ROUTES: MockFlightRoute[] = [
     durationMinutes: 90,
     priceFrom: 280000,
     tags: ['중국', '상하이', '아시아'],
+    unavailableDays: [5, 12, 19, 26],
+    baggageFeePerPerson: 40000,
   },
   {
     id: 'route-icn-sin-1',
@@ -103,6 +113,8 @@ export const MOCK_FLIGHT_ROUTES: MockFlightRoute[] = [
     durationMinutes: 400,
     priceFrom: 580000,
     tags: ['싱가포르', '동남아', '아시아'],
+    unavailableDays: [2, 9, 16, 23],
+    baggageFeePerPerson: 60000,
   },
   {
     id: 'route-icn-bkk-1',
@@ -120,6 +132,8 @@ export const MOCK_FLIGHT_ROUTES: MockFlightRoute[] = [
     durationMinutes: 350,
     priceFrom: 420000,
     tags: ['태국', '방콕', '동남아'],
+    unavailableDays: [4, 11, 18, 25],
+    baggageFeePerPerson: 55000,
   },
   {
     id: 'route-icn-cdg-1',
@@ -137,6 +151,8 @@ export const MOCK_FLIGHT_ROUTES: MockFlightRoute[] = [
     durationMinutes: 700,
     priceFrom: 1200000,
     tags: ['프랑스', '파리', '유럽'],
+    unavailableDays: [7, 14, 21, 28],
+    baggageFeePerPerson: 80000,
   },
   {
     id: 'route-icn-lax-1',
@@ -154,6 +170,8 @@ export const MOCK_FLIGHT_ROUTES: MockFlightRoute[] = [
     durationMinutes: 645,
     priceFrom: 980000,
     tags: ['미국', '로스앤젤레스', '미주'],
+    unavailableDays: [1, 8, 15, 22, 29],
+    baggageFeePerPerson: 80000,
   },
   {
     id: 'route-icn-lhr-1',
@@ -171,6 +189,8 @@ export const MOCK_FLIGHT_ROUTES: MockFlightRoute[] = [
     durationMinutes: 710,
     priceFrom: 1150000,
     tags: ['영국', '런던', '유럽'],
+    unavailableDays: [3, 10, 17, 24],
+    baggageFeePerPerson: 80000,
   },
   {
     id: 'route-icn-dxb-1',
@@ -188,6 +208,8 @@ export const MOCK_FLIGHT_ROUTES: MockFlightRoute[] = [
     durationMinutes: 550,
     priceFrom: 780000,
     tags: ['UAE', '두바이', '중동'],
+    unavailableDays: [6, 12, 18, 24],
+    baggageFeePerPerson: 70000,
   },
   {
     id: 'route-icn-syd-1',
@@ -205,6 +227,8 @@ export const MOCK_FLIGHT_ROUTES: MockFlightRoute[] = [
     durationMinutes: 635,
     priceFrom: 920000,
     tags: ['호주', '시드니', '오세아니아'],
+    unavailableDays: [5, 11, 17, 23, 29],
+    baggageFeePerPerson: 75000,
   },
   {
     id: 'route-icn-hkg-1',
@@ -222,6 +246,8 @@ export const MOCK_FLIGHT_ROUTES: MockFlightRoute[] = [
     durationMinutes: 210,
     priceFrom: 380000,
     tags: ['홍콩', '아시아', '단거리'],
+    unavailableDays: [4, 11, 18, 25],
+    baggageFeePerPerson: 45000,
   },
   {
     id: 'route-icn-kul-1',
@@ -239,6 +265,8 @@ export const MOCK_FLIGHT_ROUTES: MockFlightRoute[] = [
     durationMinutes: 390,
     priceFrom: 520000,
     tags: ['말레이시아', '동남아', '아시아'],
+    unavailableDays: [2, 8, 14, 20, 26],
+    baggageFeePerPerson: 60000,
   },
 ];
 

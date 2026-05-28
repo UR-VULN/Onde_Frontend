@@ -10,6 +10,10 @@ export interface MockStay {
   rating: number;
   reviewCount: number;
   tags: string[];
+  /** 해당 숙소의 예약 불가(매진) 날짜 목록 (일(day-of-month) 기준). 백엔드 연동 시 대체 */
+  soldOutDays: number[];
+  /** 마일리지 할인 금액 (원). 백엔드 연동 시 대체 */
+  mileageDiscount: number;
 }
 
 export const MOCK_STAYS: MockStay[] = [
@@ -25,6 +29,8 @@ export const MOCK_STAYS: MockStay[] = [
     rating: 4.90,
     reviewCount: 342,
     tags: ['도심', '스위트', '뷰맛집'],
+    soldOutDays: [3, 11, 19, 27],
+    mileageDiscount: 35000,
   },
   {
     id: 'stay-paris-1',
@@ -38,6 +44,8 @@ export const MOCK_STAYS: MockStay[] = [
     rating: 4.85,
     reviewCount: 218,
     tags: ['뷰맛집', '로맨틱', '유럽'],
+    soldOutDays: [5, 14, 22],
+    mileageDiscount: 42000,
   },
   {
     id: 'stay-dubai-1',
@@ -51,6 +59,8 @@ export const MOCK_STAYS: MockStay[] = [
     rating: 4.92,
     reviewCount: 176,
     tags: ['풀빌라', '비치', '럭셔리'],
+    soldOutDays: [2, 9, 16, 23, 30],
+    mileageDiscount: 55000,
   },
   {
     id: 'stay-bali-1',
@@ -64,6 +74,8 @@ export const MOCK_STAYS: MockStay[] = [
     rating: 4.78,
     reviewCount: 407,
     tags: ['풀빌라', '자연', '힐링'],
+    soldOutDays: [7, 18],
+    mileageDiscount: 28000,
   },
   {
     id: 'stay-maldives-1',
@@ -77,6 +89,8 @@ export const MOCK_STAYS: MockStay[] = [
     rating: 4.95,
     reviewCount: 289,
     tags: ['수상방갈로', '비치', '럭셔리'],
+    soldOutDays: [4, 12, 20, 28],
+    mileageDiscount: 68000,
   },
   {
     id: 'stay-kyoto-1',
@@ -90,6 +104,8 @@ export const MOCK_STAYS: MockStay[] = [
     rating: 4.88,
     reviewCount: 154,
     tags: ['온천', '료칸', '전통'],
+    soldOutDays: [1, 8, 17, 25],
+    mileageDiscount: 38000,
   },
   {
     id: 'stay-newyork-1',
@@ -103,6 +119,8 @@ export const MOCK_STAYS: MockStay[] = [
     rating: 4.76,
     reviewCount: 322,
     tags: ['도심', '뷰맛집', '모던'],
+    soldOutDays: [6, 13, 21, 29],
+    mileageDiscount: 45000,
   },
   {
     id: 'stay-swiss-1',
@@ -116,6 +134,8 @@ export const MOCK_STAYS: MockStay[] = [
     rating: 4.92,
     reviewCount: 198,
     tags: ['산악', '설경', '유럽'],
+    soldOutDays: [3, 15, 23],
+    mileageDiscount: 50000,
   },
   {
     id: 'stay-singapore-1',
@@ -129,6 +149,8 @@ export const MOCK_STAYS: MockStay[] = [
     rating: 4.93,
     reviewCount: 412,
     tags: ['스카이라운지', '도심', '뷰맛집'],
+    soldOutDays: [2, 10, 19, 27],
+    mileageDiscount: 62000,
   },
   {
     id: 'stay-santorini-1',
@@ -142,6 +164,8 @@ export const MOCK_STAYS: MockStay[] = [
     rating: 4.97,
     reviewCount: 531,
     tags: ['풀빌라', '로맨틱', '유럽'],
+    soldOutDays: [8, 16, 24],
+    mileageDiscount: 48000,
   },
   {
     id: 'stay-phuket-1',
@@ -155,6 +179,8 @@ export const MOCK_STAYS: MockStay[] = [
     rating: 4.82,
     reviewCount: 289,
     tags: ['풀빌라', '비치', '열대'],
+    soldOutDays: [5, 12, 20, 28],
+    mileageDiscount: 32000,
   },
   {
     id: 'stay-jeju-1',
@@ -168,6 +194,8 @@ export const MOCK_STAYS: MockStay[] = [
     rating: 4.89,
     reviewCount: 643,
     tags: ['독채', '풀빌라', '오션뷰'],
+    soldOutDays: [1, 7, 14, 21, 28],
+    mileageDiscount: 40000,
   },
   {
     id: 'stay-seoul-1',
@@ -181,6 +209,8 @@ export const MOCK_STAYS: MockStay[] = [
     rating: 4.91,
     reviewCount: 98,
     tags: ['도심', '감성', '모던'],
+    soldOutDays: [9, 18, 27],
+    mileageDiscount: 20000,
   },
   {
     id: 'stay-hoian-1',
@@ -194,6 +224,8 @@ export const MOCK_STAYS: MockStay[] = [
     rating: 4.84,
     reviewCount: 367,
     tags: ['전통', '문화', '감성'],
+    soldOutDays: [4, 11, 19],
+    mileageDiscount: 25000,
   },
   {
     id: 'stay-sydney-1',
@@ -207,6 +239,8 @@ export const MOCK_STAYS: MockStay[] = [
     rating: 4.86,
     reviewCount: 214,
     tags: ['뷰맛집', '도심', '오션뷰'],
+    soldOutDays: [6, 14, 22, 30],
+    mileageDiscount: 42000,
   },
   {
     id: 'stay-marrakech-1',
@@ -220,5 +254,7 @@ export const MOCK_STAYS: MockStay[] = [
     rating: 4.80,
     reviewCount: 187,
     tags: ['문화', '이색', '부티크'],
+    soldOutDays: [3, 13, 23],
+    mileageDiscount: 30000,
   },
 ];

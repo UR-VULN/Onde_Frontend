@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { MOCK_CARS, type MockCar } from '@/constants/mockCars';
 import type { CarSearchParams } from './CarSearchForm';
 import { CarDetailModal } from './CarDetailModal';
+import { addDaysStr, isStayRangeAvailable, todayStr } from '@/utils/calendarUtils';
 function shuffleArray<T>(array: T[]): T[] {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
@@ -11,13 +12,9 @@ function shuffleArray<T>(array: T[]): T[] {
   return arr;
 }
 
-function formatDate(date: Date): string {
-  return date.toISOString().split('T')[0];
-}
-
 const SHUFFLED_CARS = shuffleArray(MOCK_CARS);
-const TODAY = formatDate(new Date());
-const TOMORROW = formatDate(new Date(Date.now() + 24 * 60 * 60 * 1000));
+const TODAY = todayStr();
+const TOMORROW = addDaysStr(TODAY, 1);
 
 interface CarCardProps {
   car: MockCar;
@@ -101,20 +98,25 @@ interface CarRecommendationListProps {
 
 export const CarRecommendationList: React.FC<CarRecommendationListProps> = ({ searchParams }) => {
   const [selectedCar, setSelectedCar] = useState<MockCar | null>(null);
+
+  const rangePickup = searchParams?.pickupDate ?? todayStr();
+  const rangeReturn = searchParams?.returnDate ?? addDaysStr(rangePickup, 1);
+
+  const filterByAvailability = (cars: MockCar[]) =>
+    cars.filter((car) => isStayRangeAvailable(rangePickup, rangeReturn, car.unavailableDays));
+
   const displayedCars = useMemo(() => {
-    if (!searchParams) return SHUFFLED_CARS;
+    if (!searchParams) return filterByAvailability(SHUFFLED_CARS);
 
     const { carType, pickupSpot } = searchParams;
     const keyword = pickupSpot.trim().toLowerCase();
 
     let filtered = MOCK_CARS;
 
-    // Filter by car type
     if (carType !== 'ALL') {
       filtered = filtered.filter((c) => c.type === carType);
     }
 
-    // Filter by pickup spot keyword (tags / name / typeLabel)
     if (keyword) {
       filtered = filtered.filter((c) =>
         c.name.toLowerCase().includes(keyword) ||
@@ -124,10 +126,14 @@ export const CarRecommendationList: React.FC<CarRecommendationListProps> = ({ se
       );
     }
 
-    return filtered.length > 0 ? filtered : SHUFFLED_CARS;
-  }, [searchParams]);
+    const available = filterByAvailability(filtered);
+    return available.length > 0 ? available : filterByAvailability(SHUFFLED_CARS);
+  }, [searchParams, rangePickup, rangeReturn]);
 
   const isSearchMode = !!searchParams;
+
+  const modalPickup = rangePickup;
+  const modalReturn = rangeReturn;
 
   const hasNoResults = isSearchMode && (() => {
     const { carType, pickupSpot } = searchParams!;
@@ -200,8 +206,8 @@ export const CarRecommendationList: React.FC<CarRecommendationListProps> = ({ se
       {selectedCar && (
         <CarDetailModal
           car={selectedCar}
-          defaultPickup={searchParams?.pickupDate}
-          defaultReturn={searchParams?.returnDate}
+          defaultPickup={modalPickup}
+          defaultReturn={modalReturn}
           onClose={() => setSelectedCar(null)}
         />
       )}

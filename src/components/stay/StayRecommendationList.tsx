@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { MOCK_STAYS, type MockStay } from '@/constants/mockStays';
 import type { StaySearchParams } from './StaySearchForm';
 import { StayDetailModal } from './StayDetailModal';
+import { addDaysStr, isStayRangeAvailable, todayStr } from '@/utils/calendarUtils';
 function shuffleArray<T>(array: T[]): T[] {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
@@ -11,14 +12,10 @@ function shuffleArray<T>(array: T[]): T[] {
   return arr;
 }
 
-function formatDate(date: Date): string {
-  return date.toISOString().split('T')[0];
-}
-
 // Today → tomorrow (1박) 기준 랜덤 셔플 - 컴포넌트 최초 로드 시 1회 고정
 const SHUFFLED_STAYS = shuffleArray(MOCK_STAYS);
-const TODAY = formatDate(new Date());
-const TOMORROW = formatDate(new Date(Date.now() + 24 * 60 * 60 * 1000));
+const TODAY = todayStr();
+const TOMORROW = addDaysStr(TODAY, 1);
 
 interface StayCardProps {
   stay: MockStay;
@@ -97,9 +94,16 @@ interface StayRecommendationListProps {
 
 export const StayRecommendationList: React.FC<StayRecommendationListProps> = ({ searchParams }) => {
   const [selectedStay, setSelectedStay] = useState<MockStay | null>(null);
+
+  const rangeCheckIn = searchParams?.checkIn ?? todayStr();
+  const rangeCheckOut = searchParams?.checkOut ?? addDaysStr(rangeCheckIn, 1);
+
+  const filterByAvailability = (stays: MockStay[]) =>
+    stays.filter((stay) => isStayRangeAvailable(rangeCheckIn, rangeCheckOut, stay.soldOutDays));
+
   const displayedStays = useMemo(() => {
     if (!searchParams || !searchParams.destination.trim()) {
-      return SHUFFLED_STAYS;
+      return filterByAvailability(SHUFFLED_STAYS);
     }
 
     const keyword = searchParams.destination.trim().toLowerCase();
@@ -112,10 +116,14 @@ export const StayRecommendationList: React.FC<StayRecommendationListProps> = ({ 
       stay.tags.some((tag) => tag.toLowerCase().includes(keyword))
     );
 
-    return filtered.length > 0 ? filtered : SHUFFLED_STAYS;
-  }, [searchParams]);
+    const available = filterByAvailability(filtered);
+    return available.length > 0 ? available : filterByAvailability(SHUFFLED_STAYS);
+  }, [searchParams, rangeCheckIn, rangeCheckOut]);
 
   const isSearchMode = !!(searchParams && searchParams.destination.trim());
+
+  const modalCheckIn = rangeCheckIn;
+  const modalCheckOut = rangeCheckOut;
 
   const hasNoResults = isSearchMode && MOCK_STAYS.filter((s) => {
     const keyword = searchParams!.destination.trim().toLowerCase();
@@ -164,8 +172,8 @@ export const StayRecommendationList: React.FC<StayRecommendationListProps> = ({ 
       {selectedStay && (
         <StayDetailModal
           stay={selectedStay}
-          defaultCheckIn={searchParams?.checkIn}
-          defaultCheckOut={searchParams?.checkOut}
+          defaultCheckIn={modalCheckIn}
+          defaultCheckOut={modalCheckOut}
           onClose={() => setSelectedStay(null)}
         />
       )}

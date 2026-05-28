@@ -5,17 +5,16 @@ import {
   buildCalendarMonth,
   countNights,
   monthLabel,
-  toDateStr,
+  todayStr,
+  addDaysStr,
+  isStayRangeAvailable,
+  resolveValidStayRange,
 } from '@/utils/calendarUtils';
 import { useTravelStore } from '@/store/useTravelStore';
 
 // ─── constants ───────────────────────────────────────────────
 const PRIMARY = '#005ce6';
 const SECONDARY = '#ff5a5f';
-const MILEAGE_DISCOUNT = 35000;
-
-// Some random sold-out days (day-of-month)
-const SOLD_OUT_DAYS = new Set([3, 11, 19, 27]);
 
 // ─── props ───────────────────────────────────────────────────
 interface StayDetailModalProps {
@@ -34,12 +33,19 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
 }) => {
   const { addToast, isLoggedIn, openAuthModal } = useTravelStore();
 
+  // stay.soldOutDays를 Set으로 변환 (백엔드 연동 시 API 응답값으로 대체)
+  const soldOutDaysSet = useMemo(() => new Set(stay.soldOutDays), [stay.soldOutDays]);
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today.getTime() + 86400000);
 
-  const initCheckIn = defaultCheckIn ?? toDateStr(today);
-  const initCheckOut = defaultCheckOut ?? toDateStr(tomorrow);
+  const preferredCheckIn = defaultCheckIn ?? todayStr();
+  const preferredCheckOut = defaultCheckOut ?? addDaysStr(preferredCheckIn, 1);
+  const { checkIn: initCheckIn, checkOut: initCheckOut } = resolveValidStayRange(
+    preferredCheckIn,
+    preferredCheckOut,
+    stay.soldOutDays,
+  );
 
   const [checkIn, setCheckIn] = useState<string>(initCheckIn);
   const [checkOut, setCheckOut] = useState<string>(initCheckOut);
@@ -54,7 +60,7 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
   const cells = useMemo(
     () => buildCalendarMonth(calYear, calMonth, stay.pricePerNight, {
       weekendSurchargeRate: 0.2,
-      disabledDays: SOLD_OUT_DAYS,
+      disabledDays: soldOutDaysSet,
       disableBeforeToday: true,
     }),
     [calYear, calMonth, stay.pricePerNight]
@@ -63,7 +69,7 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
   // Billing
   const nights = countNights(checkIn, checkOut);
   const rawTotal = nights * stay.pricePerNight;
-  const mileageDiscount = mileage ? MILEAGE_DISCOUNT : 0;
+  const mileageDiscount = mileage ? stay.mileageDiscount : 0;
   const finalTotal = Math.max(0, rawTotal - mileageDiscount);
 
   // Week day breakdown for billing description
@@ -92,16 +98,9 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
     return parts.join(' + ') || '-';
   }
 
-  // Check if any sold-out day-of-month number falls strictly between start and end dates
+  // Check if any sold-out day falls within the occupied stay nights
   function hasSoldOutInRange(start: string, end: string): boolean {
-    const s = new Date(start);
-    const e = new Date(end);
-    const cur = new Date(s.getTime() + 86400000); // day after start
-    while (cur < e) {
-      if (SOLD_OUT_DAYS.has(cur.getDate())) return true;
-      cur.setDate(cur.getDate() + 1);
-    }
-    return false;
+    return !isStayRangeAvailable(start, end, stay.soldOutDays);
   }
 
   // Calendar click
@@ -177,8 +176,8 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
   }
 
   // Banner dates
-  const bannerStart = checkIn || toDateStr(today);
-  const bannerEnd = checkOut || toDateStr(tomorrow);
+  const bannerStart = checkIn || todayStr();
+  const bannerEnd = checkOut || addDaysStr(bannerStart, 1);
   const bannerNights = countNights(bannerStart, bannerEnd);
 
 
@@ -503,7 +502,7 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
             {mileage && rawTotal > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#008a05', marginBottom: '0.35rem', borderTop: '1px solid rgba(0,0,0,0.04)', paddingTop: '0.35rem' }}>
                 <span>마일리지 차감 적용</span>
-                <span>− ₩{MILEAGE_DISCOUNT.toLocaleString('ko-KR')}</span>
+                <span>− ₩{stay.mileageDiscount.toLocaleString('ko-KR')}</span>
               </div>
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '0.55rem', fontWeight: 800, fontSize: '1.05rem', color: '#1a1a1a' }}>

@@ -5,7 +5,10 @@ import {
   buildCalendarMonth,
   countNights,
   monthLabel,
-  toDateStr,
+  todayStr,
+  addDaysStr,
+  isFlightTripAvailable,
+  resolveValidFlightDates,
 } from '@/utils/calendarUtils';
 import { useTravelStore } from '@/store/useTravelStore';
 
@@ -21,10 +24,6 @@ const CLASS_INFO: Record<SeatClass, { multiplier: number; desc: string }> = {
   FIRST:    { multiplier: 4.0, desc: '퍼스트클래스 · 프리미엄 서비스' },
 };
 
-const BAGGAGE_FEE_PER_PERSON = 50000;
-
-// Unavailable flight days (day-of-month)
-const UNAVAILABLE_DAYS = new Set([6, 13, 20, 27]);
 
 function durationLabel(min: number): string {
   const h = Math.floor(min / 60);
@@ -51,12 +50,20 @@ export const FlightDetailModal: React.FC<FlightDetailModalProps> = ({
 }) => {
   const { addToast, isLoggedIn, openAuthModal } = useTravelStore();
 
+  // route.unavailableDays를 Set으로 변환 (백엔드 연동 시 API 응답값으로 대체)
+  const unavailableDaysSet = useMemo(() => new Set(route.unavailableDays), [route.unavailableDays]);
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const threeDaysLater = new Date(today.getTime() + 3 * 86400000);
 
-  const initDepart = defaultDate ?? route.date ?? toDateStr(today);
-  const initReturn = defaultReturn ?? toDateStr(threeDaysLater);
+  const preferredDepart = defaultDate ?? todayStr();
+  const preferredReturn = defaultReturn ?? addDaysStr(preferredDepart, 3);
+  const { depart: initDepart, return: initReturn } = resolveValidFlightDates(
+    preferredDepart,
+    preferredReturn,
+    route.unavailableDays,
+    tripType,
+  );
 
   const [departDate, setDepartDate] = useState<string>(initDepart);
   const [returnDate, setReturnDate] = useState<string>(tripType === 'RT' ? initReturn : '');
@@ -72,22 +79,14 @@ export const FlightDetailModal: React.FC<FlightDetailModalProps> = ({
   const cells = useMemo(
     () => buildCalendarMonth(calYear, calMonth, route.priceFrom, {
       weekendSurchargeRate: 0.1,
-      disabledDays: UNAVAILABLE_DAYS,
+      disabledDays: unavailableDaysSet,
       disableBeforeToday: true,
     }),
     [calYear, calMonth, route.priceFrom]
   );
 
-  // Range check for round trip
   function hasSoldOutInRange(start: string, end: string): boolean {
-    const s = new Date(start);
-    const e = new Date(end);
-    const cur = new Date(s.getTime() + 86400000);
-    while (cur < e) {
-      if (UNAVAILABLE_DAYS.has(cur.getDate())) return true;
-      cur.setDate(cur.getDate() + 1);
-    }
-    return false;
+    return !isFlightTripAvailable(start, end, route.unavailableDays, 'RT');
   }
 
   function handleCellClick(dateStr: string, disabled: boolean) {
@@ -129,7 +128,7 @@ export const FlightDetailModal: React.FC<FlightDetailModalProps> = ({
   const classInfo = CLASS_INFO[seatClass];
   const basePrice = Math.round((route.priceFrom * classInfo.multiplier) / 1000) * 1000;
   const tripMultiplier = tripType === 'RT' ? 2 : 1;
-  const baggageFee = baggageEnabled ? BAGGAGE_FEE_PER_PERSON * passengerCount : 0;
+  const baggageFee = baggageEnabled ? route.baggageFeePerPerson * passengerCount : 0;
   const finalTotal = basePrice * passengerCount * tripMultiplier + baggageFee;
 
   const tripDays = tripType === 'RT' && returnDate ? countNights(departDate, returnDate) : 0;
@@ -462,7 +461,7 @@ export const FlightDetailModal: React.FC<FlightDetailModalProps> = ({
                 <i className="fa-solid fa-suitcase-rolling" /> 위탁 수하물 추가
               </span>
               <span style={{ fontSize: '0.7rem', color: '#717171' }}>
-                인당 15kg 수하물 (<strong>+₩{BAGGAGE_FEE_PER_PERSON.toLocaleString('ko-KR')}</strong>)
+                인당 15kg 수하물 (<strong>+₩{route.baggageFeePerPerson.toLocaleString('ko-KR')}</strong>)
               </span>
             </div>
             <label style={{ position: 'relative', display: 'inline-block', width: '40px', height: '20px', flexShrink: 0 }}>
