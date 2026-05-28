@@ -1,7 +1,19 @@
 import React, { useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
 
-export const StaySearchForm: React.FC = () => {
+export interface StaySearchParams {
+  destination: string;
+  checkIn: string;
+  checkOut: string;
+  guests: number;
+  rooms: number;
+}
+
+interface StaySearchFormProps {
+  onSearch?: (params: StaySearchParams) => void;
+}
+
+export const StaySearchForm: React.FC<StaySearchFormProps> = ({ onSearch }) => {
   const { addToast } = useTravelStore();
 
   // Local state for interactive search values
@@ -27,6 +39,13 @@ export const StaySearchForm: React.FC = () => {
       `🏨 [${destination}] 숙소 검색 중: ${checkInDate} ~ ${checkOutDate} (${guestCount}명, 객실 ${roomCount}개)`,
       "info"
     );
+    onSearch?.({
+      destination,
+      checkIn: checkInDate,
+      checkOut: checkOutDate,
+      guests: guestCount,
+      rooms: roomCount,
+    });
   };
 
   return (
