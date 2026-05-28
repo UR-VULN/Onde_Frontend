@@ -9,8 +9,17 @@ export const userAxios = axios.create({
   }
 });
 
-// 본사 관리자/판매자 백오피스 서비스용 Axios 인스턴스 (Port 8081)
+// 본사 관리자 백오피스 서비스용 Axios 인스턴스 (Port 8081)
 export const adminAxios = axios.create({
+  baseURL: 'http://localhost:8081',
+  timeout: 15000,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+// 판매자(셀러) 파트너 포탈 서비스용 Axios 인스턴스 (Port 8081, 별도 경로)
+export const sellerAxios = axios.create({
   baseURL: 'http://localhost:8081',
   timeout: 15000,
   headers: {
@@ -29,6 +38,7 @@ const injectToken = (config: any) => {
 
 userAxios.interceptors.request.use(injectToken, (error) => Promise.reject(error));
 adminAxios.interceptors.request.use(injectToken, (error) => Promise.reject(error));
+sellerAxios.interceptors.request.use(injectToken, (error) => Promise.reject(error));
 
 // 공통 에러 처리 응답 인터셉터
 const handleResponseError = (error: any) => {
@@ -40,3 +50,4 @@ const handleResponseError = (error: any) => {
 
 userAxios.interceptors.response.use((response) => response.data, handleResponseError);
 adminAxios.interceptors.response.use((response) => response.data, handleResponseError);
+sellerAxios.interceptors.response.use((response) => response.data, handleResponseError);

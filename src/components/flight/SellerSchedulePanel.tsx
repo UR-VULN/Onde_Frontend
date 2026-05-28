@@ -108,7 +108,7 @@ export const SellerSchedulePanel: React.FC = () => {
 
     // Empty offset cells
     for (let i = 0; i < startDayOffset; i++) {
-      cells.push(<div key={`empty-${i}`} className="bg-slate-50/50 min-h-[90px] border-r border-b border-slate-100"></div>);
+      cells.push(<div key={`empty-${i}`} className="calendar-cell" style={{ background: 'var(--bg-light)', cursor: 'default' }}></div>);
     }
 
     // Days cells
@@ -117,21 +117,26 @@ export const SellerSchedulePanel: React.FC = () => {
       const daySchedules = schedules.filter(s => s.departureTime.startsWith(dateStr));
 
       cells.push(
-        <div key={day} className="bg-white min-h-[95px] p-2 border-r border-b border-slate-200 flex flex-col justify-between hover:bg-slate-50/40 transition-all group">
-          <span className="font-bold text-[11px] text-slate-700 block group-hover:text-primary transition-colors">{day}</span>
+        <div key={day} className="calendar-cell">
+          <span className="calendar-cell-date">{day}</span>
           
-          <div className="flex flex-col gap-1 overflow-y-auto max-h-[70px] pr-0.5 scrollbar-thin">
+          <div className="calendar-cell-data" style={{ display: 'flex', flexDirection: 'column', gap: '2px', overflow: 'hidden' }}>
             {daySchedules.length > 0 ? (
-              daySchedules.map((schedule) => {
+              daySchedules.slice(0, 2).map((schedule) => {
                 const is_closed = schedule.remainingSeats === 0;
                 return (
                   <div
                     key={schedule.scheduleId}
-                    className={`text-[9px] p-1 rounded font-bold cursor-pointer transition-all ${
-                      is_closed
-                        ? 'bg-rose-50 text-secondary border border-rose-100 hover:bg-rose-100'
-                        : 'bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-100'
-                    }`}
+                    style={{
+                      fontSize: '0.68rem',
+                      padding: '1px 4px',
+                      borderRadius: '4px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      background: is_closed ? '#fff0f0' : '#f0fdf4',
+                      color: is_closed ? 'var(--secondary)' : '#008a05',
+                      border: `1px solid ${is_closed ? 'rgba(255,90,95,0.2)' : 'rgba(0,138,5,0.15)'}`,
+                    }}
                     onClick={() => {
                       setSelectedCell(schedule);
                       setOverridePrice(schedule.basePrice.toString());
@@ -139,22 +144,13 @@ export const SellerSchedulePanel: React.FC = () => {
                       setIsOverrideOpen(true);
                     }}
                   >
-                    <div className="flex justify-between items-center gap-1">
-                      <span>{schedule.flightNumber} ({schedule.classType[0]})</span>
-                      {is_closed ? (
-                        <span className="text-[8px] bg-rose-200 px-1 rounded">마감</span>
-                      ) : (
-                        <span>{schedule.remainingSeats}석</span>
-                      )}
-                    </div>
-                    <div className="text-right text-[8px] opacity-90 mt-0.5">
-                      ₩{(schedule.basePrice / 1000).toFixed(0)}k
-                    </div>
+                    {schedule.flightNumber} {is_closed ? '마감' : `${schedule.remainingSeats}석`}
+                    <br />₩{(schedule.basePrice / 1000).toFixed(0)}k
                   </div>
                 );
               })
             ) : (
-              <span className="text-[9px] text-slate-300 font-bold block py-2 text-center">운항 없음</span>
+              <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 600 }}>운항 없음</span>
             )}
           </div>
         </div>
@@ -165,260 +161,150 @@ export const SellerSchedulePanel: React.FC = () => {
   };
 
   return (
-    <div className="admin-panel animate-[fadeIn_0.35s_ease]">
-      {/* Title & Batch trigger button */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-slate-100 pb-4">
+    <div className="seller-panel animate-[fadeIn_0.35s_ease] space-y-8">
+      {/* Header Area */}
+      <div className="section-header">
         <div>
-          <h2 className="font-logo font-black text-xl text-slate-800 flex items-center gap-2">
-            <i className="fa-solid fa-clock text-primary"></i> 노선별 요율 & 스케줄 제어 Extranet
-          </h2>
-          <p className="text-[10px] text-slate-500 font-bold mt-1">
-            신규 정기 스케줄 일괄 배치 등록을 신청하고, 달력 기반으로 실시간 가격과 좌석 재고를 제어합니다.
+          <h2 className="section-title">항공 노선 스케줄 및 여행자 보험 상품 관리</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            신규 노선 타임테이블 등록 및 보험 요율 테이블을 제어합니다.
           </p>
         </div>
         <button
           type="button"
-          className="btn-primary text-xs py-2 px-5 flex items-center gap-2"
+          className="btn-primary"
           onClick={() => setIsBatchOpen(true)}
         >
           <i className="fa-solid fa-plane-up"></i> 정기 스케줄 일괄 등록
         </button>
       </div>
 
-      {/* Filter and Calendar Grid */}
-      <div className="bg-white rounded-[28px] border border-slate-200/80 shadow-md p-6 flex flex-col gap-6">
-        <div className="flex gap-4 items-center flex-wrap">
-          <div className="flex flex-col gap-1 w-40">
-            <label className="text-[9px] font-bold text-slate-400">출발지 (Origin)</label>
-            <input
-              type="text"
-              value={origin}
-              onChange={(e) => setOrigin(e.target.value.toUpperCase())}
-              className="border border-slate-200/80 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800"
-            />
-          </div>
-          <div className="flex flex-col gap-1 w-40">
-            <label className="text-[9px] font-bold text-slate-400">목적지 (Destination)</label>
-            <input
-              type="text"
-              value={dest}
-              onChange={(e) => setDest(e.target.value.toUpperCase())}
-              className="border border-slate-200/80 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800"
-            />
-          </div>
-          <div className="flex flex-col gap-1 w-40">
-            <label className="text-[9px] font-bold text-slate-400">조회 월 (Month)</label>
-            <select
-              value={month}
-              onChange={(e) => setMonth(parseInt(e.target.value))}
-              className="border border-slate-200/80 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 cursor-pointer"
-            >
-              <option value="5">2026년 5월</option>
-              <option value="6">2026년 6월</option>
-            </select>
+      {/* Filter and Control Section */}
+      <div className="data-table-container" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <h4 style={{ fontWeight: 700, color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <i className="fa-solid fa-calendar-days" style={{ color: 'var(--primary)' }}></i>
+            스케줄 제어 Extranet <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 600 }}>(달력 UI)</span>
+          </h4>
+          
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" style={{ fontSize: '0.75rem' }}>출발지</label>
+              <input
+                type="text"
+                value={origin}
+                onChange={(e) => setOrigin(e.target.value.toUpperCase())}
+                className="form-input"
+                style={{ width: '80px', textAlign: 'center', padding: '0.5rem 0.75rem' }}
+              />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" style={{ fontSize: '0.75rem' }}>목적지</label>
+              <input
+                type="text"
+                value={dest}
+                onChange={(e) => setDest(e.target.value.toUpperCase())}
+                className="form-input"
+                style={{ width: '80px', textAlign: 'center', padding: '0.5rem 0.75rem' }}
+              />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" style={{ fontSize: '0.75rem' }}>조회 월</label>
+              <select
+                value={month}
+                onChange={(e) => setMonth(parseInt(e.target.value))}
+                className="form-input"
+                style={{ padding: '0.5rem 0.75rem' }}
+              >
+                <option value="5">2026년 5월</option>
+                <option value="6">2026년 6월</option>
+              </select>
+            </div>
           </div>
         </div>
 
         {/* Real-time calendar grid */}
-        <div className="border border-slate-200/80 rounded-[20px] overflow-hidden shadow-inner">
-          <div className="grid grid-cols-7 text-center font-black text-xs bg-slate-50 border-b border-slate-200 py-3 text-slate-500">
-            <span className="text-secondary">일</span>
-            <span>월</span>
-            <span>화</span>
-            <span>수</span>
-            <span>목</span>
-            <span>금</span>
-            <span className="text-primary">토</span>
-          </div>
-          <div className="grid grid-cols-7 min-h-[450px]">
-            {renderCalendarCells()}
-          </div>
+        <div className="calendar-grid" style={{ borderRadius: 'var(--radius-md)' }}>
+          {['일', '월', '화', '수', '목', '금', '토'].map((d, idx) => (
+            <div key={d} className="calendar-header-cell">
+              <span style={{ color: idx === 0 ? 'var(--secondary)' : idx === 6 ? 'var(--primary)' : undefined }}>{d}</span>
+            </div>
+          ))}
+          {renderCalendarCells()}
+        </div>
+
+        <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+          <p style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+            <i className="fa-solid fa-circle-info" style={{ color: 'var(--primary)' }}></i>
+            개별 운항 스케줄을 클릭하여 실시간 가격 할인/할증 및 잔여석 수량을 직접 오버라이드할 수 있습니다.
+          </p>
         </div>
       </div>
 
       {/* Batch Register Modal */}
       {isBatchOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
-          <div className="bg-white rounded-[32px] border border-slate-200 shadow-2xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto flex flex-col gap-6 animate-[scaleUp_0.2s_ease-out]">
-            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="font-logo font-black text-lg text-slate-800 flex items-center gap-2">
-                <i className="fa-solid fa-plane-up text-primary"></i> 항공 정기 스케줄 일괄 배치 신청 등록
+        <div className="modal-backdrop" style={{ display: 'flex' }}>
+          <div className="app-modal" style={{ width: '640px', maxWidth: '96%', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <i className="fa-solid fa-plane-up" style={{ color: 'var(--primary)' }}></i> 정기 스케줄 일괄 신청 등록
               </h3>
-              <button
-                type="button"
-                className="w-8 h-8 rounded-full hover:bg-slate-50 flex items-center justify-center text-slate-400"
-                onClick={() => setIsBatchOpen(false)}
-              >
-                <i className="fa-solid fa-xmark text-lg"></i>
+              <button type="button" style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }} onClick={() => setIsBatchOpen(false)}>
+                <i className="fa-solid fa-xmark"></i>
               </button>
             </div>
 
-            <form onSubmit={handle_batch_submit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="form-group mb-0">
-                <label className="text-[10px] font-bold text-slate-700">출발 공항 IATA (Departure)</label>
-                <input
-                  type="text"
-                  value={batchForm.departureAirport}
-                  onChange={(e) => setBatchForm({ ...batchForm, departureAirport: e.target.value.toUpperCase() })}
-                  className="border border-slate-200/80 rounded-xl px-3 py-2 text-xs font-bold w-full"
-                  required
-                />
-              </div>
-              <div className="form-group mb-0">
-                <label className="text-[10px] font-bold text-slate-700">도착 공항 IATA (Arrival)</label>
-                <input
-                  type="text"
-                  value={batchForm.arrivalAirport}
-                  onChange={(e) => setBatchForm({ ...batchForm, arrivalAirport: e.target.value.toUpperCase() })}
-                  className="border border-slate-200/80 rounded-xl px-3 py-2 text-xs font-bold w-full"
-                  required
-                />
-              </div>
-              <div className="form-group mb-0">
-                <label className="text-[10px] font-bold text-slate-700">편명 (Flight Number)</label>
-                <input
-                  type="text"
-                  value={batchForm.flightNumber}
-                  onChange={(e) => setBatchForm({ ...batchForm, flightNumber: e.target.value })}
-                  className="border border-slate-200/80 rounded-xl px-3 py-2 text-xs font-bold w-full"
-                  required
-                />
-              </div>
-              <div className="form-group mb-0">
-                <label className="text-[10px] font-bold text-slate-700">비행 거리 (Distance KM)</label>
-                <input
-                  type="number"
-                  value={batchForm.distanceKm}
-                  onChange={(e) => setBatchForm({ ...batchForm, distanceKm: parseInt(e.target.value) })}
-                  className="border border-slate-200/80 rounded-xl px-3 py-2 text-xs font-bold w-full"
-                  required
-                />
-              </div>
-              <div className="form-group mb-0">
-                <label className="text-[10px] font-bold text-slate-700">출발 시간 (Departure Time)</label>
-                <input
-                  type="text"
-                  value={batchForm.departureTime}
-                  onChange={(e) => setBatchForm({ ...batchForm, departureTime: e.target.value })}
-                  className="border border-slate-200/80 rounded-xl px-3 py-2 text-xs font-bold w-full"
-                  placeholder="14:30"
-                  required
-                />
-              </div>
-              <div className="form-group mb-0">
-                <label className="text-[10px] font-bold text-slate-700">도착 시간 (Arrival Time)</label>
-                <input
-                  type="text"
-                  value={batchForm.arrivalTime}
-                  onChange={(e) => setBatchForm({ ...batchForm, arrivalTime: e.target.value })}
-                  className="border border-slate-200/80 rounded-xl px-3 py-2 text-xs font-bold w-full"
-                  placeholder="17:00"
-                  required
-                />
-              </div>
-              <div className="form-group mb-0">
-                <label className="text-[10px] font-bold text-slate-700">시작 범위 (Start Date)</label>
-                <input
-                  type="date"
-                  value={batchForm.startDate}
-                  onChange={(e) => setBatchForm({ ...batchForm, startDate: e.target.value })}
-                  className="border border-slate-200/80 rounded-xl px-3 py-2 text-xs font-bold w-full"
-                  required
-                />
-              </div>
-              <div className="form-group mb-0">
-                <label className="text-[10px] font-bold text-slate-700">종료 범위 (End Date)</label>
-                <input
-                  type="date"
-                  value={batchForm.endDate}
-                  onChange={(e) => setBatchForm({ ...batchForm, endDate: e.target.value })}
-                  className="border border-slate-200/80 rounded-xl px-3 py-2 text-xs font-bold w-full"
-                  required
-                />
-              </div>
-              <div className="form-group mb-0 md:col-span-2">
-                <label className="text-[10px] font-bold text-slate-700">운항 요일 (Days, 콤마 구분)</label>
-                <input
-                  type="text"
-                  value={batchForm.operatingDays}
-                  onChange={(e) => setBatchForm({ ...batchForm, operatingDays: e.target.value })}
-                  className="border border-slate-200/80 rounded-xl px-3 py-2 text-xs font-bold w-full"
-                  placeholder="MON,WED,FRI"
-                  required
-                />
-              </div>
-
-              {/* Capacities & Prices */}
-              <div className="md:col-span-2 grid grid-cols-3 gap-3 border-t border-slate-100 pt-4 mt-2">
-                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex flex-col gap-2">
-                  <span className="text-[9px] font-black text-primary">ECONOMY</span>
-                  <input
-                    type="number"
-                    value={batchForm.economySeats}
-                    onChange={(e) => setBatchForm({ ...batchForm, economySeats: parseInt(e.target.value) })}
-                    className="border border-slate-200 rounded-lg px-2 py-1 text-[11px] font-bold w-full"
-                    placeholder="석 수"
-                  />
-                  <input
-                    type="number"
-                    value={batchForm.economyPrice}
-                    onChange={(e) => setBatchForm({ ...batchForm, economyPrice: parseInt(e.target.value) })}
-                    className="border border-slate-200 rounded-lg px-2 py-1 text-[11px] font-bold w-full"
-                    placeholder="요금 원"
-                  />
+            <form onSubmit={handle_batch_submit}>
+              <div className="grid-2" style={{ marginBottom: '1.2rem' }}>
+                <div className="form-group">
+                  <label className="form-label">출발 / 도착 공항 IATA</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <input type="text" value={batchForm.departureAirport} onChange={(e) => setBatchForm({ ...batchForm, departureAirport: e.target.value.toUpperCase() })} className="form-input" style={{ flex: 1, textAlign: 'center' }} placeholder="ICN" required />
+                    <i className="fa-solid fa-arrow-right" style={{ color: 'var(--text-muted)' }}></i>
+                    <input type="text" value={batchForm.arrivalAirport} onChange={(e) => setBatchForm({ ...batchForm, arrivalAirport: e.target.value.toUpperCase() })} className="form-input" style={{ flex: 1, textAlign: 'center' }} placeholder="NRT" required />
+                  </div>
                 </div>
-
-                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex flex-col gap-2">
-                  <span className="text-[9px] font-black text-secondary">BUSINESS</span>
-                  <input
-                    type="number"
-                    value={batchForm.businessSeats}
-                    onChange={(e) => setBatchForm({ ...batchForm, businessSeats: parseInt(e.target.value) })}
-                    className="border border-slate-200 rounded-lg px-2 py-1 text-[11px] font-bold w-full"
-                    placeholder="석 수"
-                  />
-                  <input
-                    type="number"
-                    value={batchForm.businessPrice}
-                    onChange={(e) => setBatchForm({ ...batchForm, businessPrice: parseInt(e.target.value) })}
-                    className="border border-slate-200 rounded-lg px-2 py-1 text-[11px] font-bold w-full"
-                    placeholder="요금 원"
-                  />
+                <div className="form-group">
+                  <label className="form-label">비행 편명 (Flight No.)</label>
+                  <input type="text" value={batchForm.flightNumber} onChange={(e) => setBatchForm({ ...batchForm, flightNumber: e.target.value })} className="form-input" placeholder="KE-023" required />
                 </div>
-
-                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex flex-col gap-2">
-                  <span className="text-[9px] font-black text-slate-800">FIRST CLASS</span>
-                  <input
-                    type="number"
-                    value={batchForm.firstSeats}
-                    onChange={(e) => setBatchForm({ ...batchForm, firstSeats: parseInt(e.target.value) })}
-                    className="border border-slate-200 rounded-lg px-2 py-1 text-[11px] font-bold w-full"
-                    placeholder="석 수"
-                  />
-                  <input
-                    type="number"
-                    value={batchForm.firstPrice}
-                    onChange={(e) => setBatchForm({ ...batchForm, firstPrice: parseInt(e.target.value) })}
-                    className="border border-slate-200 rounded-lg px-2 py-1 text-[11px] font-bold w-full"
-                    placeholder="요금 원"
-                  />
+                <div className="form-group">
+                  <label className="form-label">출발 / 도착 시간 (Local)</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <input type="text" value={batchForm.departureTime} onChange={(e) => setBatchForm({ ...batchForm, departureTime: e.target.value })} className="form-input" style={{ flex: 1, textAlign: 'center' }} placeholder="14:30" required />
+                    <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>~</span>
+                    <input type="text" value={batchForm.arrivalTime} onChange={(e) => setBatchForm({ ...batchForm, arrivalTime: e.target.value })} className="form-input" style={{ flex: 1, textAlign: 'center' }} placeholder="17:00" required />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">운항 기간 (Start ~ End)</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <input type="date" value={batchForm.startDate} onChange={(e) => setBatchForm({ ...batchForm, startDate: e.target.value })} className="form-input" style={{ flex: 1 }} required />
+                    <input type="date" value={batchForm.endDate} onChange={(e) => setBatchForm({ ...batchForm, endDate: e.target.value })} className="form-input" style={{ flex: 1 }} required />
+                  </div>
                 </div>
               </div>
 
-              <div className="md:col-span-2 flex gap-3 justify-end mt-4 border-t border-slate-100 pt-4">
-                <button
-                  type="button"
-                  className="btn-secondary text-xs py-2 px-5"
-                  onClick={() => setIsBatchOpen(false)}
-                >
-                  취소
-                </button>
-                <button
-                  type="submit"
-                  className="btn-primary text-xs py-2 px-5"
-                >
-                  배치 심사 신청 등록
-                </button>
+              <div className="form-group">
+                <label className="form-label">클래스별 공급 좌석 및 기준가 설정</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+                  {[
+                    { key: 'economy', label: 'ECONOMY', seatsKey: 'economySeats', priceKey: 'economyPrice', color: '#eff6ff', textColor: '#1d4ed8' },
+                    { key: 'business', label: 'BUSINESS', seatsKey: 'businessSeats', priceKey: 'businessPrice', color: '#eef2ff', textColor: '#4338ca' },
+                    { key: 'first', label: 'FIRST CLASS', seatsKey: 'firstSeats', priceKey: 'firstPrice', color: 'var(--bg-light)', textColor: 'var(--text-dark)' },
+                  ].map((cls) => (
+                    <div key={cls.key} style={{ background: cls.color, padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 800, color: cls.textColor, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{cls.label}</span>
+                      <input type="number" value={(batchForm as any)[cls.seatsKey]} onChange={(e) => setBatchForm({ ...batchForm, [cls.seatsKey]: parseInt(e.target.value) })} className="form-input" style={{ padding: '0.5rem 0.75rem', fontSize: '0.85rem' }} placeholder="공급석" />
+                      <input type="number" value={(batchForm as any)[cls.priceKey]} onChange={(e) => setBatchForm({ ...batchForm, [cls.priceKey]: parseInt(e.target.value) })} className="form-input" style={{ padding: '0.5rem 0.75rem', fontSize: '0.85rem' }} placeholder="기준 요금" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
+                <button type="button" className="btn-secondary" style={{ flex: 1, padding: '0.8rem' }} onClick={() => setIsBatchOpen(false)}>취소</button>
+                <button type="submit" className="btn-primary" style={{ flex: 1, padding: '0.8rem' }}>배치 심사 신청</button>
               </div>
             </form>
           </div>
@@ -427,59 +313,36 @@ export const SellerSchedulePanel: React.FC = () => {
 
       {/* Override control cell Modal */}
       {isOverrideOpen && selectedCell && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
-          <div className="bg-white rounded-[32px] border border-slate-200 shadow-2xl w-full max-w-sm p-6 flex flex-col gap-6 animate-[scaleUp_0.2s_ease-out]">
-            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="font-logo font-black text-md text-slate-800">
-                ⚙️ {selectedCell.flightNumber} ({selectedCell.classType}) 제어
+        <div className="modal-backdrop" style={{ display: 'flex' }}>
+          <div className="app-modal" style={{ width: '420px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <i className="fa-solid fa-sliders" style={{ color: 'var(--primary)' }}></i> 스케줄 오버라이드
               </h3>
-              <button
-                type="button"
-                className="w-8 h-8 rounded-full hover:bg-slate-50 flex items-center justify-center text-slate-400"
-                onClick={() => setIsOverrideOpen(false)}
-              >
-                <i className="fa-solid fa-xmark text-md"></i>
+              <button type="button" style={{ color: 'var(--text-muted)' }} onClick={() => setIsOverrideOpen(false)}>
+                <i className="fa-solid fa-xmark text-lg"></i>
               </button>
             </div>
 
-            <form onSubmit={handle_override_submit} className="flex flex-col gap-4">
-              <div className="form-group mb-0">
-                <label className="text-[10px] font-bold text-slate-700">남은 잔여 좌석 수량 조절</label>
-                <input
-                  type="number"
-                  value={remainingSeats}
-                  onChange={(e) => setRemainingSeats(e.target.value)}
-                  className="border border-slate-200/80 rounded-xl px-3 py-2 text-xs font-bold w-full bg-white"
-                  placeholder="수정할 석 수"
-                />
-                <span className="text-[8px] text-slate-400 block mt-1">※ 이미 확정(Confirmed) 완료된 예약수 이하로는 줄일 수 없습니다.</span>
+            <div style={{ background: 'var(--bg-light)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginBottom: '1.2rem' }}>
+              <p style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>운항 정보</p>
+              <p style={{ fontWeight: 800, color: 'var(--text-dark)', marginTop: '0.2rem' }}>{selectedCell.flightNumber} ({selectedCell.classType})</p>
+              <p style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)' }}>{selectedCell.departureTime.split('T')[0]} 운항분</p>
+            </div>
+
+            <form onSubmit={handle_override_submit}>
+              <div className="form-group">
+                <label className="form-label">잔여 좌석 수량 조절</label>
+                <input type="number" value={remainingSeats} onChange={(e) => setRemainingSeats(e.target.value)} className="form-input" placeholder="수정할 석 수" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">요금 오버라이드 (할증/할인)</label>
+                <input type="number" value={overridePrice} onChange={(e) => setOverridePrice(e.target.value)} className="form-input" placeholder="대체할 요금 (원)" />
               </div>
 
-              <div className="form-group mb-0">
-                <label className="text-[10px] font-bold text-slate-700">할증/할인 요금 오버라이드 (overridePrice)</label>
-                <input
-                  type="number"
-                  value={overridePrice}
-                  onChange={(e) => setOverridePrice(e.target.value)}
-                  className="border border-slate-200/80 rounded-xl px-3 py-2 text-xs font-bold w-full bg-white"
-                  placeholder="대체할 요금 원"
-                />
-              </div>
-
-              <div className="flex gap-3 justify-end mt-4 border-t border-slate-100 pt-4">
-                <button
-                  type="button"
-                  className="btn-secondary text-xs py-2 px-5"
-                  onClick={() => setIsOverrideOpen(false)}
-                >
-                  취소
-                </button>
-                <button
-                  type="submit"
-                  className="btn-primary text-xs py-2 px-5"
-                >
-                  설정 저장
-                </button>
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+                <button type="button" className="btn-secondary" style={{ flex: 1, padding: '0.7rem' }} onClick={() => setIsOverrideOpen(false)}>취소</button>
+                <button type="submit" className="btn-primary" style={{ flex: 1, padding: '0.7rem' }}>변경사항 적용</button>
               </div>
             </form>
           </div>

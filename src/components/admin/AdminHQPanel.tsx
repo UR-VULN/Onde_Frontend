@@ -12,10 +12,14 @@ import type {
   AdminBookingDto
 } from '@/api/adminApi';
 
-export const AdminHQPanel: React.FC = () => {
+interface AdminHQPanelProps {
+  defaultTab?: 'approval' | 'booking';
+}
+
+export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approval' }) => {
   const { addToast, openConfirmPopup } = useTravelStore();
 
-  const [activeTab, setActiveTab] = useState<'approval' | 'booking'>('approval');
+  const [activeTab, setActiveTab] = useState<'approval' | 'booking'>(defaultTab);
 
   // Approval Pending Queue State
   const [approvalDomain, setApprovalDomain] = useState('FLIGHT');
@@ -142,7 +146,6 @@ export const AdminHQPanel: React.FC = () => {
           const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
           setCsvProgress(percent);
         } else {
-          // Chunk-by-chunk download size simulator if total content-length header is absent
           const simulated = Math.min(99, Math.round(progressEvent.loaded / 150));
           setCsvProgress(simulated);
         }
@@ -151,7 +154,6 @@ export const AdminHQPanel: React.FC = () => {
       setCsvProgress(100);
       addToast("탑승객 명단 CSV 대용량 다운로드가 100% 완료되었습니다.", "success");
 
-      // Save file local
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -171,214 +173,224 @@ export const AdminHQPanel: React.FC = () => {
   };
 
   return (
-    <div className="admin-panel animate-[fadeIn_0.3s_ease]">
-      {/* Tab Switcher Headers */}
-      <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-3">
+    <div className="admin-panel">
+      {/* Header & Tab Switcher */}
+      <div className="section-header" style={{ flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 className="font-logo font-black text-xl text-slate-800 flex items-center gap-2">
-            <i className="fa-solid fa-users-gear text-emerald-600"></i> 본사 관리자 통제 허브 (Admin Panel)
+          <h2 className="section-title">
+            본사 관리자 통제 허브
           </h2>
-          <p className="text-[10px] text-slate-500 font-bold mt-1">
-            입점 등록 노선을 승인 심사하고, 전체 항공/보험 예약 현황을 직권 관리하며 대용량 명단을 안전하게 CSV 추출합니다.
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            입점 상품 승인 심사 및 통합 예약/보험 관제 시스템 <span style={{ fontSize: '0.8rem' }}>(B/C/D팀 공용)</span>
           </p>
         </div>
 
-        <div className="flex gap-2">
+        <div style={{ display: 'flex', background: 'var(--bg-light)', padding: '0.35rem', borderRadius: 'var(--radius-full)', border: '1px solid var(--border-color)' }}>
           <button
             type="button"
-            className={`px-4 py-2 rounded-full text-xs font-black transition-all ${
-              activeTab === 'approval' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
             onClick={() => setActiveTab('approval')}
+            style={{
+              padding: '0.45rem 1.1rem',
+              borderRadius: 'var(--radius-full)',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              transition: 'all 0.2s ease',
+              background: activeTab === 'approval' ? 'var(--bg-white)' : 'transparent',
+              color: activeTab === 'approval' ? 'var(--primary)' : 'var(--text-muted)',
+              boxShadow: activeTab === 'approval' ? 'var(--shadow-sm)' : 'none',
+            }}
           >
-            입점 승인 심사 대기열
+            입점 승인 대기열
           </button>
           <button
             type="button"
-            className={`px-4 py-2 rounded-full text-xs font-black transition-all ${
-              activeTab === 'booking' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
             onClick={() => setActiveTab('booking')}
+            style={{
+              padding: '0.45rem 1.1rem',
+              borderRadius: 'var(--radius-full)',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              transition: 'all 0.2s ease',
+              background: activeTab === 'booking' ? 'var(--bg-white)' : 'transparent',
+              color: activeTab === 'booking' ? 'var(--primary)' : 'var(--text-muted)',
+              boxShadow: activeTab === 'booking' ? 'var(--shadow-sm)' : 'none',
+            }}
           >
-            통합 예약/보험 관제 보드
+            통합 예약 관제 보드
           </button>
         </div>
       </div>
 
       {/* Progressive CSV Progress Alert Indicator */}
       {downloadingScheduleId && (
-        <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl mb-6 animate-pulse flex flex-col gap-2">
-          <div className="flex justify-between items-center text-xs font-black text-emerald-800">
-            <span>대용량 탑승객 명단 CSV HTTP 청크 스트리밍 추출 진행 중...</span>
+        <div style={{ background: '#f0fdf4', border: '1px solid rgba(16,185,129,0.3)', padding: '1.2rem 1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', fontWeight: 800, color: '#065f46' }}>
+            <span><i className="fa-solid fa-spinner fa-spin" style={{ marginRight: '0.5rem' }}></i> 대용량 명단 CSV 스트리밍 진행 중</span>
             <span>{csvProgress}% 완료</span>
           </div>
-          <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
-            <div 
-              className="bg-emerald-600 h-full rounded-full transition-all duration-300"
-              style={{ width: `${csvProgress}%` }}
-            ></div>
+          <div style={{ width: '100%', height: '8px', background: 'rgba(16,185,129,0.2)', borderRadius: '4px', overflow: 'hidden' }}>
+            <div style={{ width: `${csvProgress}%`, height: '100%', background: '#059669', transition: 'width 0.15s' }}></div>
           </div>
         </div>
       )}
 
       {/* Tab 1: Pending Approval Queue */}
       {activeTab === 'approval' && (
-        <div className="bg-white rounded-[28px] border border-slate-200/80 shadow-md p-6 flex flex-col gap-6">
-          <div className="flex justify-between items-center">
-            <h3 className="font-logo font-extrabold text-sm text-slate-800">
-              📥 검수 대기 입점 상품 목록
+        <div className="data-table-container p-6">
+          <div className="flex justify-between items-center mb-8 border-b border-slate-50 pb-5">
+            <h3 className="text-lg font-black text-slate-800 flex items-center gap-2.5">
+              <i className="fa-solid fa-inbox text-emerald-600"></i> 검수 대기 상품 목록
             </h3>
             <select
               value={approvalDomain}
               onChange={(e) => setApprovalDomain(e.target.value)}
-              className="border border-slate-200/80 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 cursor-pointer"
+              className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all cursor-pointer shadow-sm"
             >
               <option value="FLIGHT">✈️ 항공 노선/스케줄</option>
-              <option value="INSURANCE">🛡️ 여행자 보험 상품 요율</option>
+              <option value="INSURANCE">🛡️ 여행자 보험 요율</option>
             </select>
           </div>
 
-          <div className="data-table-container">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>요청 ID</th>
-                  <th>상품 구분</th>
-                  <th>상품/제안 명칭</th>
-                  <th>등록 판매자</th>
-                  <th>등록 요청일</th>
-                  <th>상세 구조</th>
-                  <th>심사 집행</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pendingList.length > 0 ? (
-                  pendingList.map((req) => (
-                    <tr key={req.requestId}>
-                      <td className="font-bold">#{req.requestId}</td>
-                      <td>
-                        <span className={`status-badge ${req.category === 'FLIGHT' ? 'status-active' : 'status-approved'}`}>
-                          {req.category}
-                        </span>
-                      </td>
-                      <td className="font-bold text-slate-800">{req.productName}</td>
-                      <td>Seller #{req.registeredBy}</td>
-                      <td className="text-slate-500 font-semibold">{req.createdAt.split('T')[0]}</td>
-                      <td className="text-[10px] text-slate-500 font-mono max-w-[200px] truncate">
-                        {req.details}
-                      </td>
-                      <td className="flex gap-2">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>요청 ID</th>
+                <th>상품 구분</th>
+                <th>상품/제안 명칭</th>
+                <th>등록 판매자</th>
+                <th className="text-center">등록 요청일</th>
+                <th>상세 구조</th>
+                <th className="text-right">심사 집행</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pendingList.length > 0 ? (
+                pendingList.map((req) => (
+                  <tr key={req.requestId}>
+                    <td className="font-black text-slate-900">#{req.requestId}</td>
+                    <td>
+                      <span className={`status-badge ${req.category === 'FLIGHT' ? 'status-active' : 'status-approved'}`}>
+                        {req.category}
+                      </span>
+                    </td>
+                    <td className="font-bold text-slate-800">{req.productName}</td>
+                    <td className="font-semibold text-slate-500">Seller #{req.registeredBy}</td>
+                    <td className="text-center font-bold text-slate-400 text-xs">{req.createdAt.split('T')[0]}</td>
+                    <td className="text-[11px] text-slate-400 font-mono max-w-[150px] truncate">{req.details}</td>
+                    <td className="text-right">
+                      <div className="flex justify-end gap-2">
                         <button
                           type="button"
-                          className="px-3 py-1 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700"
+                          className="px-3.5 py-1.5 bg-emerald-600 text-white rounded-lg text-[11px] font-black hover:bg-emerald-700 shadow-sm transition-all active:scale-95"
                           onClick={() => handle_approve(req.requestId)}
                         >
-                          승인
+                          즉시 승인
                         </button>
                         <button
                           type="button"
-                          className="px-3 py-1 bg-rose-500 text-white rounded-lg text-xs font-bold hover:bg-rose-600"
+                          className="px-3.5 py-1.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-lg text-[11px] font-black hover:bg-rose-100 transition-all active:scale-95"
                           onClick={() => {
                             setSelectedRequest(req);
                             setIsRejectOpen(true);
                           }}
                         >
-                          반려
+                          반려 조치
                         </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={7} className="text-center py-12 text-slate-400 font-bold">
-                      검수 대기 상태의 신규 노선 및 상품 요율 테이블이 존재하지 않습니다.
+                      </div>
                     </td>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={7} className="text-center py-24 text-slate-400 font-bold">
+                    검수 대기 상태의 신규 상품 데이터가 존재하지 않습니다.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       )}
 
       {/* Tab 2: Unified Booking Control Dashboard */}
       {activeTab === 'booking' && (
-        <div className="bg-white rounded-[28px] border border-slate-200/80 shadow-md p-6 flex flex-col gap-6">
-          <form onSubmit={handle_search_submit} className="flex gap-3 flex-wrap items-center">
-            <div className="flex flex-col gap-1 w-64">
-              <label className="text-[9px] font-bold text-slate-400">통합 키워드 검색</label>
-              <input
-                type="text"
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-                className="border border-slate-200/80 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800"
-                placeholder="예약코드, 피보험자 실명 등..."
-              />
-            </div>
-            <div className="flex flex-col gap-1 w-40">
-              <label className="text-[9px] font-bold text-slate-400">도메인 영역</label>
-              <select
-                value={searchDomain}
-                onChange={(e) => setSearchDomain(e.target.value)}
-                className="border border-slate-200/80 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 cursor-pointer"
+        <div className="data-table-container p-6">
+          <div className="mb-8 border-b border-slate-50 pb-5">
+            <form onSubmit={handle_search_submit} className="flex gap-4 flex-wrap items-end">
+              <div className="flex flex-col gap-2 flex-1 min-w-[240px]">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">통합 키워드 검색</label>
+                <input
+                  type="text"
+                  value={searchKeyword}
+                  onChange={(e) => setSearchKeyword(e.target.value)}
+                  className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all shadow-inner"
+                  placeholder="예약코드, 피보험자 실명 등..."
+                />
+              </div>
+              <div className="flex flex-col gap-2 w-48">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">도메인 영역</label>
+                <select
+                  value={searchDomain}
+                  onChange={(e) => setSearchDomain(e.target.value)}
+                  className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all cursor-pointer shadow-sm"
+                >
+                  <option value="ALL">전체 내역 (ALL)</option>
+                  <option value="FLIGHT">✈️ 항공권 예약</option>
+                  <option value="INSURANCE">🛡️ 여행자 보험 가입</option>
+                </select>
+              </div>
+              <button
+                type="submit"
+                className="px-8 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-black shadow-md hover:bg-emerald-700 transition-all active:scale-95 h-[45px]"
               >
-                <option value="ALL">전체 내역 (ALL)</option>
-                <option value="FLIGHT">✈️ 항공권 예약</option>
-                <option value="INSURANCE">🛡️ 여행자 보험 가입</option>
-              </select>
-            </div>
-            <button
-              type="submit"
-              className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-black shadow hover:bg-emerald-700 self-end mt-2"
-            >
-              조회
-            </button>
-          </form>
+                조회 실행
+              </button>
+            </form>
+          </div>
 
-          <div className="data-table-container">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>결제 고유 ID</th>
-                  <th>신청 분류</th>
-                  <th>고유 코드</th>
-                  <th>고객명 (정보)</th>
-                  <th>대상 상품</th>
-                  <th>결제 금액</th>
-                  <th>현재 상태</th>
-                  <th>관제 제어</th>
-                </tr>
-              </thead>
-              <tbody>
-                {bookings.length > 0 ? (
-                  bookings.map((booking) => {
-                    const is_cancelled = booking.status.startsWith('CANCELLED');
-                    return (
-                      <tr key={`${booking.domain}-${booking.bookingId}`}>
-                        <td className="font-bold">#{booking.bookingId}</td>
-                        <td>
-                          <span className={`status-badge ${booking.domain === 'FLIGHT' ? 'status-active' : 'status-approved'}`}>
-                            {booking.domain}
-                          </span>
-                        </td>
-                        <td className="font-mono text-xs font-bold">{booking.bookingCode}</td>
-                        <td className="font-bold text-slate-800">
-                          {booking.customerName}
-                          <span className="text-[10px] text-slate-400 block font-normal">{booking.customerInfo}</span>
-                        </td>
-                        <td className="text-slate-700 font-semibold">{booking.productName}</td>
-                        <td className="font-black text-slate-800">₩{booking.totalAmount.toLocaleString()}</td>
-                        <td>
-                          <span className={`status-badge ${is_cancelled ? 'status-rejected' : 'status-approved'}`}>
-                            {booking.status}
-                          </span>
-                        </td>
-                        <td className="flex gap-2">
-                          {/* Export CSV manifest only for FLIGHT bookings! */}
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>결제 ID</th>
+                <th>분류</th>
+                <th>고유 코드</th>
+                <th>고객명 (정보)</th>
+                <th>대상 상품</th>
+                <th className="text-right">결제 금액</th>
+                <th className="text-center">현재 상태</th>
+                <th className="text-right">관제 제어</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bookings.length > 0 ? (
+                bookings.map((booking) => {
+                  const is_cancelled = booking.status.startsWith('CANCELLED');
+                  return (
+                    <tr key={`${booking.domain}-${booking.bookingId}`}>
+                      <td className="font-black text-slate-900">#{booking.bookingId}</td>
+                      <td>
+                        <span className={`status-badge ${booking.domain === 'FLIGHT' ? 'status-active' : 'status-approved'}`}>
+                          {booking.domain}
+                        </span>
+                      </td>
+                      <td className="font-mono text-[11px] font-black text-primary">{booking.bookingCode}</td>
+                      <td className="font-bold text-slate-800">
+                        {booking.customerName}
+                        <span className="text-[10px] text-slate-400 block font-normal mt-0.5">{booking.customerInfo}</span>
+                      </td>
+                      <td className="text-slate-600 font-semibold text-xs">{booking.productName}</td>
+                      <td className="font-black text-slate-900 text-right">₩{booking.totalAmount.toLocaleString()}</td>
+                      <td className="text-center">
+                        <span className={`status-badge ${is_cancelled ? 'status-rejected' : 'status-active'}`}>
+                          {booking.status}
+                        </span>
+                      </td>
+                      <td className="text-right">
+                        <div className="flex justify-end gap-2">
                           {booking.domain === 'FLIGHT' && !is_cancelled && (
                             <button
                               type="button"
-                              className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold flex items-center gap-1"
+                              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-black flex items-center gap-1.5 transition-all shadow-sm"
                               onClick={() => handle_csv_stream_export(booking.bookingId)}
                               disabled={downloadingScheduleId !== null}
                             >
@@ -389,72 +401,58 @@ export const AdminHQPanel: React.FC = () => {
                           {!is_cancelled && (
                             <button
                               type="button"
-                              className="px-2.5 py-1 bg-rose-50 text-secondary border border-rose-200 rounded-lg text-xs font-bold hover:bg-rose-100"
+                              className="px-3 py-1.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-lg text-[11px] font-black hover:bg-rose-100 transition-all shadow-sm"
                               onClick={() => handle_cancel_booking(booking.bookingId)}
                             >
                               직권 취소
                             </button>
                           )}
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan={8} className="text-center py-12 text-slate-400 font-bold">
-                      관제 검색 조건에 부합하는 가입 예약 정보가 존재하지 않습니다.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={8} className="text-center py-24 text-slate-400 font-bold">
+                    관제 필터 조건에 부합하는 가입/예약 정보가 없습니다.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       )}
 
       {/* Reject Reason input Modal */}
       {isRejectOpen && selectedRequest && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
-          <div className="bg-white rounded-[32px] border border-slate-200 shadow-2xl w-full max-w-sm p-6 flex flex-col gap-6 animate-[scaleUp_0.2s_ease-out]">
-            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="font-logo font-black text-md text-slate-800">
-                ❌ #{selectedRequest.requestId} 등록 심사 반려
+        <div className="modal-backdrop" style={{ display: 'flex' }}>
+          <div className="app-modal" style={{ width: '480px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-dark)' }}>
+                ⚠️ #{selectedRequest.requestId} 심사 반려
               </h3>
-              <button
-                type="button"
-                className="w-8 h-8 rounded-full hover:bg-slate-50 flex items-center justify-center text-slate-400"
-                onClick={() => setIsRejectOpen(false)}
-              >
-                <i className="fa-solid fa-xmark text-md"></i>
+              <button type="button" style={{ color: 'var(--text-muted)' }} onClick={() => setIsRejectOpen(false)}>
+                <i className="fa-solid fa-xmark" style={{ fontSize: '1.1rem' }}></i>
               </button>
             </div>
 
-            <form onSubmit={handle_reject_submit} className="flex flex-col gap-4">
-              <div className="form-group mb-0">
-                <label className="text-[10px] font-bold text-slate-700">반려 필수 사유 수집</label>
+            <form onSubmit={handle_reject_submit}>
+              <div className="form-group">
+                <label className="form-label">반려 필수 정당 사유</label>
                 <textarea
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
-                  className="border border-slate-200/80 rounded-xl px-3 py-2 text-xs font-bold w-full bg-white h-24"
-                  placeholder="반려 처리의 상세 정당 사유를 적어주세요. 입점 파트너에게 전송됩니다."
+                  className="form-input"
+                  style={{ height: '100px', resize: 'none' }}
+                  placeholder="반려 처리의 상세 사유를 명확히 적어주세요. 입점 파트너에게 즉각 통보됩니다."
                   required
                 />
               </div>
 
-              <div className="flex gap-3 justify-end mt-4 border-t border-slate-100 pt-4">
-                <button
-                  type="button"
-                  className="btn-secondary text-xs py-2 px-5"
-                  onClick={() => setIsRejectOpen(false)}
-                >
-                  취소
-                </button>
-                <button
-                  type="submit"
-                  className="btn-primary text-xs py-2 px-5 bg-rose-600 hover:bg-rose-700"
-                >
-                  반려 처리 확정
-                </button>
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+                <button type="button" className="btn-secondary" style={{ flex: 1, padding: '0.7rem' }} onClick={() => setIsRejectOpen(false)}>취소</button>
+                <button type="submit" className="btn-primary" style={{ flex: 1, padding: '0.7rem', background: 'var(--secondary)', border: 'none' }}>반려 처리 확정</button>
               </div>
             </form>
           </div>

@@ -173,10 +173,12 @@ export const useTravelStore = create<TravelState>((set) => ({
     }));
     setTimeout(() => useTravelStore.getState().removeToast(toastId), 4500);
 
-    // 3. Trigger Welcome Popup with delay for smoother transition
-    setTimeout(() => {
-      set({ isWelcomePopupOpen: true });
-    }, 450);
+    // 3. Trigger Welcome Popup ONLY for regular customers (cust), not sellers or admins
+    if (role === 'cust') {
+      setTimeout(() => {
+        set({ isWelcomePopupOpen: true });
+      }, 450);
+    }
   },
   
   addReservation: (res) => set((state) => ({

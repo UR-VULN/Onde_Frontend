@@ -37,9 +37,7 @@ const App: React.FC = () => {
   if (activePortal === 'adm') {
     return (
       <>
-        <MainLayout>
-          <AdminPage />
-        </MainLayout>
+        <AdminPage />
         <ToastContainer />
         <ConfirmModal />
         {isAuthModalOpen && <AuthModal />}
