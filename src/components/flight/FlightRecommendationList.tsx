@@ -55,84 +55,113 @@ const FlightRouteCard: React.FC<FlightRouteCardProps> = ({ route, index }) => {
   return (
     <div
       ref={ref}
-      style={{ transitionDelay: `${delayMs}ms` }}
-      className={`bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-500 ease-out cursor-pointer group overflow-hidden
+      style={{
+        transitionDelay: `${delayMs}ms`,
+        boxShadow: '0 2px 16px rgba(0,0,0,0.06)',
+      }}
+      className={`rounded-2xl border border-slate-100 transition-all duration-500 ease-out cursor-pointer group overflow-hidden
         ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLDivElement).style.boxShadow = `0 8px 32px rgba(0,0,0,0.10), 0 0 0 1.5px ${accentColor}22`;
+        (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-3px)';
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLDivElement).style.boxShadow = '0 2px 16px rgba(0,0,0,0.06)';
+        (e.currentTarget as HTMLDivElement).style.transform = '';
+      }}
       onClick={() => addToast(`✈️ ${route.flightNumber} (${route.departureAirport} → ${route.arrivalAirport}) 예약 화면이 로드됩니다.`, 'info')}
     >
-      {/* Airline accent top bar */}
-      <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${accentColor} 0%, #ff5a5f 100%)` }} />
-
-      <div className="p-5">
-        {/* Top row: airline + flight number + price */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span className="text-[0.7rem] font-black px-2 py-0.5 rounded-full text-white" style={{ background: accentColor }}>
-              {route.airlineCode}
-            </span>
-            <span className="text-[0.78rem] font-bold text-slate-500">{route.airline}</span>
-            <span className="text-[0.72rem] font-extrabold text-slate-300">·</span>
-            <span className="text-[0.72rem] font-bold text-slate-400">{route.flightNumber}</span>
-          </div>
-          <div className="text-right">
-            <span className="text-[0.7rem] text-slate-400 font-bold block">이코노미 최저가</span>
-            <strong className="text-base font-black" style={{ color: '#ff5a5f' }}>₩{formattedPrice}</strong>
-            <span className="text-[0.7rem] text-slate-400 font-normal"> ~</span>
+      {/* Header band: airline info + price */}
+      <div
+        className="flex items-center justify-between"
+        style={{ padding: '1rem 1.75rem', background: `linear-gradient(135deg, ${accentColor}18 0%, ${accentColor}08 100%)`, borderBottom: `1px solid ${accentColor}20` }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          {/* Airline code pill */}
+          <span
+            className="text-[0.68rem] font-black px-2.5 py-1 rounded-lg text-white tracking-widest"
+            style={{ background: accentColor, letterSpacing: '0.08em' }}
+          >
+            {route.airlineCode}
+          </span>
+          <div>
+            <span className="font-bold text-slate-700 block leading-tight" style={{ fontSize: '1rem' }}>{route.airline}</span>
+            <span className="font-semibold text-slate-400 leading-tight" style={{ fontSize: '0.88rem' }}>{route.flightNumber}</span>
           </div>
         </div>
 
-        {/* Route row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        {/* Price */}
+        <div className="text-right">
+          <span className="text-slate-400 font-semibold block leading-tight" style={{ fontSize: '0.82rem' }}>이코노미 최저가</span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px', justifyContent: 'flex-end' }}>
+            <strong className="font-black leading-tight" style={{ color: '#ff5a5f', fontSize: '1.45rem' }}>
+              ₩{formattedPrice}
+            </strong>
+            <span className="text-slate-400 font-semibold" style={{ fontSize: '0.85rem' }}>~</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Route body */}
+      <div style={{ padding: '1.5rem 1.75rem', background: '#ffffff' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+
           {/* Departure */}
-          <div style={{ textAlign: 'right', minWidth: '70px' }}>
-            <strong className="text-2xl font-black text-slate-800 block leading-none">{route.departureAirport}</strong>
-            <span className="text-[0.72rem] font-bold text-slate-400 block">{route.departureCity}</span>
-            <span className="text-sm font-extrabold text-slate-700 block" style={{ marginTop: '0.2rem' }}>{route.departureTime}</span>
+          <div style={{ flex: '0 0 auto', minWidth: '80px' }}>
+            <strong
+              className="font-black text-slate-800 block leading-none tracking-tight"
+              style={{ fontSize: '1.9rem', letterSpacing: '-0.04em' }}
+            >
+              {route.departureAirport}
+            </strong>
+            <span className="font-semibold text-slate-400 block" style={{ fontSize: '0.95rem', marginTop: '4px' }}>
+              {route.departureCity}
+            </span>
+            <span className="font-extrabold text-slate-700 block" style={{ fontSize: '1.35rem', marginTop: '6px' }}>
+              {route.departureTime}
+            </span>
           </div>
 
           {/* Route line */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem' }}>
-            <span className="text-[0.68rem] font-bold text-slate-400">{formatDuration(route.durationMinutes)}</span>
-            <div style={{ width: '100%', display: 'flex', alignItems: 'center' }}>
-              <div style={{ flex: 1, height: '1.5px', background: '#e2e8f0' }} />
-              <i className="fa-solid fa-plane text-[0.7rem]" style={{ color: accentColor, margin: '0 4px' }}></i>
-              <div style={{ flex: 1, height: '1.5px', background: '#e2e8f0' }} />
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+            {/* Duration pill */}
+            <span
+              className="font-bold rounded-full"
+              style={{ background: `${accentColor}15`, color: accentColor, fontSize: '0.9rem', padding: '0.25rem 0.85rem' }}
+            >
+              {formatDuration(route.durationMinutes)}
+            </span>
+            {/* Dashed route line */}
+            <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <div style={{ width: '7px', height: '7px', borderRadius: '50%', border: `2px solid ${accentColor}`, flexShrink: 0 }} />
+              <div style={{ flex: 1, borderTop: `2px dashed ${accentColor}50` }} />
+              <i className="fa-solid fa-plane-departure text-[0.85rem]" style={{ color: accentColor, flexShrink: 0 }}></i>
+              <div style={{ flex: 1, borderTop: `2px dashed ${accentColor}50` }} />
+              <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: accentColor, flexShrink: 0 }} />
             </div>
-            <span className="text-[0.62rem] font-bold text-slate-300">{route.date}</span>
+            <span className="text-[0.62rem] font-semibold text-slate-300">{route.date}</span>
           </div>
 
           {/* Arrival */}
-          <div style={{ textAlign: 'left', minWidth: '70px' }}>
-            <strong className="text-2xl font-black text-slate-800 block leading-none">
+          <div style={{ flex: '0 0 auto', minWidth: '80px', textAlign: 'right' }}>
+            <strong
+              className="font-black text-slate-800 block leading-none tracking-tight"
+              style={{ fontSize: '1.9rem', letterSpacing: '-0.04em' }}
+            >
               {route.arrivalAirport}
-              {isOvernight && <sup className="text-[0.5rem] font-black text-[#ff5a5f] ml-0.5">+1</sup>}
+              {isOvernight && (
+                <sup className="font-black ml-0.5" style={{ fontSize: '0.8rem', color: '#ff5a5f', verticalAlign: 'super' }}>+1</sup>
+              )}
             </strong>
-            <span className="text-[0.72rem] font-bold text-slate-400 block">{route.arrivalCity}</span>
-            <span className="text-sm font-extrabold text-slate-700 block" style={{ marginTop: '0.2rem' }}>{route.arrivalTime}</span>
+            <span className="font-semibold text-slate-400 block" style={{ fontSize: '0.95rem', marginTop: '4px' }}>
+              {route.arrivalCity}
+            </span>
+            <span className="font-extrabold text-slate-700 block" style={{ fontSize: '1.35rem', marginTop: '6px' }}>
+              {route.arrivalTime}
+            </span>
           </div>
         </div>
 
-        {/* Bottom: tags + book button */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid #f1f5f9' }}>
-          <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
-            {route.tags.slice(0, 2).map((tag) => (
-              <span key={tag} className="text-[0.65rem] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
-                {tag}
-              </span>
-            ))}
-          </div>
-          <button
-            type="button"
-            className="text-[0.72rem] font-black text-white px-3 py-1.5 rounded-full transition-all duration-200 hover:opacity-90 active:scale-95"
-            style={{ background: `linear-gradient(135deg, ${accentColor} 0%, #ff5a5f 100%)` }}
-            onClick={(e) => {
-              e.stopPropagation();
-              addToast(`✈️ ${route.flightNumber} 예약 화면이 로드됩니다.`, 'info');
-            }}
-          >
-            예약하기
-          </button>
-        </div>
       </div>
     </div>
   );
