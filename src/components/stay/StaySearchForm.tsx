@@ -22,7 +22,7 @@ export const StaySearchForm: React.FC<StaySearchFormProps> = ({ onSearch }) => {
   const [checkInDate, setCheckInDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [checkOutDate, setCheckOutDate] = useState(() => new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
   
-  const [guestCount, setGuestCount] = useState(2);
+  const [guestCount, setGuestCount] = useState(1);
   const [roomCount, setRoomCount] = useState(1);
 
   const handleGuestChange = (amount: number) => {
