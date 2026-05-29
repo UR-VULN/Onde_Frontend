@@ -27,6 +27,7 @@ interface TravelState {
   // User Authentication
   isLoggedIn: boolean;
   username: string;
+  memberId: number | null;
   mileage: number;
   membershipGrade: string;
   
@@ -52,7 +53,12 @@ interface TravelState {
 
   // Actions
   setActivePortal: (portal: 'cust' | 'sell' | 'adm') => void;
-  login: (username: string, role?: 'cust' | 'sell' | 'adm', profile?: MemberProfileDto) => void;
+  login: (
+    username: string,
+    role?: 'cust' | 'sell' | 'adm',
+    profile?: MemberProfileDto,
+    memberId?: number | null
+  ) => void;
   setMemberProfile: (profile: MemberProfileDto) => void;
   logout: () => void;
   
@@ -93,6 +99,7 @@ export const useTravelStore = create<TravelState>((set) => ({
 
   isLoggedIn: false,
   username: '',
+  memberId: null,
   mileage: 0,
   membershipGrade: '',
   
@@ -108,11 +115,15 @@ export const useTravelStore = create<TravelState>((set) => ({
 
   setActivePortal: (portal) => set({ activePortal: portal }),
 
-  login: (username, role = 'cust', profile) => set(() => {
+  login: (username, role = 'cust', profile, memberId = null) => set(() => {
     const activePortal = role;
+    if (memberId != null) {
+      localStorage.setItem('onde_member_id', String(memberId));
+    }
     return { 
       isLoggedIn: true, 
-      username, 
+      username,
+      memberId,
       mileage: profile?.mileage ?? 0,
       membershipGrade: profile?.membershipGrade ?? '',
       activePortal,
@@ -125,13 +136,17 @@ export const useTravelStore = create<TravelState>((set) => ({
     membershipGrade: profile.membershipGrade,
   }),
   
-  logout: () => set({
-    isLoggedIn: false,
-    username: '',
-    mileage: 0,
-    membershipGrade: '',
-    activePortal: 'cust',
-  }),
+  logout: () => {
+    localStorage.removeItem('onde_member_id');
+    set({
+      isLoggedIn: false,
+      username: '',
+      memberId: null,
+      mileage: 0,
+      membershipGrade: '',
+      activePortal: 'cust',
+    });
+  },
   
   addToast: (message, type = 'success') => set((state) => {
     const id = Math.random().toString();

@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import ReactDOM from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import type { MockStay } from '@/constants/mockStays';
+import { buildPaymentCheckout, deriveReservationId } from '@/utils/paymentCheckout';
 import {
   buildCalendarMonth,
   countNights,
@@ -32,6 +34,7 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
   defaultCheckOut,
   onClose,
 }) => {
+  const navigate = useNavigate();
   const { addToast, isLoggedIn, openAuthModal, mileage: userMileage } = useTravelStore();
 
   // stay.soldOutDays를 Set으로 변환 (백엔드 연동 시 API 응답값으로 대체)
@@ -205,7 +208,25 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
       addToast('체크인/체크아웃 일정을 선택해 주세요.', 'warning');
       return;
     }
-    addToast(`🏨 ${stay.title} 예약이 요청되었습니다! (API 연결 예정)`, 'success');
+    navigate('/payment', {
+      state: buildPaymentCheckout({
+        reservationType: 'ROOM',
+        reservationId: deriveReservationId(stay.id),
+        productTitle: stay.title,
+        productSubtitle: stay.location,
+        productImageUrl: stay.imageUrl,
+        categoryLabel: '숙소',
+        categoryIcon: 'fa-hotel',
+        totalAmount: rawTotal,
+        usedMileage: mileageUsed,
+        dateSummary: `${checkIn} ~ ${checkOut} (${nights}박)`,
+        detailLines: [
+          `₩${stay.pricePerNight.toLocaleString('ko-KR')} × ${nights}박`,
+          `성인 ${adultCount}명`,
+        ],
+        returnPath: '/',
+      }),
+    });
     onClose();
   }
 

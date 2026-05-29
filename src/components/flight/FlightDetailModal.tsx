@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import ReactDOM from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import type { MockFlightRoute } from '@/constants/mockFlightRoutes';
+import { buildPaymentCheckout, deriveReservationId } from '@/utils/paymentCheckout';
 import {
   buildCalendarMonth,
   countNights,
@@ -49,6 +51,7 @@ export const FlightDetailModal: React.FC<FlightDetailModalProps> = ({
   defaultReturn,
   onClose,
 }) => {
+  const navigate = useNavigate();
   const { addToast, isLoggedIn, openAuthModal, mileage: userMileage } = useTravelStore();
 
   // route.unavailableDays를 Set으로 변환 (백엔드 연동 시 API 응답값으로 대체)
@@ -198,7 +201,30 @@ export const FlightDetailModal: React.FC<FlightDetailModalProps> = ({
       addToast('왕복 여정의 귀국일을 선택해 주세요.', 'warning');
       return;
     }
-    addToast(`✈️ ${route.flightNumber} 항공권 예약이 신청되었습니다! (API 연결 예정)`, 'success');
+    const dateSummary =
+      tripType === 'RT' && returnDate
+        ? `${departDate} ~ ${returnDate} (왕복)`
+        : `${departDate} (편도)`;
+
+    navigate('/payment', {
+      state: buildPaymentCheckout({
+        reservationType: 'FLIGHT',
+        reservationId: deriveReservationId(route.id),
+        productTitle: `${route.airline} ${route.flightNumber}`,
+        productSubtitle: `${route.departureCity} → ${route.arrivalCity}`,
+        categoryLabel: '항공권',
+        categoryIcon: 'fa-plane',
+        totalAmount: rawTotal,
+        usedMileage: mileageUsed,
+        dateSummary,
+        detailLines: [
+          `${route.departureAirport} → ${route.arrivalAirport}`,
+          `${seatClass} · 승객 ${passengerCount}명`,
+          tripType === 'RT' ? '왕복' : '편도',
+        ],
+        returnPath: '/flight',
+      }),
+    });
     onClose();
   }
 

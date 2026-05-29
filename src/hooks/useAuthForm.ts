@@ -43,10 +43,15 @@ export const useAuthForm = () => {
         setIsLoading(false);
         return;
       }
-      login(matchedUser.email, matchedUser.role, {
-        mileage: matchedUser.mileage,
-        membershipGrade: matchedUser.membershipGrade,
-      });
+      login(
+        matchedUser.email,
+        matchedUser.role,
+        {
+          mileage: matchedUser.mileage,
+          membershipGrade: matchedUser.membershipGrade,
+        },
+        matchedUser.memberId
+      );
       addToast("🔑 로그인이 완료되었습니다!", "success");
       closeAuthModal();
     } else {

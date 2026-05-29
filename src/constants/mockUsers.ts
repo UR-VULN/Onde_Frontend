@@ -3,8 +3,8 @@ export interface MockUser {
   password: string;
   username: string;
   role: 'cust' | 'sell' | 'adm';
-  status: 'active' | 'pending'; // pending = 관리자 승인 대기 중
-  /** 로그인 API 연동 전 임시 프로필 (실서비스는 fetch_member_profile_api) */
+  status: 'active' | 'pending';
+  memberId: number;
   mileage: number;
   membershipGrade: string;
 }
@@ -18,6 +18,7 @@ export const MOCK_USERS: MockUser[] = [
     username: '테스터현민',
     role: 'cust',
     status: 'active',
+    memberId: 1001,
     mileage: 0,
     membershipGrade: 'GOLD MEMBER',
   },
@@ -27,6 +28,7 @@ export const MOCK_USERS: MockUser[] = [
     username: '파트너현민',
     role: 'sell',
     status: 'active',
+    memberId: 2001,
     mileage: 0,
     membershipGrade: 'PARTNER',
   },
@@ -36,6 +38,7 @@ export const MOCK_USERS: MockUser[] = [
     username: '대기판매자',
     role: 'sell',
     status: 'pending',
+    memberId: 2002,
     mileage: 0,
     membershipGrade: 'PARTNER',
   },
@@ -45,6 +48,7 @@ export const MOCK_USERS: MockUser[] = [
     username: '어드민현민',
     role: 'adm',
     status: 'active',
+    memberId: 9001,
     mileage: 0,
     membershipGrade: 'STAFF',
   },

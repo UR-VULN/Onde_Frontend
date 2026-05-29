@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import ReactDOM from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import type { MockCar } from '@/constants/mockCars';
+import { buildPaymentCheckout, deriveReservationId } from '@/utils/paymentCheckout';
 import {
   buildCalendarMonth,
   countNights,
@@ -33,6 +35,7 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
   defaultReturn,
   onClose,
 }) => {
+  const navigate = useNavigate();
   const { addToast, isLoggedIn, openAuthModal, mileage: userMileage } = useTravelStore();
 
   // car.unavailableDays를 Set으로 변환 (백엔드 연동 시 API 응답값으로 대체)
@@ -162,7 +165,25 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
       addToast('대여/반납 일정을 선택해 주세요.', 'warning');
       return;
     }
-    addToast(`🚗 ${car.name} 차량 예약 대기가 신청되었습니다! (API 연결 예정)`, 'success');
+    navigate('/payment', {
+      state: buildPaymentCheckout({
+        reservationType: 'CAR',
+        reservationId: deriveReservationId(car.id),
+        productTitle: car.name,
+        productSubtitle: car.typeLabel,
+        productImageUrl: car.imageUrl,
+        categoryLabel: '렌터카',
+        categoryIcon: 'fa-car',
+        totalAmount: rawTotal,
+        usedMileage: mileageUsed,
+        dateSummary: `${pickupDate} ~ ${returnDate} (${rentalDays}일 대여)`,
+        detailLines: [
+          `₩${car.pricePerDay.toLocaleString('ko-KR')} × ${rentalDays}일`,
+          `${car.fuel} · ${car.seats}인승`,
+        ],
+        returnPath: '/car',
+      }),
+    });
     onClose();
   }
 

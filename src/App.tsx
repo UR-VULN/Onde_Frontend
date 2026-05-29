@@ -16,6 +16,8 @@ import { InsurancePage } from '@/pages/InsurancePage';
 import { MapPage } from '@/pages/MapPage';
 import { FeedPage } from '@/pages/FeedPage';
 import { MyPage } from '@/pages/MyPage';
+import { PaymentPage } from '@/pages/PaymentPage';
+import { PaymentCallbackPage } from '@/pages/PaymentCallbackPage';
 import { SellerPage } from '@/pages/SellerPage';
 import { AdminPage } from '@/pages/AdminPage';
 import { ErrorPage } from '@/pages/ErrorPage';
@@ -58,6 +60,8 @@ const App: React.FC = () => {
           <Route path="/map" element={<MapPage />} />
           <Route path="/feed" element={<FeedPage />} />
           <Route path="/mypage" element={<MyPage />} />
+          <Route path="/payment" element={<PaymentPage />} />
+          <Route path="/payment/callback" element={<PaymentCallbackPage />} />
         </Route>
 
         {/* Standalone error pages — no MainLayout */}
