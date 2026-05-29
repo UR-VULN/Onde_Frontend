@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { MOCK_RESERVATIONS } from '@/constants/mockReservations';
+import { DEFAULT_MEMBERSHIP_GRADE } from '@/constants/mockUsers';
+import type { MemberProfileDto } from '@/api/userApi';
 
 export interface MyPageReservation {
   id: string;
@@ -26,6 +28,7 @@ interface TravelState {
   isLoggedIn: boolean;
   username: string;
   mileage: number;
+  membershipGrade: string;
   
   // Mock reservations for testing common cancellation views
   reservations: MyPageReservation[];
@@ -49,7 +52,8 @@ interface TravelState {
 
   // Actions
   setActivePortal: (portal: 'cust' | 'sell' | 'adm') => void;
-  login: (username: string, role?: 'cust' | 'sell' | 'adm') => void;
+  login: (username: string, role?: 'cust' | 'sell' | 'adm', profile?: MemberProfileDto) => void;
+  setMemberProfile: (profile: MemberProfileDto) => void;
   logout: () => void;
   
   // Common Toast Utilities
@@ -89,7 +93,8 @@ export const useTravelStore = create<TravelState>((set) => ({
 
   isLoggedIn: false,
   username: '',
-  mileage: 35000,
+  mileage: 0,
+  membershipGrade: '',
   
   reservations: MOCK_RESERVATIONS,
   
@@ -103,20 +108,28 @@ export const useTravelStore = create<TravelState>((set) => ({
 
   setActivePortal: (portal) => set({ activePortal: portal }),
 
-  login: (username, role = 'cust') => set(() => {
+  login: (username, role = 'cust', profile) => set(() => {
     const activePortal = role;
     return { 
       isLoggedIn: true, 
       username, 
-      mileage: 35050,
+      mileage: profile?.mileage ?? 0,
+      membershipGrade: profile?.membershipGrade ?? '',
       activePortal,
       isAuthModalOpen: false
     };
+  }),
+
+  setMemberProfile: (profile) => set({
+    mileage: profile.mileage,
+    membershipGrade: profile.membershipGrade,
   }),
   
   logout: () => set({
     isLoggedIn: false,
     username: '',
+    mileage: 0,
+    membershipGrade: '',
     activePortal: 'cust',
   }),
   
@@ -176,7 +189,8 @@ export const useTravelStore = create<TravelState>((set) => ({
     set({
       isLoggedIn: true,
       username,
-      mileage: 35050,
+      mileage: 0,
+      membershipGrade: DEFAULT_MEMBERSHIP_GRADE,
       activePortal: role,
       isAuthModalOpen: false,
     });
