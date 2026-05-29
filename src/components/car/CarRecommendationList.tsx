@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { MOCK_CARS, type MockCar } from '@/constants/mockCars';
+import { CAR_TYPE_ALL, matchesCarTypeLabel } from '@/constants/carTypes';
 import type { CarSearchParams } from './CarSearchForm';
 import { CarDetailModal } from './CarDetailModal';
 import { addDaysStr, isStayRangeAvailable, todayStr } from '@/utils/calendarUtils';
@@ -113,8 +114,8 @@ export const CarRecommendationList: React.FC<CarRecommendationListProps> = ({ se
 
     let filtered = MOCK_CARS;
 
-    if (carType !== 'ALL') {
-      filtered = filtered.filter((c) => c.type === carType);
+    if (carType !== CAR_TYPE_ALL) {
+      filtered = filtered.filter((c) => matchesCarTypeLabel(c.typeLabel, carType));
     }
 
     if (keyword) {
@@ -139,22 +140,15 @@ export const CarRecommendationList: React.FC<CarRecommendationListProps> = ({ se
     const { carType, pickupSpot } = searchParams!;
     const keyword = pickupSpot.trim().toLowerCase();
     let filtered = MOCK_CARS;
-    if (carType !== 'ALL') filtered = filtered.filter((c) => c.type === carType);
+    if (carType !== CAR_TYPE_ALL) {
+      filtered = filtered.filter((c) => matchesCarTypeLabel(c.typeLabel, carType));
+    }
     if (keyword) filtered = filtered.filter((c) =>
       c.name.toLowerCase().includes(keyword) ||
       c.tags.some((t) => t.toLowerCase().includes(keyword))
     );
     return filtered.length === 0;
   })();
-
-  const typeLabelMap: Record<string, string> = {
-    ALL: '전체 차량',
-    MINI: '경형/소형',
-    SEDAN: '중형/대형',
-    SUV: 'SUV/RV',
-    IMPORT: '수입/스포츠',
-    EV: '전기차',
-  };
 
   return (
     <div className="!px-5 lg:!px-0" style={{ paddingBottom: '4rem' }}>
@@ -163,8 +157,8 @@ export const CarRecommendationList: React.FC<CarRecommendationListProps> = ({ se
         {isSearchMode ? (
           <>
             <h4 className="font-logo font-black text-3xl text-slate-800 tracking-tight">
-              {searchParams!.carType !== 'ALL'
-                ? `"${typeLabelMap[searchParams!.carType]}" 검색 결과`
+              {searchParams!.carType !== CAR_TYPE_ALL
+                ? `"${searchParams!.carType}" 검색 결과`
                 : `"${searchParams!.pickupSpot || '전체'}" 검색 결과`}
             </h4>
             <p className="text-sm text-slate-400 font-bold uppercase tracking-widest">

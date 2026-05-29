@@ -1417,6 +1417,15 @@
             min-height: 0;
         }
 
+        .destination-picker-panel__columns--single {
+            max-height: 300px;
+        }
+
+        .destination-picker-panel__columns--single .destination-picker-panel__country-card {
+            width: 100%;
+            flex: 1 1 100%;
+        }
+
         .destination-picker-panel__country-card,
         .destination-picker-panel__city-card {
             display: flex;
