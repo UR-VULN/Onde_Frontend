@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { refresh_token_api } from '@/api/authApi';
+import { ADMIN_API_BASE, USER_API_BASE } from '@/constants/apiConfig';
 import { clearAuthSession } from '@/utils/authSession';
 import { getAccessToken, getRefreshToken, updateAccessToken } from '@/utils/authCookies';
 import { isErrorPagePath, redirectByHttpStatus } from '@/utils/errorNavigation';
@@ -12,18 +13,18 @@ const axiosDefaults = {
   },
 };
 
+/** 고객·인증·결제·셀러 BO — 유저/셀러 통합 API 서버 */
 export const userAxios = axios.create({
-  baseURL: 'http://localhost:8080',
+  baseURL: USER_API_BASE,
   ...axiosDefaults,
 });
 
+/** 판매자 API — userAxios와 동일 서버 */
+export const sellerAxios = userAxios;
+
+/** 어드민 BO 전용 API 서버 */
 export const adminAxios = axios.create({
-  baseURL: 'http://localhost:8081',
-  ...axiosDefaults,
-});
-
-export const sellerAxios = axios.create({
-  baseURL: 'http://localhost:8081',
+  baseURL: ADMIN_API_BASE,
   ...axiosDefaults,
 });
 
@@ -38,7 +39,6 @@ const injectToken = (config: any) => {
 
 userAxios.interceptors.request.use(injectToken, (error) => Promise.reject(error));
 adminAxios.interceptors.request.use(injectToken, (error) => Promise.reject(error));
-sellerAxios.interceptors.request.use(injectToken, (error) => Promise.reject(error));
 
 let isRefreshing = false;
 let refreshWaiters: Array<(token: string | null) => void> = [];
@@ -126,4 +126,3 @@ const createAuthAwareErrorHandler = (instance: typeof userAxios) => {
 
 userAxios.interceptors.response.use((response) => response.data, createAuthAwareErrorHandler(userAxios));
 adminAxios.interceptors.response.use((response) => response.data, createAuthAwareErrorHandler(adminAxios));
-sellerAxios.interceptors.response.use((response) => response.data, createAuthAwareErrorHandler(sellerAxios));
