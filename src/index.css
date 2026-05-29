@@ -487,6 +487,15 @@
         /* Map Explorer Layout */
         .map-page {
             width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* 태블릿·모바일: 숙소/항공/렌터카 목록과 동일한 좌우 여백 (Tailwind !px-5 보조) */
+        @media (max-width: 1023px) {
+            .map-page {
+                padding-left: 1.25rem;
+                padding-right: 1.25rem;
+            }
         }
 
         .map-page-header {
