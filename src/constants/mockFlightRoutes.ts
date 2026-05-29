@@ -2,14 +2,6 @@ function formatDate(date: Date): string {
   return date.toISOString().split('T')[0];
 }
 
-function addHours(date: Date, hours: number): Date {
-  return new Date(date.getTime() + hours * 60 * 60 * 1000);
-}
-
-function formatTime(date: Date): string {
-  return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
-}
-
 // Build today/tomorrow base times
 const TODAY_BASE = new Date();
 TODAY_BASE.setHours(0, 0, 0, 0);

@@ -74,6 +74,8 @@ export const PaymentPage: React.FC = () => {
     return null;
   }
 
+  const order = checkout;
+
   const buyerName = getDisplayName(username);
   const buyerEmail = username.includes('@') ? username : `${username}@example.com`;
 
@@ -82,8 +84,8 @@ export const PaymentPage: React.FC = () => {
 
     try {
       const prepareRes = await prepare_payment_api({
-        reservationId: checkout.reservationId,
-        reservationType: checkout.reservationType,
+        reservationId: order.reservationId,
+        reservationType: order.reservationType,
         usedMileage,
         totalAmount,
       });

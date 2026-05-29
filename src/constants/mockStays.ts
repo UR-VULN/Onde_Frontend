@@ -14,6 +14,9 @@ export interface MockStay {
   soldOutDays: number[];
   /** 마일리지 할인 금액 (원). 백엔드 연동 시 대체 */
   mileageDiscount: number;
+  /** 지도 탐색 마커용 (Leaflet) */
+  latitude: number;
+  longitude: number;
 }
 
 export const MOCK_STAYS: MockStay[] = [
@@ -31,6 +34,8 @@ export const MOCK_STAYS: MockStay[] = [
     tags: ['도심', '스위트', '뷰맛집'],
     soldOutDays: [3, 11, 19, 27],
     mileageDiscount: 35000,
+    latitude: 35.6938,
+    longitude: 139.7034,
   },
   {
     id: 'stay-paris-1',
@@ -46,6 +51,8 @@ export const MOCK_STAYS: MockStay[] = [
     tags: ['뷰맛집', '로맨틱', '유럽'],
     soldOutDays: [5, 14, 22],
     mileageDiscount: 42000,
+    latitude: 48.8584,
+    longitude: 2.2945,
   },
   {
     id: 'stay-dubai-1',
@@ -61,6 +68,8 @@ export const MOCK_STAYS: MockStay[] = [
     tags: ['풀빌라', '비치', '럭셔리'],
     soldOutDays: [2, 9, 16, 23, 30],
     mileageDiscount: 55000,
+    latitude: 25.1412,
+    longitude: 55.1853,
   },
   {
     id: 'stay-bali-1',
@@ -76,6 +85,8 @@ export const MOCK_STAYS: MockStay[] = [
     tags: ['풀빌라', '자연', '힐링'],
     soldOutDays: [7, 18],
     mileageDiscount: 28000,
+    latitude: -8.5193,
+    longitude: 115.2633,
   },
   {
     id: 'stay-maldives-1',
@@ -91,6 +102,8 @@ export const MOCK_STAYS: MockStay[] = [
     tags: ['수상방갈로', '비치', '럭셔리'],
     soldOutDays: [4, 12, 20, 28],
     mileageDiscount: 68000,
+    latitude: 3.2028,
+    longitude: 73.2207,
   },
   {
     id: 'stay-kyoto-1',
@@ -106,6 +119,8 @@ export const MOCK_STAYS: MockStay[] = [
     tags: ['온천', '료칸', '전통'],
     soldOutDays: [1, 8, 17, 25],
     mileageDiscount: 38000,
+    latitude: 35.0037,
+    longitude: 135.7788,
   },
   {
     id: 'stay-newyork-1',
@@ -121,6 +136,8 @@ export const MOCK_STAYS: MockStay[] = [
     tags: ['도심', '뷰맛집', '모던'],
     soldOutDays: [6, 13, 21, 29],
     mileageDiscount: 45000,
+    latitude: 40.758,
+    longitude: -73.9855,
   },
   {
     id: 'stay-swiss-1',
@@ -136,6 +153,8 @@ export const MOCK_STAYS: MockStay[] = [
     tags: ['산악', '설경', '유럽'],
     soldOutDays: [3, 15, 23],
     mileageDiscount: 50000,
+    latitude: 46.0207,
+    longitude: 7.7491,
   },
   {
     id: 'stay-singapore-1',
@@ -151,6 +170,8 @@ export const MOCK_STAYS: MockStay[] = [
     tags: ['스카이라운지', '도심', '뷰맛집'],
     soldOutDays: [2, 10, 19, 27],
     mileageDiscount: 62000,
+    latitude: 1.2834,
+    longitude: 103.8607,
   },
   {
     id: 'stay-santorini-1',
@@ -166,6 +187,8 @@ export const MOCK_STAYS: MockStay[] = [
     tags: ['풀빌라', '로맨틱', '유럽'],
     soldOutDays: [8, 16, 24],
     mileageDiscount: 48000,
+    latitude: 36.3932,
+    longitude: 25.4615,
   },
   {
     id: 'stay-phuket-1',
@@ -181,6 +204,8 @@ export const MOCK_STAYS: MockStay[] = [
     tags: ['풀빌라', '비치', '열대'],
     soldOutDays: [5, 12, 20, 28],
     mileageDiscount: 32000,
+    latitude: 7.8804,
+    longitude: 98.3923,
   },
   {
     id: 'stay-jeju-1',
@@ -196,6 +221,8 @@ export const MOCK_STAYS: MockStay[] = [
     tags: ['독채', '풀빌라', '오션뷰'],
     soldOutDays: [1, 7, 14, 21, 28],
     mileageDiscount: 40000,
+    latitude: 33.4507,
+    longitude: 126.6322,
   },
   {
     id: 'stay-seoul-1',
@@ -211,6 +238,59 @@ export const MOCK_STAYS: MockStay[] = [
     tags: ['도심', '감성', '모던'],
     soldOutDays: [9, 18, 27],
     mileageDiscount: 20000,
+    latitude: 37.5447,
+    longitude: 127.0557,
+  },
+  {
+    id: 'stay-seoul-2',
+    title: '서울 한남 더 테라스 스위트',
+    location: '서울, 한국',
+    city: '서울',
+    country: '한국',
+    description: '한남동 언덕 위, 도심 파노라마 뷰 스위트',
+    imageUrl: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=600',
+    pricePerNight: 285000,
+    rating: 4.94,
+    reviewCount: 156,
+    tags: ['도심', '스위트', '뷰맛집'],
+    soldOutDays: [5, 12, 20],
+    mileageDiscount: 28000,
+    latitude: 37.5344,
+    longitude: 127.0026,
+  },
+  {
+    id: 'stay-busan-1',
+    title: '부산 해운대 오션뷰 호텔',
+    location: '부산, 한국',
+    city: '부산',
+    country: '한국',
+    description: '해운대 해변이 보이는 프리미엄 오션뷰',
+    imageUrl: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&q=80&w=600',
+    pricePerNight: 198000,
+    rating: 4.87,
+    reviewCount: 421,
+    tags: ['오션뷰', '비치', '도심'],
+    soldOutDays: [6, 15, 22],
+    mileageDiscount: 22000,
+    latitude: 35.1587,
+    longitude: 129.1604,
+  },
+  {
+    id: 'stay-gangneung-1',
+    title: '강릉 경포대 바다뷰 스테이',
+    location: '강릉, 한국',
+    city: '강릉',
+    country: '한국',
+    description: '경포 호수와 동해가 함께 보이는 감성 숙소',
+    imageUrl: 'https://images.unsplash.com/photo-1601918774946-25832a4be0d6?auto=format&fit=crop&q=80&w=600',
+    pricePerNight: 165000,
+    rating: 4.83,
+    reviewCount: 267,
+    tags: ['오션뷰', '감성', '힐링'],
+    soldOutDays: [3, 10, 18],
+    mileageDiscount: 18000,
+    latitude: 37.7955,
+    longitude: 128.8962,
   },
   {
     id: 'stay-hoian-1',
@@ -226,6 +306,8 @@ export const MOCK_STAYS: MockStay[] = [
     tags: ['전통', '문화', '감성'],
     soldOutDays: [4, 11, 19],
     mileageDiscount: 25000,
+    latitude: 15.8778,
+    longitude: 108.3267,
   },
   {
     id: 'stay-sydney-1',
@@ -241,6 +323,8 @@ export const MOCK_STAYS: MockStay[] = [
     tags: ['뷰맛집', '도심', '오션뷰'],
     soldOutDays: [6, 14, 22, 30],
     mileageDiscount: 42000,
+    latitude: -33.8568,
+    longitude: 151.2153,
   },
   {
     id: 'stay-marrakech-1',
@@ -256,5 +340,10 @@ export const MOCK_STAYS: MockStay[] = [
     tags: ['문화', '이색', '부티크'],
     soldOutDays: [3, 13, 23],
     mileageDiscount: 30000,
+    latitude: 31.6295,
+    longitude: -7.9811,
   },
 ];
+
+/** 지도·숙소 탭 공통 데이터 소스 */
+export const MAP_STAYS = MOCK_STAYS;
