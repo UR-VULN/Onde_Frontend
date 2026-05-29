@@ -11,7 +11,6 @@ export const InsuranceCoverageGrid: React.FC = () => {
       price: '평균 ₩9,000~',
       benefits: ['해외 상해/질병 치료 1,000만 원', '휴대품 손해/분실 50만 원', '국내외 배상책임 500만 원'],
       color: 'slate',
-      isPopular: false
     },
     {
       level: 'DELUXE',
@@ -19,7 +18,6 @@ export const InsuranceCoverageGrid: React.FC = () => {
       price: '평균 ₩29,000~',
       benefits: ['해외 상해/질병 치료 3,000만 원', '휴대품 손해/분실 100만 원', '국내외 배상책임 1,000만 원', '여권 분실 재발급 비용 및 수수료 지원'],
       color: 'primary',
-      isPopular: true
     },
     {
       level: 'PREMIUM',
@@ -27,7 +25,6 @@ export const InsuranceCoverageGrid: React.FC = () => {
       price: '평균 ₩49,000~',
       benefits: ['해외 상해/질병 치료 5,000만 원 실손 보장', '휴대품 손해/분실 200만 원 최고 한도', '국내외 배상책임 3,000만 원 보장', '항공기 지연 및 수하물 도착 지연 보상', '24시간 한국어 핫라인 긴급구조 및 의료 송환'],
       color: 'secondary',
-      isPopular: false
     }
   ];
 
@@ -47,15 +44,6 @@ export const InsuranceCoverageGrid: React.FC = () => {
                 : 'border-slate-100 hover:border-slate-200'
             }`}
           >
-            {plan.isPopular && (
-              <span 
-                style={{ left: '40px' }}
-                className="absolute -top-3.5 bg-primary text-white text-[10px] font-black px-5 py-2 rounded-full shadow-lg z-10 tracking-widest"
-              >
-                MOST POPULAR
-              </span>
-            )}
-            
             <div className="flex justify-between items-center gap-4">
               <h5 className={`text-3xl font-black tracking-tight ${
                 plan.color === 'primary' ? 'text-primary' : plan.color === 'secondary' ? 'text-secondary' : 'text-slate-800'

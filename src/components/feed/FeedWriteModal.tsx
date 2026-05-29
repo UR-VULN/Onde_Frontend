@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
-import { MOCK_FEED_IMAGES, DEFAULT_FEED_PLACEHOLDER_IMG } from '@/constants/mockFeeds';
+import { DEFAULT_FEED_PLACEHOLDER_IMG } from '@/constants/appConstants';
 
 interface FeedWriteModalProps {
   isOpen: boolean;
@@ -35,11 +35,9 @@ export const FeedWriteModal: React.FC<FeedWriteModalProps> = ({ isOpen, onClose,
 
   if (!isOpen) return null;
 
-  // Process Mock Image Upload
-  const handleMockUpload = () => {
-    const randomImg = MOCK_FEED_IMAGES[Math.floor(Math.random() * MOCK_FEED_IMAGES.length)];
-    setNewImg(randomImg);
-    addToast("📷 이미지가 업로드되었습니다!", "success");
+  const handlePlaceholderImage = () => {
+    setNewImg(DEFAULT_FEED_PLACEHOLDER_IMG);
+    addToast('썸네일 URL이 없을 때 사용할 기본 이미지가 적용되었습니다.', 'success');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -177,7 +175,7 @@ export const FeedWriteModal: React.FC<FeedWriteModalProps> = ({ isOpen, onClose,
             </label>
             <div 
               style={{ border: '2px dashed var(--border-color)', padding: '1.2rem', borderRadius: '12px', textAlign: 'center', background: 'var(--bg-body)', cursor: 'pointer' }}
-              onClick={handleMockUpload}
+              onClick={handlePlaceholderImage}
               className="hover:bg-slate-100 transition-colors"
             >
               <i className="fa-solid fa-cloud-arrow-up text-slate-400 text-2xl mb-1.5 block"></i>

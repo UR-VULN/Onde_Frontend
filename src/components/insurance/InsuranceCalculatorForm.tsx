@@ -1,5 +1,6 @@
 import React from 'react';
 import { useInsuranceStore } from '@/store/useInsuranceStore';
+import type { InsuranceQuotePanelStatus } from '@/components/insurance/insuranceQuoteTypes';
 
 interface InsuranceCalculatorFormProps {
   insuredName: string;
@@ -9,6 +10,8 @@ interface InsuranceCalculatorFormProps {
   isAgreed: boolean;
   setIsAgreed: (agreed: boolean) => void;
   loading: boolean;
+  quoteStatus: InsuranceQuotePanelStatus;
+  quoteHint?: string;
   handleApplyPolicy: () => void;
 }
 
@@ -20,7 +23,9 @@ export const InsuranceCalculatorForm: React.FC<InsuranceCalculatorFormProps> = (
   isAgreed,
   setIsAgreed,
   loading,
-  handleApplyPolicy
+  quoteStatus,
+  quoteHint = '',
+  handleApplyPolicy,
 }) => {
   const { insured_details, set_insured_details, premium_estimate } = useInsuranceStore();
 
@@ -182,12 +187,12 @@ export const InsuranceCalculatorForm: React.FC<InsuranceCalculatorFormProps> = (
             style={{ padding: '24px 28px', borderRadius: '12px', height: '200px' }}
             className="bg-slate-900 text-white relative overflow-hidden shadow-2xl animate-[fadeIn_0.3s_ease] flex flex-col justify-center"
           >
-            {loading ? (
+            {loading || quoteStatus === 'loading' ? (
               <div className="flex flex-col items-center justify-center gap-5">
                 <i className="fa-solid fa-circle-notch animate-spin text-3xl text-primary"></i>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Pricing...</p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">보험료 계산 중...</p>
               </div>
-            ) : premium_estimate ? (
+            ) : quoteStatus === 'ready' && premium_estimate ? (
               <div className="space-y-6">
                 <div className="flex justify-between items-center text-xs font-bold text-slate-500 border-b border-white/10 pb-5 uppercase">
                   <span>{premium_estimate.tripDurationDays}일 보장</span>
@@ -209,14 +214,23 @@ export const InsuranceCalculatorForm: React.FC<InsuranceCalculatorFormProps> = (
                   </div>
                 </div>
               </div>
+            ) : quoteStatus === 'api_error' ? (
+              <div className="flex flex-col items-center justify-center text-center px-2">
+                <div className="w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center mb-5">
+                  <i className="fa-solid fa-plug-circle-xmark text-3xl text-rose-400"></i>
+                </div>
+                <p className="text-base font-bold text-slate-300">서버에 연결할 수 없습니다</p>
+              </div>
             ) : (
-              <div className="flex flex-col items-center justify-center text-center">
+              <div className="flex flex-col items-center justify-center text-center px-2">
                 <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-6">
                   <i className="fa-solid fa-shield-cat text-4xl text-slate-700"></i>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-base font-bold text-slate-500">정보를 모두 입력하시면</p>
-                  <p className="text-base font-medium text-slate-400">맞춤 보험료를 계산해 드립니다</p>
+                  <p className="text-base font-bold text-slate-500">입력 정보를 확인해 주세요</p>
+                  <p className="text-sm font-medium text-slate-400 leading-relaxed">
+                    {quoteHint || '생년월일·보장 기간을 입력하시면 맞춤 보험료를 계산해 드립니다.'}
+                  </p>
                 </div>
               </div>
             )}

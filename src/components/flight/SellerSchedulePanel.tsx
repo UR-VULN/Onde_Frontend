@@ -85,8 +85,9 @@ export const SellerSchedulePanel: React.FC = () => {
     try {
       addToast("가격 및 잔여 좌석 상태 변경 내용을 반영 중입니다...", "info");
       const res = await seller_control_schedule_api(selectedCell.scheduleId, {
-        remainingSeats: remainingSeats ? parseInt(remainingSeats) : undefined,
-        overridePrice: overridePrice ? parseFloat(overridePrice) : undefined
+        seatClass: selectedCell.classType ?? 'ECONOMY',
+        availableSeats: remainingSeats ? parseInt(remainingSeats, 10) : undefined,
+        newPrice: overridePrice ? parseFloat(overridePrice) : undefined,
       });
 
       if (res.success) {

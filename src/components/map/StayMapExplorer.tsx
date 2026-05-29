@@ -2,7 +2,9 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { MAP_STAYS, type MockStay } from '@/constants/mockStays';
+import { fetch_properties_in_bounds_api } from '@/api/propertiesApi';
+import { mapStayToStayDto } from '@/api/stayApi';
+import type { MapStayItem } from '@/types/mapStay';
 import {
   DEFAULT_MAP_CENTER,
   DEFAULT_MAP_ZOOM,
@@ -16,6 +18,7 @@ import {
   filterStaysInBounds,
   type MapBounds,
 } from '@/utils/mapStayFilters';
+import { propertyMarkerToMapStay } from '@/utils/mapPropertyMarkers';
 import { StayMapList } from '@/components/map/StayMapList';
 import { StayDetailModal } from '@/components/stay/StayDetailModal';
 
@@ -67,15 +70,50 @@ interface StayMapExplorerProps {
 export const StayMapExplorer: React.FC<StayMapExplorerProps> = ({ searchQuery }) => {
   const debouncedQuery = useDebouncedValue(searchQuery, MAP_SEARCH_DEBOUNCE_MS);
   const [bounds, setBounds] = useState<MapBounds | null>(null);
+  const apiBounds = useDebouncedValue(bounds, MAP_SEARCH_DEBOUNCE_MS);
+  const [mapStays, setMapStays] = useState<MapStayItem[]>([]);
+  const [loadingMap, setLoadingMap] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [flyTarget, setFlyTarget] = useState<{ latitude: number; longitude: number; zoom?: number } | null>(
     null
   );
-  const [detailStay, setDetailStay] = useState<MockStay | null>(null);
+  const [detailStay, setDetailStay] = useState<MapStayItem | null>(null);
+
+  const handleBoundsChange = useCallback((next: MapBounds) => {
+    setBounds(next);
+  }, []);
+
+  useEffect(() => {
+    if (!apiBounds) return;
+    let cancelled = false;
+    (async () => {
+      setLoadingMap(true);
+      try {
+        const res = await fetch_properties_in_bounds_api({
+          swLat: apiBounds.south,
+          swLng: apiBounds.west,
+          neLat: apiBounds.north,
+          neLng: apiBounds.east,
+        });
+        if (cancelled || !res.success || !res.data) return;
+        const stays = res.data.properties
+          .map(propertyMarkerToMapStay)
+          .filter((s): s is MapStayItem => s != null);
+        setMapStays(stays);
+      } catch {
+        if (!cancelled) setMapStays([]);
+      } finally {
+        if (!cancelled) setLoadingMap(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [apiBounds?.south, apiBounds?.north, apiBounds?.west, apiBounds?.east]);
 
   const queryFiltered = useMemo(
-    () => filterStaysByQuery(MAP_STAYS, debouncedQuery),
-    [debouncedQuery]
+    () => filterStaysByQuery(mapStays, debouncedQuery),
+    [mapStays, debouncedQuery]
   );
 
   const visibleStays = useMemo(() => {
@@ -83,11 +121,7 @@ export const StayMapExplorer: React.FC<StayMapExplorerProps> = ({ searchQuery })
     return inView.slice(0, MAP_VIEWPORT_MARKER_LIMIT);
   }, [queryFiltered, bounds]);
 
-  const handleBoundsChange = useCallback((next: MapBounds) => {
-    setBounds(next);
-  }, []);
-
-  const handleSelectStay = useCallback((stay: MockStay) => {
+  const handleSelectStay = useCallback((stay: MapStayItem) => {
     setSelectedId(stay.id);
     setFlyTarget({ latitude: stay.latitude, longitude: stay.longitude, zoom: 14 });
   }, []);
@@ -110,7 +144,11 @@ export const StayMapExplorer: React.FC<StayMapExplorerProps> = ({ searchQuery })
         <aside className="map-list">
           <h4 className="map-list-title">
             <i className="fa-solid fa-map-pin"></i>
-            주변 숙소 <span className="map-list-count">({visibleStays.length})</span>
+            주변 숙소{' '}
+            <span className="map-list-count">
+              ({visibleStays.length}
+              {loadingMap ? ' · 조회 중' : ''})
+            </span>
           </h4>
           <p className="map-list-hint">지도 이동 시 현재 화면 안 숙소만 표시합니다.</p>
           <StayMapList
@@ -156,7 +194,14 @@ export const StayMapExplorer: React.FC<StayMapExplorerProps> = ({ searchQuery })
         </div>
       </div>
 
-      {detailStay && <StayDetailModal stay={detailStay} onClose={() => setDetailStay(null)} />}
+      {detailStay && (
+        <StayDetailModal
+          stay={mapStayToStayDto(detailStay)}
+          roomId={detailStay.roomId}
+          soldOutDays={detailStay.soldOutDays}
+          onClose={() => setDetailStay(null)}
+        />
+      )}
     </>
   );
 };

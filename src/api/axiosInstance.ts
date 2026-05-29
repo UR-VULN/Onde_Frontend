@@ -1,35 +1,35 @@
 import axios from 'axios';
+import { refresh_token_api } from '@/api/authApi';
+import { clearAuthSession } from '@/utils/authSession';
+import { getAccessToken, getRefreshToken, updateAccessToken } from '@/utils/authCookies';
+import { isErrorPagePath, redirectByHttpStatus } from '@/utils/errorNavigation';
 
-// 일반 사용자 서비스용 Axios 인스턴스 (Port 8080)
+const axiosDefaults = {
+  timeout: 15000,
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+};
+
 export const userAxios = axios.create({
   baseURL: 'http://localhost:8080',
-  timeout: 15000,
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  ...axiosDefaults,
 });
 
-// 본사 관리자 백오피스 서비스용 Axios 인스턴스 (Port 8081)
 export const adminAxios = axios.create({
   baseURL: 'http://localhost:8081',
-  timeout: 15000,
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  ...axiosDefaults,
 });
 
-// 판매자(셀러) 파트너 포탈 서비스용 Axios 인스턴스 (Port 8081, 별도 경로)
 export const sellerAxios = axios.create({
   baseURL: 'http://localhost:8081',
-  timeout: 15000,
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  ...axiosDefaults,
 });
 
-// JWT 토큰 주입용 인터셉터 설정
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const injectToken = (config: any) => {
-  const token = localStorage.getItem('onde_auth_token');
+  const token = getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -40,14 +40,90 @@ userAxios.interceptors.request.use(injectToken, (error) => Promise.reject(error)
 adminAxios.interceptors.request.use(injectToken, (error) => Promise.reject(error));
 sellerAxios.interceptors.request.use(injectToken, (error) => Promise.reject(error));
 
-// 공통 에러 처리 응답 인터셉터
-const handleResponseError = (error: any) => {
+let isRefreshing = false;
+let refreshWaiters: Array<(token: string | null) => void> = [];
+
+function waitForRefresh(): Promise<string | null> {
+  return new Promise((resolve) => {
+    refreshWaiters.push(resolve);
+  });
+}
+
+function flushRefreshWaiters(token: string | null) {
+  refreshWaiters.forEach((cb) => cb(token));
+  refreshWaiters = [];
+}
+
+function isRefreshable401(config: { url?: string; _retry?: boolean } | undefined): boolean {
+  if (!config || config._retry) return false;
+  const url = config.url ?? '';
+  return !url.includes('/api/v1/auth/refresh') && !url.includes('/api/v1/auth/login');
+}
+
+const finalizeResponseError = (error: {
+  response?: { status?: number; data?: unknown };
+}) => {
   console.error('[API ERROR INTERCEPTOR]:', error);
-  // 공통 에러 반환 구조 (ApiResponse 형식에 맞춤)
+
+  const status = error.response?.status;
+  const onErrorPage = isErrorPagePath(window.location.pathname);
+
+  if (status && !onErrorPage) {
+    if (status === 401) {
+      clearAuthSession();
+    }
+    redirectByHttpStatus(status);
+  }
+
   const errorData = error.response?.data;
-  return Promise.reject(errorData || { success: false, error: { message: '네트워크 연결 오류가 발생했습니다.' } });
+  return Promise.reject(
+    errorData || { success: false, error: { message: '네트워크 연결 오류가 발생했습니다.' } }
+  );
 };
 
-userAxios.interceptors.response.use((response) => response.data, handleResponseError);
-adminAxios.interceptors.response.use((response) => response.data, handleResponseError);
-sellerAxios.interceptors.response.use((response) => response.data, handleResponseError);
+const createAuthAwareErrorHandler = (instance: typeof userAxios) => {
+  return async (error: {
+    response?: { status?: number; data?: unknown };
+    config?: { url?: string; _retry?: boolean; headers: Record<string, string> };
+  }) => {
+    const status = error.response?.status;
+    const config = error.config;
+
+    if (status === 401 && isRefreshable401(config) && getRefreshToken()) {
+      if (isRefreshing) {
+        const token = await waitForRefresh();
+        if (token && config) {
+          config.headers.Authorization = `Bearer ${token}`;
+          config._retry = true;
+          return instance.request(config);
+        }
+        return finalizeResponseError(error);
+      }
+
+      isRefreshing = true;
+      try {
+        const res = await refresh_token_api();
+        if (res.success && res.data?.accessToken) {
+          updateAccessToken(res.data.accessToken, res.data.expiresIn);
+          flushRefreshWaiters(res.data.accessToken);
+          if (config) {
+            config.headers.Authorization = `Bearer ${res.data.accessToken}`;
+            config._retry = true;
+            return instance.request(config);
+          }
+        }
+        flushRefreshWaiters(null);
+      } catch {
+        flushRefreshWaiters(null);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
+    return finalizeResponseError(error);
+  };
+};
+
+userAxios.interceptors.response.use((response) => response.data, createAuthAwareErrorHandler(userAxios));
+adminAxios.interceptors.response.use((response) => response.data, createAuthAwareErrorHandler(adminAxios));
+sellerAxios.interceptors.response.use((response) => response.data, createAuthAwareErrorHandler(sellerAxios));

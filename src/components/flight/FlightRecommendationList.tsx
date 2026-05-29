@@ -1,249 +1,180 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { MOCK_FLIGHT_ROUTES, SHUFFLED_FLIGHT_ROUTES, type MockFlightRoute } from '@/constants/mockFlightRoutes';
-import type { FlightSearchParams } from './FlightSearchForm';
-import { FlightDetailModal } from './FlightDetailModal';
-import { addDaysStr, isFlightTripAvailable, todayStr } from '@/utils/calendarUtils';
-function formatDuration(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m > 0 ? `${h}h ${m}m` : `${h}h`;
-}
-
-import { formatAirportLabel } from '@/constants/flightAirports';
-import { getAirlineColor } from '@/constants/flightAirlines';
-
-interface FlightRouteCardProps {
-  route: MockFlightRoute;
-  index: number;
-  onSelect: (route: MockFlightRoute) => void;
-}
-
-const FlightRouteCard: React.FC<FlightRouteCardProps> = ({ route, index, onSelect }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.06, rootMargin: '60px 0px' }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  const delayMs = (index % 2) * 100;
-  const accentColor =
-    getAirlineColor(route.airline) !== '#005ce6'
-      ? getAirlineColor(route.airline)
-      : getAirlineColor(route.airlineCode);
-  const formattedPrice = route.priceFrom.toLocaleString('ko-KR');
-  const isOvernight = route.arrivalDate !== route.date;
-
-  return (
-    <div
-      ref={ref}
-      style={{
-        transitionDelay: `${delayMs}ms`,
-        boxShadow: '0 2px 16px rgba(0,0,0,0.06)',
-      }}
-      className={`rounded-2xl border border-slate-100 transition-all duration-500 ease-out cursor-pointer group overflow-hidden
-        ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLDivElement).style.boxShadow = `0 8px 32px rgba(0,0,0,0.10), 0 0 0 1.5px ${accentColor}22`;
-        (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-3px)';
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLDivElement).style.boxShadow = '0 2px 16px rgba(0,0,0,0.06)';
-        (e.currentTarget as HTMLDivElement).style.transform = '';
-      }}
-      onClick={() => onSelect(route)}
-    >
-      {/* Header band: airline info + price */}
-      <div
-        className="flex items-center justify-between"
-        style={{ padding: '1rem 1.75rem', background: `linear-gradient(135deg, ${accentColor}18 0%, ${accentColor}08 100%)`, borderBottom: `1px solid ${accentColor}20` }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          {/* Airline code pill */}
-          <span
-            className="text-[0.68rem] font-black px-2.5 py-1 rounded-lg text-white tracking-widest"
-            style={{ background: accentColor, letterSpacing: '0.08em' }}
-          >
-            {route.airlineCode}
-          </span>
-          <div>
-            <span className="font-bold text-slate-700 block leading-tight" style={{ fontSize: '1rem' }}>{route.airline}</span>
-            <span className="font-semibold text-slate-400 leading-tight" style={{ fontSize: '0.88rem' }}>{route.flightNumber}</span>
-          </div>
-        </div>
-
-        {/* Price */}
-        <div className="text-right">
-          <span className="text-slate-400 font-semibold block leading-tight" style={{ fontSize: '0.82rem' }}>이코노미 최저가</span>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px', justifyContent: 'flex-end' }}>
-            <strong className="font-black leading-tight" style={{ color: '#ff5a5f', fontSize: '1.45rem' }}>
-              ₩{formattedPrice}
-            </strong>
-            <span className="text-slate-400 font-semibold" style={{ fontSize: '0.85rem' }}>~</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Route body */}
-      <div style={{ padding: '1.5rem 1.75rem', background: '#ffffff' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-
-          {/* Departure */}
-          <div style={{ flex: '0 0 auto', minWidth: '80px' }}>
-            <strong
-              className="font-black text-slate-800 block leading-none tracking-tight"
-              style={{ fontSize: '1.9rem', letterSpacing: '-0.04em' }}
-            >
-              {route.departureAirport}
-            </strong>
-            <span className="font-semibold text-slate-400 block" style={{ fontSize: '0.95rem', marginTop: '4px' }}>
-              {route.departureCity}
-            </span>
-            <span className="font-extrabold text-slate-700 block" style={{ fontSize: '1.35rem', marginTop: '6px' }}>
-              {route.departureTime}
-            </span>
-          </div>
-
-          {/* Route line */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-            {/* Duration pill */}
-            <span
-              className="font-bold rounded-full"
-              style={{ background: `${accentColor}15`, color: accentColor, fontSize: '0.9rem', padding: '0.25rem 0.85rem' }}
-            >
-              {formatDuration(route.durationMinutes)}
-            </span>
-            {/* Dashed route line */}
-            <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '3px' }}>
-              <div style={{ width: '7px', height: '7px', borderRadius: '50%', border: `2px solid ${accentColor}`, flexShrink: 0 }} />
-              <div style={{ flex: 1, borderTop: `2px dashed ${accentColor}50` }} />
-              <i className="fa-solid fa-plane-departure text-[0.85rem]" style={{ color: accentColor, flexShrink: 0 }}></i>
-              <div style={{ flex: 1, borderTop: `2px dashed ${accentColor}50` }} />
-              <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: accentColor, flexShrink: 0 }} />
-            </div>
-            <span className="text-[0.62rem] font-semibold text-slate-300">{route.date}</span>
-          </div>
-
-          {/* Arrival */}
-          <div style={{ flex: '0 0 auto', minWidth: '80px', textAlign: 'right' }}>
-            <strong
-              className="font-black text-slate-800 block leading-none tracking-tight"
-              style={{ fontSize: '1.9rem', letterSpacing: '-0.04em' }}
-            >
-              {route.arrivalAirport}
-              {isOvernight && (
-                <sup className="font-black ml-0.5" style={{ fontSize: '0.8rem', color: '#ff5a5f', verticalAlign: 'super' }}>+1</sup>
-              )}
-            </strong>
-            <span className="font-semibold text-slate-400 block" style={{ fontSize: '0.95rem', marginTop: '4px' }}>
-              {route.arrivalCity}
-            </span>
-            <span className="font-extrabold text-slate-700 block" style={{ fontSize: '1.35rem', marginTop: '6px' }}>
-              {route.arrivalTime}
-            </span>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  );
-};
+import React from 'react';
+import type { FlightSearchParams } from '@/components/flight/FlightSearchForm';
+import type { FlightDto, AvailableSeat, FlightSearchResponse } from '@/store/useFlightStore';
+import { count_flights_in_results } from '@/utils/flightSearchPayload';
 
 interface FlightRecommendationListProps {
+  results: FlightSearchResponse | null;
   searchParams: FlightSearchParams | null;
+  loading?: boolean;
+  hasSearched?: boolean;
+  on_select_seat: (flight: FlightDto, seat: AvailableSeat) => void;
 }
 
-export const FlightRecommendationList: React.FC<FlightRecommendationListProps> = ({ searchParams }) => {
-  const [selectedRoute, setSelectedRoute] = useState<MockFlightRoute | null>(null);
-  const today = todayStr();
-  const returnDay = addDaysStr(today, 3);
-  const tripType = (searchParams?.tripType as 'RT' | 'OW') ?? 'RT';
+function format_time(isoString: string) {
+  const d = new Date(isoString);
+  return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
 
-  const datesArray = searchParams?.dates?.split(',') ?? [];
-  const depDate = searchParams ? (datesArray[0] ?? today) : today;
-  const retDate = searchParams
-    ? (tripType === 'RT' ? (datesArray[1] ?? returnDay) : '')
-    : returnDay;
+function format_date(isoString: string) {
+  const d = new Date(isoString);
+  return `${d.getMonth() + 1}월 ${d.getDate()}일`;
+}
 
-  const filterByAvailability = (routes: MockFlightRoute[]) =>
-    routes.filter((route) => isFlightTripAvailable(depDate, retDate, route.unavailableDays, tripType));
+function route_label(departures: string, arrivals: string): string {
+  const dep = departures.split(',')[0]?.trim() || departures;
+  const arr = arrivals.split(',')[0]?.trim() || arrivals;
+  return `${dep} → ${arr}`;
+}
 
-  const displayedRoutes = useMemo(() => {
-    if (!searchParams) return filterByAvailability(SHUFFLED_FLIGHT_ROUTES);
+export const FlightRecommendationList: React.FC<FlightRecommendationListProps> = ({
+  results,
+  searchParams,
+  loading = false,
+  hasSearched = false,
+  on_select_seat,
+}) => {
+  const flightCount = count_flights_in_results(results);
+  const isSearchMode = hasSearched && !!searchParams;
 
-    const dep = searchParams.departures.trim().toUpperCase();
-    const arr = searchParams.arrivals.trim().toUpperCase();
-
-    const filtered = MOCK_FLIGHT_ROUTES.filter((r) => {
-      const depMatch = !dep || r.departureAirport.includes(dep) || r.departureCity.includes(dep);
-      const arrMatch = !arr || r.arrivalAirport.includes(arr) || r.arrivalCity.includes(arr) ||
-        r.tags.some((t) => t.toLowerCase().includes(arr.toLowerCase()));
-      return depMatch && arrMatch;
-    });
-
-    const available = filterByAvailability(filtered);
-    return available.length > 0 ? available : filterByAvailability(SHUFFLED_FLIGHT_ROUTES);
-  }, [searchParams, depDate, retDate, tripType]);
-
-  const isSearchMode = !!searchParams;
-  const hasNoResults = isSearchMode && displayedRoutes === SHUFFLED_FLIGHT_ROUTES &&
-    MOCK_FLIGHT_ROUTES.filter((r) => {
-      const arr = searchParams!.arrivals.trim().toUpperCase();
-      return r.arrivalAirport.includes(arr) || r.arrivalCity.includes(arr);
-    }).length === 0;
+  const dates = searchParams?.dates.split(',') ?? [];
+  const depDate = dates[0] ?? '';
+  const retDate = dates[1];
 
   return (
     <div className="!px-5 lg:!px-0" style={{ paddingBottom: '4rem' }}>
-      {/* Section Header */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingBottom: '2rem', borderBottom: '1.5px solid #e2e8f0' }}>
-        {isSearchMode ? (
+      <div className="recommendation-section-head">
+        {isSearchMode && searchParams ? (
           <>
             <h4 className="font-logo font-black text-3xl text-slate-800 tracking-tight">
-              &ldquo;{formatAirportLabel(searchParams!.departures.split(',')[0] ?? searchParams!.departures)} → {formatAirportLabel(searchParams!.arrivals.split(',')[0] ?? searchParams!.arrivals)}&rdquo; 검색 결과
+              &ldquo;{route_label(searchParams.departures, searchParams.arrivals)}&rdquo; 검색 결과
             </h4>
             <p className="text-sm text-slate-400 font-bold uppercase tracking-widest">
-              {hasNoResults
-                ? '검색 결과가 없어 인기 노선을 보여드립니다'
-                : `${displayedRoutes.length}개 노선 · ${depDate}${searchParams!.tripType === 'RT' ? ` ~ ${retDate}` : ''} · ${searchParams!.passengerCount}명 · ${searchParams!.tripType === 'RT' ? '왕복' : '편도'}`}
+              {loading
+                ? '조회 중...'
+                : `${flightCount}편 · ${depDate}${searchParams.tripType === 'RT' && retDate ? ` ~ ${retDate}` : ''} · 성인 ${searchParams.passengerCount}명`}
             </p>
           </>
         ) : (
           <>
-            <h4 className="font-logo font-black text-3xl text-slate-800 tracking-tight">인기 항공 노선 추천</h4>
+            <h4 className="font-logo font-black text-3xl text-slate-800 tracking-tight">구름 위로 떠나볼까요</h4>
             <p className="text-sm text-slate-400 font-bold uppercase tracking-widest">
-              왕복 3박 기준 · {today} ~ {returnDay}
+              {loading ? '불러오는 중...' : `총 ${flightCount}편`}
             </p>
           </>
         )}
       </div>
 
-      {/* 2-col grid on desktop, 1-col on mobile */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5" style={{ paddingTop: '2rem' }}>
-        {displayedRoutes.map((route, index) => (
-          <FlightRouteCard key={route.id} route={route} index={index} onSelect={setSelectedRoute} />
-        ))}
-      </div>
+      {loading && flightCount === 0 ? (
+        <p className="recommendation-section-status">항공편을 불러오는 중입니다...</p>
+      ) : !results || flightCount === 0 ? (
+        <p className="recommendation-section-status">표시할 항공편이 없습니다.</p>
+      ) : (
+        <div className="recommendation-section-content">
+          {results.journeys.map((journey) => (
+            <div key={journey.journeyIndex} className="mb-10">
+              <h5 className="text-sm font-black text-slate-700 bg-slate-100/80 px-4 py-2 rounded-2xl mb-4 inline-block">
+                {journey.description}
+              </h5>
 
-      {selectedRoute && (
-        <FlightDetailModal
-          route={selectedRoute}
-          tripType={tripType}
-          defaultDate={depDate}
-          defaultReturn={retDate}
-          onClose={() => setSelectedRoute(null)}
-        />
+              {journey.flights.length === 0 ? (
+                <div className="bg-white p-12 rounded-[28px] border border-slate-200 shadow-sm text-center">
+                  <i className="fa-solid fa-plane-slash text-4xl text-slate-300 mb-3 block" />
+                  <p className="text-xs text-slate-500 font-bold">
+                    해당 구간에 운항 스케줄이 없습니다.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {journey.flights.map((flight) => (
+                    <div
+                      key={flight.scheduleId}
+                      className="bg-white p-6 rounded-[28px] border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6 hover:shadow-md transition-all border-l-4 border-l-primary"
+                    >
+                      <div className="flex items-center gap-6 flex-1 min-w-[280px]">
+                        <div className="flex flex-col items-center justify-center bg-slate-50 px-4 py-3 rounded-2xl border border-slate-100 flex-shrink-0">
+                          <i className="fa-solid fa-plane text-primary text-xl mb-1" />
+                          <span className="text-xs font-black text-slate-800">{flight.flightNumber}</span>
+                        </div>
+
+                        <div className="flex items-center gap-4 flex-1">
+                          <div className="text-right">
+                            <span className="text-xs font-bold text-slate-400 block">{flight.departureAirport}</span>
+                            <strong className="text-lg font-black text-slate-800 block">
+                              {format_time(flight.departureTime)}
+                            </strong>
+                            <span className="text-[10px] font-bold text-slate-500">
+                              {format_date(flight.departureTime)}
+                            </span>
+                          </div>
+
+                          <div className="flex-1 flex flex-col items-center justify-center relative px-2">
+                            <span className="text-[10px] font-bold text-slate-400 mb-1">
+                              {flight.durationMinutes}분 소요
+                            </span>
+                            <div className="w-full h-[1.5px] bg-slate-200 relative flex items-center justify-center">
+                              <i className="fa-solid fa-chevron-right text-[10px] text-slate-300 absolute right-0" />
+                            </div>
+                          </div>
+
+                          <div className="text-left">
+                            <span className="text-xs font-bold text-slate-400 block">{flight.arrivalAirport}</span>
+                            <strong className="text-lg font-black text-slate-800 block">
+                              {format_time(flight.arrivalTime)}
+                            </strong>
+                            <span className="text-[10px] font-bold text-slate-500">
+                              {format_date(flight.arrivalTime)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center min-w-[340px] border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-6">
+                        {flight.availableSeats.map((seat) => {
+                          const is_low_inventory = seat.remainingSeats < 5;
+                          return (
+                            <div
+                              key={seat.classType}
+                              className="flex-1 bg-slate-50/50 hover:bg-slate-50 p-3.5 rounded-2xl border border-slate-100 flex flex-col gap-2 relative transition-all"
+                            >
+                              <div className="flex justify-between items-center">
+                                <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                  {seat.classType}
+                                </span>
+                                {is_low_inventory ? (
+                                  <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-rose-50 text-secondary border border-rose-100 flex items-center gap-1 animate-pulse">
+                                    매진 임박 {seat.remainingSeats}석 남음
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] font-bold text-slate-500">
+                                    {seat.remainingSeats}석 남음
+                                  </span>
+                                )}
+                              </div>
+                              <div className="mt-1 flex flex-col">
+                                <span className="text-xs font-bold text-slate-400">1인 요금</span>
+                                <strong className="text-sm font-black text-slate-800">
+                                  ₩{seat.basePrice.toLocaleString()}
+                                </strong>
+                              </div>
+                              <button
+                                type="button"
+                                className="btn-primary text-[10px] font-extrabold w-full py-1.5 px-3 mt-2"
+                                onClick={() => on_select_seat(flight, seat)}
+                              >
+                                예약하기
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

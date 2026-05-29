@@ -4,6 +4,33 @@ import { useTravelStore } from '@/store/useTravelStore';
 import { InsuranceHeader } from './InsuranceHeader';
 import { InsuranceCalculatorForm } from './InsuranceCalculatorForm';
 import { InsuranceCoverageGrid } from './InsuranceCoverageGrid';
+import { calculate_premium_api, apply_insurance_policy_api } from '@/api/insuranceApi';
+import type { InsuranceQuotePanelStatus } from '@/components/insurance/insuranceQuoteTypes';
+
+function getQuoteInputIssue(
+  details: { birthdate: string; startDate: string; endDate: string }
+): string | null {
+  if (!details.birthdate || !details.startDate || !details.endDate) {
+    return '생년월일과 보장 기간(출발·종료)을 입력해 주세요.';
+  }
+  const start = new Date(details.startDate);
+  const end = new Date(details.endDate);
+  if (end.getTime() < start.getTime()) {
+    return '보장 종료일은 출발일 이후여야 합니다.';
+  }
+  return null;
+}
+
+function resolveApiErrorMessage(err: unknown): string {
+  const msg =
+    (err as { message?: string })?.message ||
+    (err as { error?: { message?: string } })?.error?.message ||
+    '';
+  if (/네트워크|연결|timeout|ECONNREFUSED|fetch/i.test(msg)) {
+    return '서버에 연결할 수 없습니다';
+  }
+  return msg || '서버에 연결할 수 없습니다';
+}
 
 export const InsuranceCalculatorWidget: React.FC = () => {
   const { insured_details, premium_estimate, set_premium_estimate } = useInsuranceStore();
@@ -13,87 +40,79 @@ export const InsuranceCalculatorWidget: React.FC = () => {
   const [gender, setGender] = useState<'M' | 'F'>('M');
   const [isAgreed, setIsAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [quoteStatus, setQuoteStatus] = useState<InsuranceQuotePanelStatus>('incomplete');
+  const [quoteHint, setQuoteHint] = useState('');
 
-  // 400ms Debouncing for local calculation (Offline development mode)
   useEffect(() => {
-    const triggerCalculation = () => {
-      if (!insured_details.birthdate || !insured_details.startDate || !insured_details.endDate) {
-        return;
-      }
-      
-      const start = new Date(insured_details.startDate);
-      const end = new Date(insured_details.endDate);
-      if (end.getTime() < start.getTime()) {
-        return;
-      }
+    const inputIssue = getQuoteInputIssue(insured_details);
+    if (inputIssue) {
+      setQuoteStatus('incomplete');
+      setQuoteHint(inputIssue);
+      set_premium_estimate(null);
+      setLoading(false);
+      return;
+    }
 
+    let cancelled = false;
+    const handler = setTimeout(async () => {
       setLoading(true);
-      
+      setQuoteStatus('loading');
+      setQuoteHint('');
       try {
-        const diffTime = Math.abs(end.getTime() - start.getTime());
-        const tripDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-
-        // Calculate age
-        const birth = new Date(insured_details.birthdate);
-        const today = new Date();
-        let age = today.getFullYear() - birth.getFullYear();
-        const m = today.getMonth() - birth.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-          age--;
+        const res = await calculate_premium_api({
+          productId: insured_details.insuranceProductId,
+          birthdate: insured_details.birthdate,
+          startDate: insured_details.startDate,
+          endDate: insured_details.endDate,
+          coverageLevel: insured_details.coverageLevel,
+        });
+        if (cancelled) return;
+        if (!res.success || !res.data) {
+          set_premium_estimate(null);
+          setQuoteStatus('api_error');
+          setQuoteHint(res.message || '서버에 연결할 수 없습니다');
+          return;
         }
-
-        // Set base plan rate based on coverage level: STANDARD (9,000 KRW), DELUXE (29,000 KRW), PREMIUM (49,000 KRW)
-        let basePlanRate = 29000; // DELUXE
-        if (insured_details.coverageLevel === 'STANDARD') basePlanRate = 9000;
-        else if (insured_details.coverageLevel === 'PREMIUM') basePlanRate = 49000;
-
-        // Gender multiplier: Male (1.0), Female (0.9 - 10% discount for females)
-        const genderMultiplier = gender === 'F' ? 0.9 : 1.0;
-
-        // Age multiplier: under 20 (0.8), 20-39 (1.0), 40-59 (1.25), 60+ (1.6)
-        let ageMultiplier = 1.0;
-        if (age < 20) ageMultiplier = 0.8;
-        else if (age >= 20 && age < 40) ageMultiplier = 1.0;
-        else if (age >= 40 && age < 60) ageMultiplier = 1.25;
-        else ageMultiplier = 1.6;
-
-        // Daily scale factor: base price is for 1 day, then +10% base price for each additional day
-        const dayFactor = 1 + (tripDays - 1) * 0.1;
-
-        const calculatedPremium = Math.floor((basePlanRate * dayFactor * ageMultiplier * genderMultiplier) / 10) * 10;
-
+        const d = res.data as unknown as Record<string, unknown>;
+        const totalPremium = Number(d.totalPremium ?? d.calculatedPremium ?? 0);
+        const tripDays = Number(d.travelDays ?? d.tripDurationDays ?? 1);
         set_premium_estimate({
           insuranceProductId: insured_details.insuranceProductId,
           tripDurationDays: tripDays,
-          age: age,
-          ageMultiplier: ageMultiplier,
-          coverageLevel: insured_details.coverageLevel,
-          coverageMultiplier: genderMultiplier,
-          calculatedPremium: calculatedPremium,
+          age: Number(d.age ?? 30),
+          ageMultiplier: Number(d.ageMultiplier ?? 1),
+          coverageLevel: String(d.coverageLevel ?? insured_details.coverageLevel),
+          coverageMultiplier: gender === 'F' ? 0.9 : 1,
+          calculatedPremium: totalPremium,
           breakdown: {
-            baseDailyRate: Math.floor(basePlanRate / 10),
-            basePremiumWithoutMultipliers: basePlanRate
-          }
+            baseDailyRate: Number((d.breakdown as { baseDailyRate?: number })?.baseDailyRate ?? 3500),
+            basePremiumWithoutMultipliers: totalPremium,
+          },
         });
-      } catch (err) {
-        console.error("Local premium calculation error:", err);
+        setQuoteStatus('ready');
+      } catch (err: unknown) {
+        if (!cancelled) {
+          set_premium_estimate(null);
+          setQuoteStatus('api_error');
+          setQuoteHint(resolveApiErrorMessage(err));
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
-    };
-
-    const handler = setTimeout(() => {
-      triggerCalculation();
     }, 400);
 
-    return () => clearTimeout(handler);
+    return () => {
+      cancelled = true;
+      clearTimeout(handler);
+    };
   }, [
     insured_details.birthdate,
     insured_details.startDate,
     insured_details.endDate,
     insured_details.coverageLevel,
+    insured_details.insuranceProductId,
     gender,
-    set_premium_estimate
+    set_premium_estimate,
   ]);
 
   const handle_apply_policy = async () => {
@@ -113,50 +132,64 @@ export const InsuranceCalculatorWidget: React.FC = () => {
       addToast("피보험자 실명을 입력해 주십시오.", "warning");
       return;
     }
-    // 4. Check premium estimate
     if (!premium_estimate) {
-      addToast("보험료를 먼저 산출해 주십시오.", "warning");
+      if (quoteStatus === 'api_error') {
+        addToast('서버에 연결할 수 없습니다', 'warning');
+      } else if (getQuoteInputIssue(insured_details)) {
+        addToast(getQuoteInputIssue(insured_details)!, 'warning');
+      } else {
+        addToast('보험료를 먼저 산출해 주십시오.', 'warning');
+      }
       return;
     }
 
     const { openConfirmPopup } = useTravelStore.getState();
     
     openConfirmPopup(async (confirmed) => {
-      if (confirmed) {
-        try {
-          addToast("보험 가입 서명을 등록 중입니다...", "info");
-          
-          await new Promise((resolve) => setTimeout(resolve, 800));
-
-          const mockPolicyCode = `POL-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-
-          addToast("여행자 보험 가입이 최종 승인 완료되었습니다!", "success");
-
-          addReservation({
-            id: mockPolicyCode,
-            category: 'ins',
-            title: `🛡️ ONDE Protect 안심 여행자 보험 (${insured_details.coverageLevel})`,
-            badge: '가입 완료',
-            badgeType: 'active',
-            date: `${insured_details.startDate} ~ ${insured_details.endDate} (보장 기간)`,
-            details: `피보험자: ${insuredName} | 보장 플랜: ${insured_details.coverageLevel} | 증권 코드: ${mockPolicyCode}`,
-            price: `₩${premium_estimate.calculatedPremium.toLocaleString()}`
-          });
-
-          // Reset Form
-          setInsuredName('');
-          setIsAgreed(false);
-        } catch {
-          addToast("가입 처리 중 오류가 발생했습니다.", "warning");
+      if (!confirmed) {
+        addToast('보험 가입 신청이 취소되었습니다.', 'info');
+        return;
+      }
+      try {
+        addToast('보험 가입을 처리 중입니다...', 'info');
+        const res = await apply_insurance_policy_api({
+          productId: insured_details.insuranceProductId,
+          insuredName: insuredName.trim(),
+          insuredBirthdate: insured_details.birthdate,
+          startDate: insured_details.startDate,
+          endDate: insured_details.endDate,
+          coverageLevel: insured_details.coverageLevel,
+        });
+        if (!res.success || !res.data) {
+          addToast(res.message || '보험 가입에 실패했습니다.', 'warning');
+          return;
         }
-      } else {
-        addToast("보험 가입 신청이 취소되었습니다.", "info");
+        const policyCode = res.data.policyCode;
+        addToast('여행자 보험 가입이 완료되었습니다!', 'success');
+        addReservation({
+          id: String(res.data.policyId),
+          category: 'ins',
+          title: `🛡️ ${res.data.productName} (${insured_details.coverageLevel})`,
+          badge: '가입 완료',
+          badgeType: 'active',
+          date: `${insured_details.startDate} ~ ${insured_details.endDate}`,
+          details: `피보험자: ${insuredName} | 증권: ${policyCode}`,
+          price: `₩${res.data.totalPremium.toLocaleString()}`,
+        });
+        setInsuredName('');
+        setIsAgreed(false);
+      } catch (err: unknown) {
+        const msg =
+          (err as { message?: string })?.message ||
+          (err as { error?: { message?: string } })?.error?.message ||
+          '가입 처리 중 오류가 발생했습니다.';
+        addToast(msg, 'warning');
       }
     }, {
-      title: "결제 하시겠습니까?",
-      description: "선택하신 보장 플랜으로 보험 가입 및 결제를 진행합니다.",
-      yesLabel: "결제하기",
-      noLabel: "조금 더 생각해볼게요"
+      title: '보험에 가입하시겠습니까?',
+      description: '입력하신 정보로 여행자 보험 가입을 진행합니다.',
+      yesLabel: '가입하기',
+      noLabel: '취소',
     });
   };
 
@@ -175,6 +208,8 @@ export const InsuranceCalculatorWidget: React.FC = () => {
           isAgreed={isAgreed}
           setIsAgreed={setIsAgreed}
           loading={loading}
+          quoteStatus={quoteStatus}
+          quoteHint={quoteHint}
           handleApplyPolicy={handle_apply_policy}
         />
 

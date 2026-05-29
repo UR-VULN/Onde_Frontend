@@ -1,11 +1,11 @@
 import React, { memo } from 'react';
-import type { MockStay } from '@/constants/mockStays';
+import type { MapStayItem } from '@/types/mapStay';
 
 interface StayMapListProps {
-  stays: MockStay[];
+  stays: MapStayItem[];
   selectedId: string | null;
-  onSelect: (stay: MockStay) => void;
-  onDetail: (stay: MockStay) => void;
+  onSelect: (stay: MapStayItem) => void;
+  onDetail: (stay: MapStayItem) => void;
 }
 
 const StayMapListItem = memo(function StayMapListItem({
@@ -14,10 +14,10 @@ const StayMapListItem = memo(function StayMapListItem({
   onSelect,
   onDetail,
 }: {
-  stay: MockStay;
+  stay: MapStayItem;
   isSelected: boolean;
-  onSelect: (stay: MockStay) => void;
-  onDetail: (stay: MockStay) => void;
+  onSelect: (stay: MapStayItem) => void;
+  onDetail: (stay: MapStayItem) => void;
 }) {
   return (
     <article

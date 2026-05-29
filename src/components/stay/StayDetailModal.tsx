@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import type { MockStay } from '@/constants/mockStays';
-import { buildPaymentCheckout, deriveReservationId } from '@/utils/paymentCheckout';
+import type { StayDto } from '@/api/stayApi';
+import { book_room_api } from '@/api/stayApi';
+import { buildPaymentCheckout } from '@/utils/paymentCheckout';
 import {
   buildCalendarMonth,
   countNights,
@@ -21,15 +22,19 @@ const SECONDARY = '#ff5a5f';
 
 // ─── props ───────────────────────────────────────────────────
 interface StayDetailModalProps {
-  stay: MockStay;
-  defaultCheckIn?: string;  // YYYY-MM-DD
-  defaultCheckOut?: string; // YYYY-MM-DD
+  stay: StayDto;
+  roomId: number;
+  soldOutDays?: number[];
+  defaultCheckIn?: string;
+  defaultCheckOut?: string;
   onClose: () => void;
 }
 
 // ─── component ───────────────────────────────────────────────
 export const StayDetailModal: React.FC<StayDetailModalProps> = ({
   stay,
+  roomId,
+  soldOutDays = [],
   defaultCheckIn,
   defaultCheckOut,
   onClose,
@@ -38,7 +43,8 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
   const { addToast, isLoggedIn, openAuthModal, mileage: userMileage } = useTravelStore();
 
   // stay.soldOutDays를 Set으로 변환 (백엔드 연동 시 API 응답값으로 대체)
-  const soldOutDaysSet = useMemo(() => new Set(stay.soldOutDays), [stay.soldOutDays]);
+  const [booking, setBooking] = useState(false);
+  const soldOutDaysSet = useMemo(() => new Set(soldOutDays), [soldOutDays]);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -48,7 +54,7 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
   const { checkIn: initCheckIn, checkOut: initCheckOut } = resolveValidStayRange(
     preferredCheckIn,
     preferredCheckOut,
-    stay.soldOutDays,
+    soldOutDays,
   );
 
   const [checkIn, setCheckIn] = useState<string>(initCheckIn);
@@ -110,7 +116,7 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
 
   // Check if any sold-out day falls within the occupied stay nights
   function hasSoldOutInRange(start: string, end: string): boolean {
-    return !isStayRangeAvailable(start, end, stay.soldOutDays);
+    return !isStayRangeAvailable(start, end, soldOutDays);
   }
 
   // Calendar click
@@ -197,7 +203,7 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  function handleBook() {
+  async function handleBook() {
     if (!isLoggedIn) {
       addToast('로그인 후에 숙소를 예약하실 수 있습니다.', 'warning');
       onClose();
@@ -208,26 +214,43 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
       addToast('체크인/체크아웃 일정을 선택해 주세요.', 'warning');
       return;
     }
-    navigate('/payment', {
-      state: buildPaymentCheckout({
-        reservationType: 'ROOM',
-        reservationId: deriveReservationId(stay.id),
-        productTitle: stay.title,
-        productSubtitle: stay.location,
-        productImageUrl: stay.imageUrl,
-        categoryLabel: '숙소',
-        categoryIcon: 'fa-hotel',
-        totalAmount: rawTotal,
-        usedMileage: mileageUsed,
-        dateSummary: `${checkIn} ~ ${checkOut} (${nights}박)`,
-        detailLines: [
-          `₩${stay.pricePerNight.toLocaleString('ko-KR')} × ${nights}박`,
-          `성인 ${adultCount}명`,
-        ],
-        returnPath: '/',
-      }),
-    });
-    onClose();
+
+    setBooking(true);
+    try {
+      const res = await book_room_api({ roomId, checkIn, checkOut });
+      if (!res.success || !res.data) {
+        addToast(res.message || '숙소 예약에 실패했습니다.', 'warning');
+        return;
+      }
+      onClose();
+      navigate('/payment', {
+        state: buildPaymentCheckout({
+          reservationType: 'ROOM',
+          reservationId: res.data.reservationId,
+          productTitle: stay.title,
+          productSubtitle: stay.location,
+          productImageUrl: stay.imageUrl,
+          categoryLabel: '숙소',
+          categoryIcon: 'fa-hotel',
+          totalAmount: res.data.totalPrice,
+          usedMileage: mileageUsed,
+          dateSummary: `${checkIn} ~ ${checkOut} (${nights}박)`,
+          detailLines: [
+            `₩${stay.pricePerNight.toLocaleString('ko-KR')} × ${nights}박`,
+            `성인 ${adultCount}명`,
+          ],
+          returnPath: '/',
+        }),
+      });
+    } catch (err: unknown) {
+      const msg =
+        (err as { message?: string })?.message ||
+        (err as { error?: { message?: string } })?.error?.message ||
+        '숙소 예약 중 오류가 발생했습니다.';
+      addToast(msg, 'warning');
+    } finally {
+      setBooking(false);
+    }
   }
 
   return ReactDOM.createPortal(
@@ -508,16 +531,18 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
           {/* CTA Button */}
           <button
             onClick={handleBook}
+            disabled={booking}
             style={{
               width: '100%', padding: '0.75rem',
               background: `linear-gradient(135deg, ${SECONDARY} 0%, #e0484d 100%)`,
               color: '#fff', border: 'none', borderRadius: '12px',
-              fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer',
+              fontSize: '0.9rem', fontWeight: 800, cursor: booking ? 'wait' : 'pointer',
+              opacity: booking ? 0.7 : 1,
               boxShadow: '0 4px 12px rgba(255,90,95,0.28)',
               letterSpacing: '-0.2px',
             }}
           >
-            숙소 예약하기
+            {booking ? '예약 처리 중...' : '숙소 예약하기'}
           </button>
         </div>
       </div>

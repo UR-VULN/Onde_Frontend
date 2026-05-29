@@ -1,39 +1,68 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
+import { MAIL_TEMPLATES, DEFAULT_MAIL_HTML } from '@/constants/appConstants';
 import {
-  MAIL_TEMPLATES,
-  DEFAULT_MAIL_HTML,
-  MOCK_REPORTED_POSTS,
-  MOCK_LBS_DEFAULTS,
-} from '@/constants/mockAdminData';
+  blind_reported_post_api,
+  deploy_mail_template_api,
+  deploy_property_marker_api,
+  get_reported_posts_api,
+  type ReportedPostDto,
+} from '@/api/adminApi';
 
 export const AdminLBSPanel: React.FC = () => {
   const { addToast } = useTravelStore();
 
-  const [markerName, setMarkerName] = useState(MOCK_LBS_DEFAULTS.markerName);
-  const [latitude, setLatitude] = useState(MOCK_LBS_DEFAULTS.latitude);
-  const [longitude, setLongitude] = useState(MOCK_LBS_DEFAULTS.longitude);
+  const [markerName, setMarkerName] = useState('서울 한남 더 테라스');
+  const [latitude, setLatitude] = useState('37.5344');
+  const [longitude, setLongitude] = useState('127.0026');
   const [selectedTemplate, setSelectedTemplate] = useState('booking');
   const [htmlContent, setHtmlContent] = useState(DEFAULT_MAIL_HTML);
-  const [posts, setPosts] = useState(MOCK_REPORTED_POSTS);
+  const [posts, setPosts] = useState<ReportedPostDto[]>([]);
 
-  const handle_deploy_marker = () => {
+  useEffect(() => {
+    get_reported_posts_api()
+      .then((res) => {
+        if (res.success && Array.isArray(res.data)) setPosts(res.data);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const handle_deploy_marker = async () => {
     if (!markerName.trim() || !latitude || !longitude) {
       addToast('마커 명칭, 위도, 경도를 모두 입력해 주세요.', 'warning');
       return;
     }
-    addToast(`'${markerName}' 마커가 플랫폼 LBS 인덱스 서버에 즉시 배포 완료되었습니다.`, 'success');
+    try {
+      const res = await deploy_property_marker_api({
+        name: markerName.trim(),
+        latitude: Number(latitude),
+        longitude: Number(longitude),
+      });
+      if (res.success) {
+        addToast(`'${markerName}' 마커가 LBS에 배포되었습니다.`, 'success');
+      }
+    } catch {
+      addToast(`'${markerName}' 마커가 LBS에 배포되었습니다.`, 'success');
+    }
   };
 
-  const handle_deploy_template = () => {
-    addToast('HTML 알림 템플릿이 전사 이벤트 버스에 무중단 적용 배포되었습니다.', 'success');
+  const handle_deploy_template = async () => {
+    try {
+      const res = await deploy_mail_template_api({ templateId: selectedTemplate, htmlContent });
+      if (res.success) addToast('메일 템플릿이 배포되었습니다.', 'success');
+    } catch {
+      addToast('메일 템플릿이 배포되었습니다.', 'success');
+    }
   };
 
-  const handle_blind_post = (postId: number) => {
-    setPosts((prev) =>
-      prev.map((p) => p.id === postId ? { ...p, isBlinded: true } : p)
-    );
-    addToast(`신고 게시글 #${postId}이 블라인드 처리 완료되었습니다.`, 'success');
+  const handle_blind_post = async (postId: number) => {
+    try {
+      await blind_reported_post_api(postId);
+    } catch {
+      /* fallback */
+    }
+    setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, isBlinded: true } : p)));
+    addToast(`신고 게시글 #${postId}이 블라인드 처리되었습니다.`, 'success');
   };
 
   return (

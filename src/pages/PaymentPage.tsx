@@ -38,7 +38,7 @@ function resolvePaymentToastType(message: string): 'warning' | 'info' {
 export const PaymentPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { username, mileage: userMileage, isLoggedIn, addToast } = useTravelStore();
+  const { username, mileage: userMileage, addToast } = useTravelStore();
 
   const checkout = location.state as PaymentCheckoutState | null;
 
@@ -53,16 +53,11 @@ export const PaymentPage: React.FC = () => {
   );
 
   useEffect(() => {
-    if (!isLoggedIn) {
-      addToast('로그인 후 결제를 진행할 수 있습니다.', 'warning');
-      navigate('/', { replace: true });
-      return;
-    }
     if (!checkout) {
       addToast('결제할 주문 정보가 없습니다.', 'warning');
       navigate('/', { replace: true });
     }
-  }, [checkout, isLoggedIn, navigate, addToast]);
+  }, [checkout, navigate, addToast]);
 
   useEffect(() => {
     if (checkout) {

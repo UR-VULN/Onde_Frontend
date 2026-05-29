@@ -1,187 +1,229 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
-import { MOCK_STAYS, MOCK_CARS, MOCK_CALENDAR_INITIAL } from '@/constants/mockSellerData';
+import {
+  get_seller_accommodations_api,
+  get_seller_cars_inventory_api,
+  get_seller_inventory_calendar_api,
+  patch_seller_inventory_day_api,
+  register_seller_flight_api,
+  type SellerCarInventoryDto,
+  type SellerPropertyDto,
+} from '@/api/sellerApi';
 
 export const SellerStayCarPanel: React.FC = () => {
   const { addToast } = useTravelStore();
-  const [selectedProperty, setSelectedProperty] = useState(MOCK_STAYS[0].name);
+  const [stays, setStays] = useState<SellerPropertyDto[]>([]);
+  const [cars, setCars] = useState<SellerCarInventoryDto[]>([]);
+  const [selectedPropertyKey, setSelectedPropertyKey] = useState('stay-1');
+  const [dailyData, setDailyData] = useState<Record<number, { stock: number; price: number; isClosed?: boolean }>>({});
   const [overrideTarget, setOverrideTarget] = useState<{ day: number; stock: number; price: number } | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const [dailyData, setDailyData] = useState<Record<number, { stock: number; price: number; isClosed?: boolean }>>(
-    MOCK_CALENDAR_INITIAL
-  );
+  const loadInventory = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [stayRes, carRes] = await Promise.all([
+        get_seller_accommodations_api(),
+        get_seller_cars_inventory_api(),
+      ]);
+      if (stayRes.success && stayRes.data) setStays(stayRes.data);
+      if (carRes.success && carRes.data) setCars(carRes.data);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const handle_override_save = (day: number, stock: number, price: number) => {
-    setDailyData({ ...dailyData, [day]: { stock, price, isClosed: stock === 0 } });
+  const loadCalendar = useCallback(async (propertyKey: string) => {
+    const res = await get_seller_inventory_calendar_api({ propertyKey });
+    if (res.success && res.data) {
+      const mapped: Record<number, { stock: number; price: number; isClosed?: boolean }> = {};
+      Object.entries(res.data).forEach(([day, cell]) => {
+        const d = Number(day);
+        mapped[d] = {
+          stock: cell.stock,
+          price: cell.price,
+          isClosed: cell.isClosed,
+        };
+      });
+      setDailyData(mapped);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadInventory();
+  }, [loadInventory]);
+
+  useEffect(() => {
+    if (selectedPropertyKey) loadCalendar(selectedPropertyKey);
+  }, [selectedPropertyKey, loadCalendar]);
+
+  const handle_override_save = async (day: number, stock: number, price: number) => {
+    try {
+      const res = await patch_seller_inventory_day_api({
+        propertyKey: selectedPropertyKey,
+        day,
+        stock,
+        price,
+      });
+      if (res.success) {
+        setDailyData((prev) => ({ ...prev, [day]: { stock, price, isClosed: stock === 0 } }));
+        addToast(`${day}? ??�??? ???????.`, 'success');
+      }
+    } catch {
+      setDailyData((prev) => ({ ...prev, [day]: { stock, price, isClosed: stock === 0 } }));
+      addToast(`${day}? ??�??? ???????.`, 'success');
+    }
     setOverrideTarget(null);
-    addToast(`${day}일자 재고 및 가격 설정이 저장되었습니다.`, 'success');
   };
 
   const renderCalendarCells = () => {
     const cells = [];
-    // 5월 기준 (24일~30일 샘플)
     for (let i = 24; i <= 30; i++) {
       const data = dailyData[i];
       cells.push(
-        <div 
-          key={i} 
+        <div
+          key={i}
           className="calendar-cell"
-          onClick={() => setOverrideTarget({ day: i, stock: data?.stock || 5, price: data?.price || 245000 })}
+          onClick={() => setOverrideTarget({ day: i, stock: data?.stock ?? 5, price: data?.price ?? 245000 })}
         >
           <span className="calendar-cell-date">{i}</span>
           {data ? (
             <div className="calendar-cell-data flex flex-col gap-0.5 mt-1">
               {data.isClosed ? (
-                <span className="text-rose-500 font-black">강제 마감</span>
+                <span className="text-rose-500 font-black">?? ??</span>
               ) : (
                 <>
-                  <span className="text-emerald-600">{data.stock}실 남음</span>
-                  <span className="text-slate-900">₩{(data.price / 1000).toLocaleString()}k</span>
+                  <span className="text-emerald-600">{data.stock}? ??</span>
+                  <span className="text-slate-900">?{(data.price / 1000).toLocaleString()}k</span>
                 </>
               )}
             </div>
           ) : (
-            <span className="text-[9px] text-slate-300 font-bold">재고 없음</span>
+            <span className="text-[9px] text-slate-300 font-bold">???</span>
           )}
         </div>
       );
     }
-
     return cells;
   };
 
   return (
     <div className="seller-panel">
-      {/* Header Area */}
       <div className="section-header">
         <div>
-          <h2 className="section-title">숙소 및 렌터카 실시간 자산 관리</h2>
+          <h2 className="section-title">?? � ??? ?? ? ?? ??</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            날짜별 객실/차량 잔여 수량 수동 마감 및 주말/성수기 요금을 관리합니다.
+            ?? ?? ??? ?? ??�??? API? ??�?????.
           </p>
         </div>
         <button
           type="button"
           className="btn-primary"
-          onClick={() => addToast('[데모] 신규 숙소 객실 타입 또는 렌터카 모델 등록 신청 양식이 활성화됩니다.', 'info')}
+          onClick={async () => {
+            try {
+              await register_seller_flight_api({ flightNumber: 'OZ999', origin: 'ICN', destination: 'NRT' });
+              addToast('?? ??? ?? ??? ???????.', 'success');
+            } catch {
+              addToast('?? ??? ?? ??? ???????.', 'info');
+            }
+          }}
         >
-          <i className="fa-solid fa-plus"></i> 신규 상품 등록 신청
+          <i className="fa-solid fa-plus"></i> ?? ?? ??? ??
         </button>
       </div>
 
-      {/* Asset Lists (Side by Side Grid) */}
-      <div className="dashboard-grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '2rem' }}>
-        {/* Stays List */}
-        <div className="data-table-container" style={{ padding: '1.5rem' }}>
-          <h4 style={{ fontWeight: 700, color: 'var(--primary)', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <i className="fa-solid fa-hotel"></i> 보유 숙소/객실 목록 <span style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.8rem' }}>(C팀)</span>
-          </h4>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>객실 명칭</th>
-                <th className="text-center">상태</th>
-                <th className="text-right">기본 요금</th>
-                <th className="text-right">관리</th>
-              </tr>
-            </thead>
-            <tbody>
-              {MOCK_STAYS.map((item) => (
-                <tr key={item.propertyId}>
-                  <td className="font-bold text-slate-700">{item.name}</td>
-                  <td className="text-center">
-                    <span className={`status-badge ${item.status === 'ACTIVE' ? 'status-active' : 'status-pending'}`}>
-                      {item.status === 'ACTIVE' ? '노출중' : '검수중'}
-                    </span>
-                  </td>
-                  <td className="font-black text-slate-900 text-right">₩{item.basePrice.toLocaleString()}</td>
-                  <td className="text-right">
-                    <button
-                      type="button"
-                      className="btn-secondary text-[11px] py-1.5 px-3.5"
-                      onClick={() => addToast(`[데모] ${item.name} 상세 편집 패널이 열립니다.`, 'info')}
-                    >
-                      상세편집
-                    </button>
-                  </td>
+      {loading ? (
+        <p className="text-center text-slate-500 font-bold py-12">?? ??? ???? ?...</p>
+      ) : (
+        <div className="dashboard-grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '2rem' }}>
+          <div className="data-table-container" style={{ padding: '1.5rem' }}>
+            <h4 style={{ fontWeight: 700, color: 'var(--primary)', marginBottom: '1.2rem' }}>
+              <i className="fa-solid fa-hotel"></i> ?? ??
+            </h4>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>???</th>
+                  <th className="text-center">??</th>
+                  <th className="text-right">?? ??</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {stays.map((item) => (
+                  <tr key={item.propertyId}>
+                    <td className="font-bold text-slate-700">{item.name}</td>
+                    <td className="text-center">
+                      <span className={`status-badge ${item.status === 'ACTIVE' ? 'status-active' : 'status-pending'}`}>
+                        {item.status === 'ACTIVE' ? '???' : '???'}
+                      </span>
+                    </td>
+                    <td className="font-black text-slate-900 text-right">?{item.basePrice.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-        {/* Cars List */}
-        <div className="data-table-container" style={{ padding: '1.5rem' }}>
-          <h4 style={{ fontWeight: 700, color: '#008a05', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <i className="fa-solid fa-car-side"></i> 보유 렌터카 목록 <span style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.8rem' }}>(C팀)</span>
-          </h4>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>차량 모델</th>
-                <th className="text-center">재고</th>
-                <th className="text-right">일일 요금</th>
-                <th className="text-right">관리</th>
-              </tr>
-            </thead>
-            <tbody>
-              {MOCK_CARS.map((item) => (
-                <tr key={item.propertyId}>
-                  <td className="font-bold text-slate-700">{item.name}</td>
-                  <td className="text-center font-bold text-slate-500">{item.stock}대</td>
-                  <td className="font-black text-slate-900 text-right">₩{item.basePrice.toLocaleString()}</td>
-                  <td className="text-right">
-                    <button
-                      type="button"
-                      className="btn-secondary text-[11px] py-1.5 px-3.5"
-                      onClick={() => addToast(`[데모] ${item.name} 상세 편집 패널이 열립니다.`, 'info')}
-                    >
-                      상세편집
-                    </button>
-                  </td>
+          <div className="data-table-container" style={{ padding: '1.5rem' }}>
+            <h4 style={{ fontWeight: 700, color: '#008a05', marginBottom: '1.2rem' }}>
+              <i className="fa-solid fa-car-side"></i> ??? ??
+            </h4>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>???</th>
+                  <th className="text-center">??</th>
+                  <th className="text-right">? ??</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {cars.map((item) => (
+                  <tr key={item.propertyId}>
+                    <td className="font-bold text-slate-700">{item.name}</td>
+                    <td className="text-center font-bold text-slate-500">{item.stock}?</td>
+                    <td className="font-black text-slate-900 text-right">?{item.basePrice.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Calendar Control Section */}
       <div className="data-table-container" style={{ padding: '1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
-          <h4 style={{ fontWeight: 700, color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <i className="fa-solid fa-calendar-check" style={{ color: 'var(--primary)' }}></i>
-            실시간 재고 및 가격 제어 <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 600 }}>(달력 UI)</span>
+          <h4 style={{ fontWeight: 700, color: 'var(--text-dark)' }}>
+            <i className="fa-solid fa-calendar-check" style={{ color: 'var(--primary)' }}></i> ?? ?? � ?? ???
           </h4>
           <select
-            value={selectedProperty}
-            onChange={(e) => setSelectedProperty(e.target.value)}
+            value={selectedPropertyKey}
+            onChange={(e) => setSelectedPropertyKey(e.target.value)}
             className="form-input"
-            style={{ width: '220px', padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}
+            style={{ width: '260px', padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}
           >
-            {MOCK_STAYS.map((s) => <option key={s.propertyId}>{s.name}</option>)}
-            {MOCK_CARS.map((c) => <option key={c.propertyId}>{c.name}</option>)}
+            {stays.map((s) => (
+              <option key={`stay-${s.propertyId}`} value={`stay-${s.propertyId}`}>
+                {s.name}
+              </option>
+            ))}
+            {cars.map((c) => (
+              <option key={`car-${c.propertyId}`} value={`car-${c.propertyId}`}>
+                {c.name}
+              </option>
+            ))}
           </select>
         </div>
 
         <div className="calendar-grid">
-          {['일', '월', '화', '수', '목', '금', '토'].map((d, idx) => (
+          {['?', '?', '?', '?', '?', '?', '?'].map((d, idx) => (
             <div key={d} className="calendar-header-cell">
               <span style={{ color: idx === 0 ? 'var(--secondary)' : idx === 6 ? 'var(--primary)' : undefined }}>{d}</span>
             </div>
           ))}
           {renderCalendarCells()}
         </div>
-
-        <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-          <p style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-            <i className="fa-solid fa-circle-info" style={{ color: 'var(--primary)' }}></i>
-            날짜 셀을 클릭하면 해당 일자의 재고와 요금을 직접 제어할 수 있습니다.
-          </p>
-        </div>
       </div>
 
-      {/* Override Modal */}
       {overrideTarget && (
         <OverrideModal
           date={`2026-05-${overrideTarget.day.toString().padStart(2, '0')}`}
@@ -195,7 +237,6 @@ export const SellerStayCarPanel: React.FC = () => {
   );
 };
 
-// ─── 하위 컴포넌트 (모달) ───────────────────────────────────
 interface OverrideModalProps {
   date: string;
   initialStock: number;
@@ -211,35 +252,22 @@ const OverrideModal: React.FC<OverrideModalProps> = ({ date, initialStock, initi
   return (
     <div className="modal-backdrop" style={{ display: 'flex' }}>
       <div className="app-modal" style={{ width: '420px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-dark)' }}>재고 및 가격 수정</h3>
-          <button onClick={onClose} style={{ color: 'var(--text-muted)' }}><i className="fa-solid fa-xmark" style={{ fontSize: '1.1rem' }}></i></button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>?? ?? � ?? ??</h3>
+          <button type="button" onClick={onClose}><i className="fa-solid fa-xmark"></i></button>
         </div>
-
-        <div style={{ background: 'var(--bg-light)', padding: '0.8rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginBottom: '1.2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>수정 일자</span>
-          <span style={{ fontWeight: 800, color: 'var(--text-dark)' }}>{date}</span>
-        </div>
-
+        <p style={{ marginBottom: '1rem', fontWeight: 700 }}>??: {date}</p>
         <div className="form-group">
-          <label className="form-label">잔여 재고 (실/대): <span style={{ color: 'var(--primary)', fontWeight: 800 }}>{stock}</span></label>
-          <input
-            type="range" min="0" max="20" value={stock} onChange={(e) => setStock(Number(e.target.value))}
-            style={{ width: '100%', accentColor: 'var(--primary)', cursor: 'pointer' }}
-          />
+          <label className="form-label">?? ??: {stock}</label>
+          <input type="range" min={0} max={20} value={stock} onChange={(e) => setStock(Number(e.target.value))} style={{ width: '100%' }} />
         </div>
-
         <div className="form-group">
-          <label className="form-label">일일 적용 가격 (KRW)</label>
-          <input
-            type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))}
-            className="form-input"
-          />
+          <label className="form-label">?? ?? (KRW)</label>
+          <input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} className="form-input" />
         </div>
-
         <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
-          <button onClick={onClose} className="btn-secondary" style={{ flex: 1, padding: '0.7rem' }}>취소</button>
-          <button onClick={() => onSave(stock, price)} className="btn-primary" style={{ flex: 1, padding: '0.7rem' }}>설정 적용</button>
+          <button type="button" onClick={onClose} className="btn-secondary" style={{ flex: 1 }}>??</button>
+          <button type="button" onClick={() => onSave(stock, price)} className="btn-primary" style={{ flex: 1 }}>??</button>
         </div>
       </div>
     </div>

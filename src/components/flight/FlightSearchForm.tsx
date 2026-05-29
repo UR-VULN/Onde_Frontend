@@ -1,8 +1,6 @@
 import React from 'react';
 import { useFlightStore } from '@/store/useFlightStore';
 import type { FlightSearchQuery } from '@/store/useFlightStore';
-import { search_flights_api } from '@/api/flightApi';
-import { useTravelStore } from '@/store/useTravelStore';
 import { SearchDateField } from '@/components/common/SearchDateField';
 import { SearchListPicker } from '@/components/common/SearchListPicker';
 import {
@@ -21,11 +19,11 @@ export type FlightSearchParams = FlightSearchQuery;
 
 interface FlightSearchFormProps {
   onSearch?: (params: FlightSearchParams) => void;
+  loading?: boolean;
 }
 
-export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch }) => {
-  const { search_query, set_search_query, set_search_results } = useFlightStore();
-  const { addToast } = useTravelStore();
+export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, loading = false }) => {
+  const { search_query, set_search_query } = useFlightStore();
 
   const handle_toggle_trip_type = () => {
     const nextType = search_query.tripType === 'RT' ? 'OW' : 'RT';
@@ -78,35 +76,9 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch }) 
     }
   };
 
-  const handle_search = async (e: React.FormEvent) => {
+  const handle_search = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch?.(search_query);
-    try {
-      addToast('실시간 항공 운항편을 조회 중입니다...', 'info');
-
-      const queryPayload = { ...search_query };
-      if (search_query.tripType === 'RT') {
-        const datesArray = search_query.dates.split(',');
-        const depDate = datesArray[0] || todayStr();
-        const retDate = datesArray[1] || addDays(depDate, 7);
-
-        queryPayload.departures = `${search_query.departures},${search_query.arrivals}`;
-        queryPayload.arrivals = `${search_query.arrivals},${search_query.departures}`;
-        queryPayload.dates = `${depDate},${retDate}`;
-      }
-
-      const res = await search_flights_api(queryPayload);
-      if (res.success && res.data) {
-        set_search_results(res.data);
-        addToast('항공 스케줄 통합 검색이 완료되었습니다.', 'success');
-      } else {
-        set_search_results(null);
-        addToast(res.message || '검색 결과가 없습니다.', 'warning');
-      }
-    } catch (err: any) {
-      set_search_results(null);
-      addToast(err?.error?.message || '항공편 실시간 검색 중 오류가 발생했습니다.', 'warning');
-    }
   };
 
   const datesArray = search_query.dates.split(',');
@@ -114,7 +86,7 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch }) 
   const returnDate = datesArray[1] || addDays(departureDate, 7);
 
   return (
-    <div className="w-full !-mt-[40px] relative z-20 transition-all duration-300">
+    <div className="w-full relative z-20 transition-all duration-300">
       <div className="w-full bg-white border border-slate-200/80 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] flex flex-col select-none overflow-visible">
         <div className="lg:hidden h-1 w-full" style={{ background: 'linear-gradient(135deg, #005ce6 0%, #ff5a5f 100%)' }} />
         <div className="p-4 md:p-5 flex flex-col">
@@ -234,7 +206,8 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch }) 
 
               <button
                 type="submit"
-                className="search-submit-btn h-[48px] lg:h-[68px] w-full lg:w-[68px] rounded-xl flex items-center justify-center cursor-pointer flex-shrink-0"
+                disabled={loading}
+                className="search-submit-btn h-[48px] lg:h-[68px] w-full lg:w-[68px] rounded-xl flex items-center justify-center cursor-pointer flex-shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
                 title="항공권 검색"
               >
                 <i className="fa-solid fa-magnifying-glass text-lg text-white"></i>

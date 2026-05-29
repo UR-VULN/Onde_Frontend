@@ -1,13 +1,13 @@
 import { userAxios } from '@/api/axiosInstance';
-import type { FlightSearchQuery, FlightSearchResponse, HeldBooking } from '@/store/useFlightStore';
+import type { FlightSearchQuery, FlightSearchResponse } from '@/store/useFlightStore';
 
 // 1. 고객용 항공권 통합 실시간 검색
 export const search_flights_api = async (params: FlightSearchQuery): Promise<{ success: boolean; data: FlightSearchResponse; message: string }> => {
   return userAxios.get('/api/v1/flights/search', { params });
 };
 
-// 2. 고객용 항공 좌석 임시 선점 신청 (10분 보존)
-export interface CreateBookingPayload {
+/** 명세: POST /api/v1/reservations/flights — 숙소·렌터카와 동일 예약 후 결제 */
+export interface FlightReservationPayload {
   scheduleId: number;
   seatClass: string;
   passengers: Array<{
@@ -17,9 +17,25 @@ export interface CreateBookingPayload {
   }>;
 }
 
-export const book_flight_seat_api = async (payload: CreateBookingPayload): Promise<{ success: boolean; data: HeldBooking; message: string }> => {
-  return userAxios.post('/api/v1/flights/bookings', payload);
+export interface FlightReservationResponse {
+  reservationId: number;
+  bookingId: number;
+  bookingCode: string;
+  scheduleId: number;
+  flightNumber: string;
+  seatClass: string;
+  totalPrice: number;
+  status: string;
+}
+
+export const book_flight_reservation_api = async (
+  payload: FlightReservationPayload
+): Promise<{ success: boolean; data: FlightReservationResponse; message: string }> => {
+  return userAxios.post('/api/v1/reservations/flights', payload);
 };
+
+/** @deprecated book_flight_reservation_api */
+export const book_flight_seat_api = book_flight_reservation_api;
 
 // 3. 판매자용 정기 스케줄 일괄 등록 신청
 export interface FlightBatchRegisterPayload {
@@ -68,12 +84,16 @@ export const seller_get_calendar_schedules_api = async (params: CalendarParams):
   return userAxios.get('/api/v1/seller/schedules/calendar', { params });
 };
 
-// 5. 판매자용 달력 기반 가격/재고 수동 제어
+// 5. 판매자용 달력 기반 가격/재고 수동 제어 (명세: PATCH .../control)
 export interface ScheduleControlPayload {
-  remainingSeats?: number;
-  overridePrice?: number;
+  seatClass: string;
+  newPrice?: number;
+  availableSeats?: number;
 }
 
-export const seller_control_schedule_api = async (scheduleId: number, payload: ScheduleControlPayload): Promise<{ success: boolean; message: string }> => {
+export const seller_control_schedule_api = async (
+  scheduleId: number,
+  payload: ScheduleControlPayload
+): Promise<{ success: boolean; message: string }> => {
   return userAxios.patch(`/api/v1/seller/schedules/${scheduleId}/control`, payload);
 };

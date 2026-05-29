@@ -5,6 +5,10 @@ import 'pretendard/dist/web/static/pretendard.css'
 import '@fortawesome/fontawesome-free/css/all.min.css'
 import './index.css'
 import App from '@/App'
+import { migrateLegacyLocalStorageAuth, restoreSessionFromCookies } from '@/utils/authCookies'
+
+migrateLegacyLocalStorageAuth()
+restoreSessionFromCookies()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

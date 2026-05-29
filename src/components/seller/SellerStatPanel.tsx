@@ -1,19 +1,47 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
-import { request_monthly_settlement_api } from '@/api/sellerApi';
 import {
-  MOCK_SETTLEMENT_HISTORY,
-  MOCK_DAILY_SALES,
-  MOCK_STAT_METRICS,
-} from '@/constants/mockSellerData';
+  get_seller_sales_stat_api,
+  get_seller_settlement_history_api,
+  request_monthly_settlement_api,
+} from '@/api/sellerApi';
+import type { SellerSettlementHistoryDto } from '@/api/sellerApi';
+import { get_seller_dashboard_statistics_api } from '@/api/sellerApi';
 import { DAYS_OF_WEEK } from '@/constants/shared';
 
 export const SellerStatPanel: React.FC = () => {
   const { addToast } = useTravelStore();
   const [isRequesting, setIsRequesting] = useState(false);
+  const [totalSales, setTotalSales] = useState(0);
+  const [completedBookings, setCompletedBookings] = useState(0);
+  const [settlementPending, setSettlementPending] = useState(0);
+  const [commissionRate, setCommissionRate] = useState(0.1);
+  const [settlementHistory, setSettlementHistory] = useState<SellerSettlementHistoryDto[]>([]);
+  const [dailySales, setDailySales] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
 
-  const { totalSales, completedBookings, settlementPending, commissionRate } = MOCK_STAT_METRICS;
-  const maxBar = Math.max(...MOCK_DAILY_SALES);
+  useEffect(() => {
+    (async () => {
+      const [statRes, histRes, dashRes] = await Promise.all([
+        get_seller_sales_stat_api(),
+        get_seller_settlement_history_api(),
+        get_seller_dashboard_statistics_api({ period: 'MONTHLY' }),
+      ]);
+      if (statRes.success && statRes.data) {
+        setTotalSales(statRes.data.totalSalesAmount);
+        setCompletedBookings(statRes.data.completedBookingsCount);
+        setSettlementPending(statRes.data.settlementPendingAmount);
+        setCommissionRate(statRes.data.commissionRate);
+      }
+      if (histRes.success && histRes.data) {
+        setSettlementHistory(histRes.data);
+      }
+      if (dashRes.success && dashRes.data?.dailyRevenue?.length) {
+        setDailySales(dashRes.data.dailyRevenue);
+      }
+    })();
+  }, []);
+
+  const maxBar = Math.max(...dailySales, 1);
 
   const handle_request_settlement = async () => {
     setIsRequesting(true);
@@ -96,7 +124,7 @@ export const SellerStatPanel: React.FC = () => {
                 {[1, 2, 3, 4].map(i => <div key={i} style={{ width: '100%', height: '1px', background: 'var(--border-color)' }} />)}
              </div>
              <div style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', display: 'flex', alignItems: 'flex-end', gap: '1rem' }}>
-                {MOCK_DAILY_SALES.map((amount, idx) => {
+                {dailySales.map((amount, idx) => {
                   const heightPct = Math.round((amount / maxBar) * 85);
                   return (
                     <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
@@ -133,7 +161,7 @@ export const SellerStatPanel: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {MOCK_SETTLEMENT_HISTORY.map((item) => (
+              {settlementHistory.map((item) => (
                 <tr key={item.settlementMonth}>
                   <td style={{ fontWeight: 700 }}>{item.settlementMonth}</td>
                   <td style={{ fontWeight: 800 }}>₩{item.netAmount.toLocaleString()}</td>

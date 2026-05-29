@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
-import { search_stays_api } from '@/api/stayApi';
 import { SearchDateField } from '@/components/common/SearchDateField';
 import { StayDestinationPicker } from '@/components/stay/StayDestinationPicker';
 import { DEFAULT_DESTINATION } from '@/constants/travelDestinations';
@@ -16,9 +15,10 @@ export interface StaySearchParams {
 
 interface StaySearchFormProps {
   onSearch?: (params: StaySearchParams) => void;
+  loading?: boolean;
 }
 
-export const StaySearchForm: React.FC<StaySearchFormProps> = ({ onSearch }) => {
+export const StaySearchForm: React.FC<StaySearchFormProps> = ({ onSearch, loading = false }) => {
   const { addToast } = useTravelStore();
 
   const [destinationCountry, setDestinationCountry] = useState<string>(DEFAULT_DESTINATION.country);
@@ -61,18 +61,8 @@ export const StaySearchForm: React.FC<StaySearchFormProps> = ({ onSearch }) => {
       guests: guestCount,
       rooms: roomCount,
     };
+    addToast('실시간 숙소를 조회 중입니다...', 'info');
     onSearch?.(params);
-    try {
-      addToast("실시간 숙소를 조회 중입니다...", "info");
-      const res = await search_stays_api(params);
-      if (res.success && res.data) {
-        addToast("숙소 검색이 완료되었습니다.", "success");
-      } else {
-        addToast(res.message || "검색 결과가 없습니다.", "warning");
-      }
-    } catch (err: any) {
-      addToast(err?.error?.message || "숙소 실시간 검색 중 오류가 발생했습니다.", "warning");
-    }
   };
 
   return (
@@ -192,8 +182,9 @@ export const StaySearchForm: React.FC<StaySearchFormProps> = ({ onSearch }) => {
           {/* Coral Gradient Signature Search Button */}
           <button
             type="submit"
+            disabled={loading}
             className="h-[48px] lg:h-[68px] w-full lg:w-[68px] rounded-xl flex items-center justify-center cursor-pointer flex-shrink-0 shadow-[0_4px_12px_rgba(255,90,95,0.2)] hover:shadow-[0_6px_20px_rgba(255,90,95,0.3)] transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
-            style={{ background: 'linear-gradient(135deg, #005ce6 0%, #ff5a5f 100%)', color: '#ffffff' }}
+            style={{ background: 'linear-gradient(135deg, #005ce6 0%, #ff5a5f 100%)', color: '#ffffff', opacity: loading ? 0.6 : 1 }}
             title="숙소 검색"
           >
             <i className="fa-solid fa-magnifying-glass text-lg text-white"></i>

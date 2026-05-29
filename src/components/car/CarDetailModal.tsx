@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import type { MockCar } from '@/constants/mockCars';
-import { buildPaymentCheckout, deriveReservationId } from '@/utils/paymentCheckout';
+import type { CarDto } from '@/api/carApi';
+import { book_car_api } from '@/api/carApi';
+import { buildPaymentCheckout } from '@/utils/paymentCheckout';
 import {
   buildCalendarMonth,
   countNights,
@@ -22,15 +23,17 @@ const SECONDARY = '#ff5a5f';
 
 // ─── props ───────────────────────────────────────────────────
 interface CarDetailModalProps {
-  car: MockCar;
-  defaultPickup?: string;  // YYYY-MM-DD
-  defaultReturn?: string;  // YYYY-MM-DD
+  car: CarDto;
+  soldOutDays?: number[];
+  defaultPickup?: string;
+  defaultReturn?: string;
   onClose: () => void;
 }
 
 // ─── component ───────────────────────────────────────────────
 export const CarDetailModal: React.FC<CarDetailModalProps> = ({
   car,
+  soldOutDays = [],
   defaultPickup,
   defaultReturn,
   onClose,
@@ -39,7 +42,8 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
   const { addToast, isLoggedIn, openAuthModal, mileage: userMileage } = useTravelStore();
 
   // car.unavailableDays를 Set으로 변환 (백엔드 연동 시 API 응답값으로 대체)
-  const unavailableDaysSet = useMemo(() => new Set(car.unavailableDays), [car.unavailableDays]);
+  const [booking, setBooking] = useState(false);
+  const unavailableDaysSet = useMemo(() => new Set(soldOutDays), [soldOutDays]);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -49,7 +53,7 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
   const { checkIn: initPickup, checkOut: initReturn } = resolveValidStayRange(
     preferredPickup,
     preferredReturn,
-    car.unavailableDays,
+    soldOutDays,
   );
 
   const [pickupDate, setPickupDate] = useState<string>(initPickup);
@@ -117,7 +121,7 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
   }
 
   function hasSoldOutInRange(start: string, end: string): boolean {
-    return !isStayRangeAvailable(start, end, car.unavailableDays);
+    return !isStayRangeAvailable(start, end, soldOutDays);
   }
 
   function handleCellClick(dateStr: string, disabled: boolean) {
@@ -154,7 +158,7 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  function handleBook() {
+  async function handleBook() {
     if (!isLoggedIn) {
       addToast('로그인 후에 렌터카를 예약하실 수 있습니다.', 'warning');
       onClose();
@@ -165,26 +169,48 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
       addToast('대여/반납 일정을 선택해 주세요.', 'warning');
       return;
     }
-    navigate('/payment', {
-      state: buildPaymentCheckout({
-        reservationType: 'CAR',
-        reservationId: deriveReservationId(car.id),
-        productTitle: car.name,
-        productSubtitle: car.typeLabel,
-        productImageUrl: car.imageUrl,
-        categoryLabel: '렌터카',
-        categoryIcon: 'fa-car',
-        totalAmount: rawTotal,
-        usedMileage: mileageUsed,
-        dateSummary: `${pickupDate} ~ ${returnDate} (${rentalDays}일 대여)`,
-        detailLines: [
-          `₩${car.pricePerDay.toLocaleString('ko-KR')} × ${rentalDays}일`,
-          `${car.fuel} · ${car.seats}인승`,
-        ],
-        returnPath: '/car',
-      }),
-    });
-    onClose();
+
+    setBooking(true);
+    try {
+      const res = await book_car_api({
+        carId: car.carId,
+        insuranceType: 'BASIC',
+        pickupDate,
+        returnDate,
+      });
+      if (!res.success || !res.data) {
+        addToast(res.message || '렌터카 예약에 실패했습니다.', 'warning');
+        return;
+      }
+      onClose();
+      navigate('/payment', {
+        state: buildPaymentCheckout({
+          reservationType: 'CAR',
+          reservationId: res.data.reservationId,
+          productTitle: car.name,
+          productSubtitle: car.typeLabel,
+          productImageUrl: car.imageUrl,
+          categoryLabel: '렌터카',
+          categoryIcon: 'fa-car',
+          totalAmount: res.data.totalPrice,
+          usedMileage: mileageUsed,
+          dateSummary: `${pickupDate} ~ ${returnDate} (${rentalDays}일 대여)`,
+          detailLines: [
+            `₩${car.pricePerDay.toLocaleString('ko-KR')} × ${rentalDays}일`,
+            `${car.fuel} · ${car.seats}인승`,
+          ],
+          returnPath: '/car',
+        }),
+      });
+    } catch (err: unknown) {
+      const msg =
+        (err as { message?: string })?.message ||
+        (err as { error?: { message?: string } })?.error?.message ||
+        '렌터카 예약 중 오류가 발생했습니다.';
+      addToast(msg, 'warning');
+    } finally {
+      setBooking(false);
+    }
   }
 
   const bannerPickup = pickupDate || todayStr();
@@ -407,16 +433,18 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
           {/* CTA Button */}
           <button
             onClick={handleBook}
+            disabled={booking}
             style={{
               width: '100%', padding: '0.75rem',
               background: `linear-gradient(135deg, ${SECONDARY} 0%, #e0484d 100%)`,
               color: '#fff', border: 'none', borderRadius: '12px',
-              fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer',
+              fontSize: '0.9rem', fontWeight: 800, cursor: booking ? 'wait' : 'pointer',
+              opacity: booking ? 0.7 : 1,
               boxShadow: '0 4px 12px rgba(255,90,95,0.28)',
               letterSpacing: '-0.2px',
             }}
           >
-            차량 예약하기
+            {booking ? '예약 처리 중...' : '차량 예약하기'}
           </button>
         </div>
       </div>

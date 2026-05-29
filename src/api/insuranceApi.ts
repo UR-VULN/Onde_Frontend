@@ -1,49 +1,62 @@
 import { userAxios } from '@/api/axiosInstance';
 import type { PremiumEstimate } from '@/store/useInsuranceStore';
 
-// 1. 고객용 실시간 동적 보험료 사전 계산
+/** 명세: POST /api/v1/insurances/calculate */
 export interface CalculatePremiumPayload {
-  insuranceProductId: number;
+  productId: number;
   birthdate: string;
+  destination?: string;
   startDate: string;
   endDate: string;
-  coverageLevel: string; // STANDARD, DELUXE, PREMIUM
+  coverageLevel: string;
 }
 
-export const calculate_premium_api = async (payload: CalculatePremiumPayload): Promise<{ success: boolean; data: PremiumEstimate; message: string }> => {
-  return userAxios.post('/api/v1/insurance/calculate', payload);
+export const calculate_premium_api = async (
+  payload: CalculatePremiumPayload
+): Promise<{ success: boolean; data: PremiumEstimate; message: string }> => {
+  return userAxios.post('/api/v1/insurances/calculate', payload);
 };
 
-// 2. 고객용 여행자 보험 최종 가입 신청 (JWT 인증 필수)
-export interface ApplyPolicyPayload {
-  insuranceProductId: number;
+/** 명세: POST /api/v1/reservations/insurances */
+export interface InsuranceReservationPayload {
+  productId: number;
   insuredName: string;
   insuredBirthdate: string;
   startDate: string;
   endDate: string;
   coverageLevel: string;
-  totalPremium: number;
 }
 
 export interface InsurancePolicyResponse {
+  policyId: number;
   policyCode: string;
+  productName: string;
   insuredName: string;
-  coverageLevel: string;
+  startDate: string;
+  endDate: string;
   totalPremium: number;
   status: string;
 }
 
-export const apply_insurance_policy_api = async (payload: ApplyPolicyPayload): Promise<{ success: boolean; data: InsurancePolicyResponse; message: string }> => {
-  return userAxios.post('/api/v1/insurance/policies', payload);
+export const apply_insurance_policy_api = async (
+  payload: InsuranceReservationPayload
+): Promise<{ success: boolean; data: InsurancePolicyResponse; message: string }> => {
+  return userAxios.post('/api/v1/reservations/insurances', payload);
 };
 
-// 3. 판매자(보험사 파트너)용 신규 보험 요율 상품 등록 제안
+/** 명세: POST /api/v1/seller/insurances */
 export interface RegisterInsuranceProductPayload {
   productName: string;
   baseDailyRate: number;
-  coverageDetails: string; // Stringified JSON
+  coverageDetails: Record<string, string> | string;
 }
 
-export const seller_register_insurance_rate_api = async (payload: RegisterInsuranceProductPayload): Promise<{ success: boolean; message: string }> => {
-  return userAxios.post('/api/v1/seller/insurance', payload);
+export const seller_register_insurance_rate_api = async (
+  payload: RegisterInsuranceProductPayload
+): Promise<{ success: boolean; message: string }> => {
+  const body =
+    typeof payload.coverageDetails === 'string'
+      ? payload
+      : { ...payload, coverageDetails: JSON.stringify(payload.coverageDetails) };
+  return userAxios.post('/api/v1/seller/insurances', body);
 };

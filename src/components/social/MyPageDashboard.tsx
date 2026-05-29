@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
-import { useFlightStore } from '@/store/useFlightStore';
-import { fetch_member_profile_api } from '@/api/userApi';
+import { fetch_member_profile_api, fetch_member_mileage_history_api } from '@/api/userApi';
+import type { MileageLogDto } from '@/api/userApi';
+import { fetch_my_reservations_api, mapReservationDtoToMyPage } from '@/api/reservationsApi';
 
 type ReservationFilter = 'all' | 'stay' | 'flight' | 'car' | 'ins';
 
@@ -36,20 +37,15 @@ export const MyPageDashboard: React.FC = () => {
     membershipGrade,
     isLoggedIn,
     setMemberProfile,
+    setReservations,
     cancelReservation,
     logout,
     addToast,
     openConfirmPopup,
   } = useTravelStore();
-  const { held_booking, booking_hold_time, hold_timer_active } = useFlightStore();
 
   const [activeFilter, setActiveFilter] = useState<ReservationFilter>('all');
-
-  const format_time = (seconds: number) => {
-    const min = Math.floor(seconds / 60);
-    const sec = seconds % 60;
-    return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
-  };
+  const [mileageLogs, setMileageLogs] = useState<MileageLogDto[]>([]);
 
   const filteredReservations = reservations.filter((r) => {
     if (activeFilter === 'all') return true;
@@ -65,10 +61,21 @@ export const MyPageDashboard: React.FC = () => {
 
     let cancelled = false;
 
-    fetch_member_profile_api()
-      .then((res) => {
-        if (!cancelled && res.success && res.data) {
-          setMemberProfile(res.data);
+    Promise.all([
+      fetch_member_profile_api(),
+      fetch_my_reservations_api(),
+      fetch_member_mileage_history_api(0, 5),
+    ])
+      .then(([profileRes, reservationsRes, historyRes]) => {
+        if (cancelled) return;
+        if (profileRes.success && profileRes.data) {
+          setMemberProfile(profileRes.data);
+        }
+        if (reservationsRes.success && reservationsRes.data?.reservations) {
+          setReservations(reservationsRes.data.reservations.map(mapReservationDtoToMyPage));
+        }
+        if (historyRes.success && historyRes.data?.logs) {
+          setMileageLogs(historyRes.data.logs);
         }
       })
       .catch(() => {
@@ -78,30 +85,14 @@ export const MyPageDashboard: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [isLoggedIn, setMemberProfile]);
+  }, [isLoggedIn, setMemberProfile, setReservations]);
+
+  if (!isLoggedIn) {
+    return null;
+  }
 
   return (
     <div className="mypage-dashboard page-hero-gap">
-      {hold_timer_active && held_booking && (
-        <div className="mypage-hold-alert">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <i className="fa-solid fa-triangle-exclamation"></i>
-            <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-dark)' }}>
-              [임시 선점 좌석 확보 중] {held_booking.flightNumber}편 ({held_booking.seatClass} 등급) -
-              좌석이 {format_time(booking_hold_time)} 동안 선점 예약 확보됩니다!
-            </span>
-          </div>
-          <button
-            type="button"
-            className="btn-primary"
-            style={{ fontSize: '0.72rem', padding: '0.4rem 0.9rem' }}
-            onClick={() => addToast('결제 페이지 연동 API 모크 결제 처리가 완료되었습니다.', 'success')}
-          >
-            즉시 결제하기 (₩{held_booking.totalPrice.toLocaleString()})
-          </button>
-        </div>
-      )}
-
       <div className="mypage-section-header">
         <h2 className="mypage-section-title">
           <i className="fa-solid fa-circle-user" style={{ color: 'var(--primary)' }}></i>
@@ -140,6 +131,19 @@ export const MyPageDashboard: React.FC = () => {
                 <span className="mypage-field-label">누적 마일리지</span>
                 <strong className="mypage-mileage-value">{mileage.toLocaleString()} P</strong>
               </div>
+              {mileageLogs.length > 0 && (
+                <ul className="mypage-mileage-history" style={{ marginTop: '0.75rem', fontSize: '0.72rem' }}>
+                  {mileageLogs.map((log) => (
+                    <li key={log.logId} style={{ marginBottom: '0.35rem', color: 'var(--text-muted)' }}>
+                      {log.description}{' '}
+                      <strong style={{ color: log.logType === 'USE' ? 'var(--secondary)' : '#059669' }}>
+                        {log.logType === 'USE' ? '-' : '+'}
+                        {log.amount.toLocaleString()} P
+                      </strong>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             <div className="mypage-contact-block">

@@ -1,26 +1,12 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { MOCK_CARS, type MockCar } from '@/constants/mockCars';
-import { CAR_TYPE_ALL, matchesCarTypeLabel } from '@/constants/carTypes';
+import React, { useEffect, useRef, useState } from 'react';
+import type { CarDto } from '@/api/carApi';
 import type { CarSearchParams } from './CarSearchForm';
 import { CarDetailModal } from './CarDetailModal';
-import { addDaysStr, isStayRangeAvailable, todayStr } from '@/utils/calendarUtils';
-function shuffleArray<T>(array: T[]): T[] {
-  const arr = [...array];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-const SHUFFLED_CARS = shuffleArray(MOCK_CARS);
-const TODAY = todayStr();
-const TOMORROW = addDaysStr(TODAY, 1);
 
 interface CarCardProps {
-  car: MockCar;
+  car: CarDto;
   index: number;
-  onSelect: (car: MockCar) => void;
+  onSelect: (car: CarDto) => void;
 }
 
 const CarCard: React.FC<CarCardProps> = ({ car, index, onSelect }) => {
@@ -43,18 +29,14 @@ const CarCard: React.FC<CarCardProps> = ({ car, index, onSelect }) => {
     return () => observer.disconnect();
   }, []);
 
-  const delayMs = (index % 4) * 90;
-  const formattedPrice = car.pricePerDay.toLocaleString('ko-KR');
-
   return (
     <div
       ref={ref}
-      style={{ transitionDelay: `${delayMs}ms` }}
+      style={{ transitionDelay: `${(index % 4) * 90}ms` }}
       className={`flex flex-col cursor-pointer group transition-all duration-500 ease-out
         ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
       onClick={() => onSelect(car)}
     >
-      {/* Image Wrapper */}
       <div className="w-full aspect-[16/10] rounded-xl overflow-hidden relative mb-3 border border-slate-100">
         <img
           src={car.imageUrl}
@@ -63,29 +45,13 @@ const CarCard: React.FC<CarCardProps> = ({ car, index, onSelect }) => {
           className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
         />
       </div>
-
-      {/* Card Body */}
       <div className="px-1">
-        {/* Car Name */}
         <span className="font-bold text-[1.45rem] lg:text-[0.95rem] text-slate-800 leading-snug block truncate">
           {car.name}
         </span>
-
-        {/* Description */}
-        <p className="text-[1.25rem] lg:text-[0.83rem] text-slate-400 font-medium truncate leading-snug">
-          {car.description}
-        </p>
-
-        {/* Seats + Fuel */}
-        <p className="text-[1rem] lg:text-[0.75rem] text-slate-400 font-medium leading-snug">
-          <i className="fa-solid fa-user text-slate-300 mr-1"></i>{car.seats}인승
-          <span className="mx-1.5 text-slate-200">·</span>
-          <i className="fa-solid fa-gas-pump text-slate-300 mr-1"></i>{car.fuel}
-        </p>
-
-        {/* Price */}
+        <p className="text-[1.25rem] lg:text-[0.83rem] text-slate-400 font-medium truncate">{car.typeLabel}</p>
         <div className="text-[1.3rem] lg:text-[0.9rem] text-slate-700">
-          <span className="font-bold text-slate-900">₩{formattedPrice}</span>
+          <span className="font-bold text-slate-900">₩{car.pricePerDay.toLocaleString('ko-KR')}</span>
           <span className="text-slate-400 font-normal"> / per Day</span>
         </div>
       </div>
@@ -94,114 +60,61 @@ const CarCard: React.FC<CarCardProps> = ({ car, index, onSelect }) => {
 };
 
 interface CarRecommendationListProps {
+  cars: CarDto[];
   searchParams: CarSearchParams | null;
+  loading?: boolean;
+  hasSearched?: boolean;
 }
 
-export const CarRecommendationList: React.FC<CarRecommendationListProps> = ({ searchParams }) => {
-  const [selectedCar, setSelectedCar] = useState<MockCar | null>(null);
-
-  const rangePickup = searchParams?.pickupDate ?? todayStr();
-  const rangeReturn = searchParams?.returnDate ?? addDaysStr(rangePickup, 1);
-
-  const filterByAvailability = (cars: MockCar[]) =>
-    cars.filter((car) => isStayRangeAvailable(rangePickup, rangeReturn, car.unavailableDays));
-
-  const displayedCars = useMemo(() => {
-    if (!searchParams) return filterByAvailability(SHUFFLED_CARS);
-
-    const { carType, pickupSpot } = searchParams;
-    const keyword = pickupSpot.trim().toLowerCase();
-
-    let filtered = MOCK_CARS;
-
-    if (carType !== CAR_TYPE_ALL) {
-      filtered = filtered.filter((c) => matchesCarTypeLabel(c.typeLabel, carType));
-    }
-
-    if (keyword) {
-      filtered = filtered.filter((c) =>
-        c.name.toLowerCase().includes(keyword) ||
-        c.typeLabel.toLowerCase().includes(keyword) ||
-        c.description.toLowerCase().includes(keyword) ||
-        c.tags.some((t) => t.toLowerCase().includes(keyword))
-      );
-    }
-
-    const available = filterByAvailability(filtered);
-    return available.length > 0 ? available : filterByAvailability(SHUFFLED_CARS);
-  }, [searchParams, rangePickup, rangeReturn]);
-
-  const isSearchMode = !!searchParams;
-
-  const modalPickup = rangePickup;
-  const modalReturn = rangeReturn;
-
-  const hasNoResults = isSearchMode && (() => {
-    const { carType, pickupSpot } = searchParams!;
-    const keyword = pickupSpot.trim().toLowerCase();
-    let filtered = MOCK_CARS;
-    if (carType !== CAR_TYPE_ALL) {
-      filtered = filtered.filter((c) => matchesCarTypeLabel(c.typeLabel, carType));
-    }
-    if (keyword) filtered = filtered.filter((c) =>
-      c.name.toLowerCase().includes(keyword) ||
-      c.tags.some((t) => t.toLowerCase().includes(keyword))
-    );
-    return filtered.length === 0;
-  })();
-
+export const CarRecommendationList: React.FC<CarRecommendationListProps> = ({
+  cars,
+  searchParams,
+  loading = false,
+  hasSearched = false,
+}) => {
+  const [selectedCar, setSelectedCar] = useState<CarDto | null>(null);
   return (
     <div className="!px-5 lg:!px-0" style={{ paddingBottom: '4rem' }}>
-      {/* Section Header */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingBottom: '2rem', borderBottom: '1.5px solid #e2e8f0' }}>
-        {isSearchMode ? (
+      <div className="recommendation-section-head">
+        {hasSearched && searchParams?.pickupSpot ? (
           <>
             <h4 className="font-logo font-black text-3xl text-slate-800 tracking-tight">
-              {searchParams!.carType !== CAR_TYPE_ALL
-                ? `"${searchParams!.carType}" 검색 결과`
-                : `"${searchParams!.pickupSpot || '전체'}" 검색 결과`}
+              &ldquo;{searchParams.pickupSpot}&rdquo; 검색 결과
             </h4>
             <p className="text-sm text-slate-400 font-bold uppercase tracking-widest">
-              {hasNoResults
-                ? '검색 결과가 없어 인기 차량을 보여드립니다'
-                : `${displayedCars.length}대 · ${searchParams!.pickupDate} ~ ${searchParams!.returnDate}`}
+              {loading
+                ? '조회 중...'
+                : `${cars.length}대 · ${searchParams.pickupDate} ~ ${searchParams.returnDate}`}
             </p>
           </>
         ) : (
           <>
-            <h4 className="font-logo font-black text-3xl text-slate-800 tracking-tight">인기 렌터카 추천</h4>
+            <h4 className="font-logo font-black text-3xl text-slate-800 tracking-tight">운전석이 비어 있어요</h4>
             <p className="text-sm text-slate-400 font-bold uppercase tracking-widest">
-              오늘 1일 기준 · {TODAY} ~ {TOMORROW}
+              {loading ? '불러오는 중...' : `총 ${cars.length}대`}
             </p>
           </>
         )}
       </div>
 
-      {/* Desktop: 4-column grid */}
-      <div
-        className="hidden lg:grid lg:grid-cols-4 gap-6"
-        style={{ paddingTop: '2rem' }}
-      >
-        {displayedCars.map((car, index) => (
-          <CarCard key={car.id} car={car} index={index} onSelect={setSelectedCar} />
-        ))}
-      </div>
-
-      {/* Mobile·Tablet: 1 column */}
-      <div
-        className="grid grid-cols-1 lg:hidden gap-6"
-        style={{ paddingTop: '2rem' }}
-      >
-        {displayedCars.map((car, index) => (
-          <CarCard key={car.id} car={car} index={index} onSelect={setSelectedCar} />
-        ))}
-      </div>
+      {loading && cars.length === 0 ? (
+        <p className="recommendation-section-status">차량을 불러오는 중입니다...</p>
+      ) : cars.length === 0 ? (
+        <p className="recommendation-section-status">표시할 차량이 없습니다.</p>
+      ) : (
+        <div className="recommendation-section-content grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {cars.map((car, index) => (
+            <CarCard key={car.carId} car={car} index={index} onSelect={setSelectedCar} />
+          ))}
+        </div>
+      )}
 
       {selectedCar && (
         <CarDetailModal
           car={selectedCar}
-          defaultPickup={modalPickup}
-          defaultReturn={modalReturn}
+          soldOutDays={[]}
+          defaultPickup={searchParams?.pickupDate}
+          defaultReturn={searchParams?.returnDate}
           onClose={() => setSelectedCar(null)}
         />
       )}

@@ -11,11 +11,6 @@ import type {
   PendingApprovalDto,
   AdminBookingDto
 } from '@/api/adminApi';
-import {
-  MOCK_PENDING_APPROVALS_FLIGHT,
-  MOCK_PENDING_APPROVALS_STAYS,
-  MOCK_BOOKINGS,
-} from '@/constants/mockAdminData';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -48,8 +43,8 @@ export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approv
   const [activeTab, setActiveTab] = useState<'approval' | 'booking'>(defaultTab);
 
   // Approval — B팀 (항공·보험) and C팀 (숙소·렌터카)
-  const [flightPendingList, setFlightPendingList] = useState<PendingApprovalDto[]>(MOCK_PENDING_APPROVALS_FLIGHT);
-  const [staysPendingList,  setStaysPendingList]  = useState<PendingApprovalDto[]>(MOCK_PENDING_APPROVALS_STAYS);
+  const [flightPendingList, setFlightPendingList] = useState<PendingApprovalDto[]>([]);
+  const [staysPendingList,  setStaysPendingList]  = useState<PendingApprovalDto[]>([]);
   const [isRejectOpen,      setIsRejectOpen]      = useState(false);
   const [selectedRequest,   setSelectedRequest]   = useState<PendingApprovalDto | null>(null);
   const [rejectPreset,      setRejectPreset]      = useState('');
@@ -58,7 +53,7 @@ export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approv
   // Booking
   const [searchKeyword, setSearchKeyword] = useState('');
   const [searchDomain,  setSearchDomain]  = useState('ALL');
-  const [bookings,      setBookings]      = useState<AdminBookingDto[]>(MOCK_BOOKINGS);
+  const [bookings,      setBookings]      = useState<AdminBookingDto[]>([]);
   const [page,          setPage]          = useState(0);
   const [totalPages,    setTotalPages]    = useState(1);
 
@@ -118,7 +113,7 @@ export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approv
   const handle_approve = async (requestId: number) => {
     try {
       addToast('상품 등록 신청을 승인하고 실시간 노선 캐시를 갱신 중입니다...', 'info');
-      const res = await process_approval_action_api(requestId, { action: 'APPROVED' });
+      const res = await process_approval_action_api(requestId, { action: 'APPROVE' });
       if (res.success) {
         addToast('성공적으로 승인 완료되었습니다. 일반 고객용 서비스 노출이 즉각 활성화됩니다.', 'success');
         fetchAllPendingApprovals();
@@ -137,7 +132,10 @@ export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approv
     }
     try {
       addToast('상품 등록을 반려하고 기록 중입니다...', 'info');
-      const res = await process_approval_action_api(selectedRequest.requestId, { action: 'REJECTED', rejectReason });
+      const res = await process_approval_action_api(selectedRequest.requestId, {
+        action: 'REJECT',
+        reason: rejectReason,
+      });
       if (res.success) {
         addToast('노선 상품 심사 등록이 정당하게 반려 조치되었습니다.', 'success');
         setIsRejectOpen(false);

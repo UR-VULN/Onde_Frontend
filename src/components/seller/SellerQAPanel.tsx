@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
 import {
   post_seller_review_reply_api,
   update_seller_review_reply_api,
   delete_seller_review_reply_api,
+  get_seller_reviews_api,
+  type SellerReviewDto,
 } from '@/api/sellerApi';
-import { MOCK_REVIEWS } from '@/constants/mockSellerData';
 
 const StarRating: React.FC<{ rating: number }> = ({ rating }) => (
   <div style={{ color: '#f5b041', fontSize: '0.8rem' }}>
@@ -18,7 +19,17 @@ const StarRating: React.FC<{ rating: number }> = ({ rating }) => (
 export const SellerQAPanel: React.FC = () => {
   const { addToast } = useTravelStore();
 
-  const [reviews, setReviews] = useState(MOCK_REVIEWS);
+  const [reviews, setReviews] = useState<SellerReviewDto[]>([]);
+
+  useEffect(() => {
+    get_seller_reviews_api()
+      .then((res) => {
+        if (res.success && Array.isArray(res.data)) {
+          setReviews(res.data);
+        }
+      })
+      .catch(() => undefined);
+  }, []);
   const [replyDrafts, setReplyDrafts] = useState<Record<number, string>>({});
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editDraft, setEditDraft] = useState('');
@@ -105,7 +116,7 @@ export const SellerQAPanel: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
                 <div
                   className="feed-user-avatar"
-                  style={{ width: '32px', height: '32px', fontSize: '0.7rem', background: rev.guestColor }}
+                  style={{ width: '32px', height: '32px', fontSize: '0.7rem', background: 'var(--primary)' }}
                 >
                   {rev.guestInitials}
                 </div>

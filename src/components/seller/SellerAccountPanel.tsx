@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
-import { verify_business_api, save_seller_profile_api } from '@/api/sellerApi';
-import { KOREAN_BANKS, MOCK_ACCOUNT_DEFAULTS } from '@/constants/mockSellerData';
+import {
+  verify_business_api,
+  save_seller_profile_api,
+  get_seller_settlement_account_api,
+} from '@/api/sellerApi';
+import { KOREAN_BANKS } from '@/constants/appConstants';
 
 export const SellerAccountPanel: React.FC = () => {
   const { addToast } = useTravelStore();
 
-  // ─── 기본 업체 정보 ───────────────────────────
-  const [businessName, setBusinessName] = useState(MOCK_ACCOUNT_DEFAULTS.businessName);
-  const [contactPhone, setContactPhone] = useState(MOCK_ACCOUNT_DEFAULTS.contactPhone);
-  const [address] = useState(MOCK_ACCOUNT_DEFAULTS.address);
+  const [businessName, setBusinessName] = useState('온데 글로벌 리조트');
+  const [contactPhone, setContactPhone] = useState('02-1234-5678');
+  const [address] = useState('서울 강남구');
 
   // ─── 사업자 진위 확인 ─────────────────────────
   const [businessNumber, setBusinessNumber] = useState('');
@@ -19,13 +22,31 @@ export const SellerAccountPanel: React.FC = () => {
   const [isBusinessVerified, setIsBusinessVerified] = useState(false);
 
   // ─── 정산 계좌 관리 ───────────────────────────
-  const [bankName, setBankName] = useState(MOCK_ACCOUNT_DEFAULTS.bankName);
+  const [bankName, setBankName] = useState('신한은행');
   const [accountNumber, setAccountNumber] = useState('');
   const [accountHolder, setAccountHolder] = useState('');
   const [showAccount, setShowAccount] = useState(false);
 
   // ─── 저장 상태 ────────────────────────────────
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    get_seller_settlement_account_api()
+      .then((res) => {
+        if (!res.success || !res.data) return;
+        setBankName(res.data.bankName);
+        setAccountHolder(res.data.accountHolder);
+        setBusinessNumber(
+          res.data.businessNumber.length === 10
+            ? `${res.data.businessNumber.slice(0, 3)}-${res.data.businessNumber.slice(3, 5)}-${res.data.businessNumber.slice(5)}`
+            : res.data.businessNumber
+        );
+        setRepresentativeName(res.data.representativeName);
+        setOpenDate(res.data.openedAt);
+        setIsBusinessVerified(true);
+      })
+      .catch(() => undefined);
+  }, []);
 
   const formatBusinessNumber = (value: string) => {
     const digits = value.replace(/\D/g, '').slice(0, 10);

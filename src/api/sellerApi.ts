@@ -1,55 +1,37 @@
 import { sellerAxios } from '@/api/axiosInstance';
 
-// =============================================
-// A팀: 계정 및 계좌 설정
-// =============================================
+// ─── 명세: PUT/GET /api/v1/seller/settlements/accounts ───
 
-// 사업자 진위 확인 요청 payload
-export interface BusinessVerifyPayload {
-  businessNumber: string;   // 사업자등록번호 (예: 123-45-67890)
-  representativeName: string; // 대표자 성명
-  openDate: string;          // 개업일자 (YYYYMMDD)
-}
-
-// 사업자 진위 확인 응답
-export interface BusinessVerifyResponse {
-  success: boolean;
-  verified: boolean;
-  message: string;
-}
-
-// 판매자 기본 업체 프로필 정보
-export interface SellerProfileDto {
-  businessName: string;     // 업체 상호명
-  contactPhone: string;     // 고객센터 연락처
-  address: string;          // 사업장 소재지
-  businessNumber: string;   // 사업자등록번호
+export interface SellerSettlementAccountPayload {
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+  businessNumber: string;
   representativeName: string;
-  openDate: string;
-  isBusinessVerified: boolean;
+  openedAt: string;
 }
 
-// 정산 계좌 정보
-export interface SellerBankAccountDto {
-  bankName: string;         // 정산 수령 은행
-  accountNumber: string;    // 계좌번호 (마스킹 가능)
-  accountHolder: string;    // 예금주 성명
+export interface SellerSettlementAccountDto extends SellerSettlementAccountPayload {
+  sellerId: number;
+  createdAt?: string;
 }
 
-// 사업자 진위 확인 API (공공 API 연동 예정)
-export const verify_business_api = async (
-  payload: BusinessVerifyPayload
-): Promise<BusinessVerifyResponse> => {
-  return sellerAxios.post('/api/v1/seller/account/verify-business', payload);
+export const get_seller_settlement_account_api = async (): Promise<{
+  success: boolean;
+  data: SellerSettlementAccountDto;
+  message: string;
+}> => {
+  return sellerAxios.get('/api/v1/seller/settlements/accounts');
 };
 
-// 판매자 프로필 조회
-export const get_seller_profile_api = async (): Promise<{ success: boolean; data: SellerProfileDto; message: string }> => {
-  return sellerAxios.get('/api/v1/seller/account/profile');
+export const put_seller_settlement_account_api = async (
+  payload: SellerSettlementAccountPayload
+): Promise<{ success: boolean; data: SellerSettlementAccountDto; message: string }> => {
+  return sellerAxios.put('/api/v1/seller/settlements/accounts', payload);
 };
 
-// 판매자 프로필 저장 (사업자 진위 확인 완료 후에만 가능)
-export interface SaveSellerProfilePayload {
+/** @deprecated put_seller_settlement_account_api */
+export const save_seller_profile_api = async (payload: {
   businessName: string;
   contactPhone: string;
   address: string;
@@ -59,62 +41,181 @@ export interface SaveSellerProfilePayload {
   bankName: string;
   accountNumber: string;
   accountHolder: string;
-}
-
-export const save_seller_profile_api = async (
-  payload: SaveSellerProfilePayload
-): Promise<{ success: boolean; message: string }> => {
-  return sellerAxios.put('/api/v1/seller/account/profile', payload);
+}): Promise<{ success: boolean; message: string }> => {
+  const res = await put_seller_settlement_account_api({
+    bankName: payload.bankName,
+    accountNumber: payload.accountNumber,
+    accountHolder: payload.accountHolder,
+    businessNumber: payload.businessNumber,
+    representativeName: payload.representativeName,
+    openedAt: payload.openDate.replace(/-/g, ''),
+  });
+  return { success: res.success, message: res.message };
 };
 
-// =============================================
-// D팀: 매출 통계 및 정산 대금
-// =============================================
+// ─── 명세: GET /api/v1/seller/settlements ───
 
+export interface SellerSettlementDto {
+  settlementId: number;
+  settlementMonth: string;
+  grossAmount: number;
+  commission: number;
+  netAmount: number;
+  status: string;
+}
+
+export interface SellerSettlementsResponse {
+  settlements: SellerSettlementDto[];
+  totalCount: number;
+}
+
+export const get_seller_settlements_api = async (
+  year?: number,
+  page = 0,
+  size = 12
+): Promise<{ success: boolean; data: SellerSettlementsResponse; message: string }> => {
+  return sellerAxios.get('/api/v1/seller/settlements', { params: { year, page, size } });
+};
+
+/** 명세: POST /api/v1/seller/settlements/{settlementId}/request */
+export const request_settlement_api = async (
+  settlementId: number
+): Promise<{ success: boolean; data: { settlementId: number; status: string }; message: string }> => {
+  return sellerAxios.post(`/api/v1/seller/settlements/${settlementId}/request`);
+};
+
+/** @deprecated request_settlement_api(settlementId) — UI에서 settlementId 전달 필요 */
+export const request_monthly_settlement_api = async (): Promise<{
+  success: boolean;
+  message: string;
+}> => {
+  const list = await get_seller_settlements_api(new Date().getFullYear());
+  const pending = list.data?.settlements?.[0];
+  if (!pending) {
+    return { success: false, message: '정산 대상이 없습니다.' };
+  }
+  const res = await request_settlement_api(pending.settlementId);
+  return { success: res.success, message: res.message };
+};
+
+// ─── 명세: GET /api/v1/seller/dashboard/statistics ───
+
+export interface SellerDashboardStatisticsDto {
+  period: string;
+  totalRevenue: number;
+  dailyRevenue?: number[];
+  breakdown: Array<{ month: string; revenue: number; bookingCount: number }>;
+}
+
+export const get_seller_dashboard_statistics_api = async (params?: {
+  period?: string;
+  startDate?: string;
+  endDate?: string;
+}): Promise<{ success: boolean; data: SellerDashboardStatisticsDto; message: string }> => {
+  return sellerAxios.get('/api/v1/seller/dashboard/statistics', { params });
+};
+
+/** UI 호환 */
 export interface SellerSalesStatDto {
   totalSalesAmount: number;
   completedBookingsCount: number;
   settlementPendingAmount: number;
-  commissionRate: number;     // 수수료율 (0.10 = 10%)
-  month: string;              // YYYY-MM
+  commissionRate: number;
+  month: string;
 }
+
+export const get_seller_sales_stat_api = async (): Promise<{
+  success: boolean;
+  data: SellerSalesStatDto;
+  message: string;
+}> => {
+  const res = await get_seller_dashboard_statistics_api({
+    period: 'MONTHLY',
+    startDate: '2026-01-01',
+    endDate: '2026-12-31',
+  });
+  if (!res.success || !res.data) {
+    return {
+      success: false,
+      data: {
+        totalSalesAmount: 0,
+        completedBookingsCount: 0,
+        settlementPendingAmount: 0,
+        commissionRate: 0.1,
+        month: '',
+      },
+      message: res.message,
+    };
+  }
+  const last = res.data.breakdown[res.data.breakdown.length - 1];
+  return {
+    success: true,
+    message: res.message,
+    data: {
+      totalSalesAmount: res.data.totalRevenue,
+      completedBookingsCount: last?.bookingCount ?? 0,
+      settlementPendingAmount: Math.floor(res.data.totalRevenue * 0.1),
+      commissionRate: 0.1,
+      month: last?.month ?? '',
+    },
+  };
+};
 
 export interface SellerSettlementHistoryDto {
   settlementMonth: string;
   netAmount: number;
-  status: string; // PENDING_REVIEW, PAID
+  status: string;
   requestedAt: string;
 }
 
-export const get_seller_sales_stat_api = async (): Promise<{ success: boolean; data: SellerSalesStatDto; message: string }> => {
-  return sellerAxios.get('/api/v1/seller/stats/sales');
+export const get_seller_settlement_history_api = async (): Promise<{
+  success: boolean;
+  data: SellerSettlementHistoryDto[];
+  message: string;
+}> => {
+  const res = await get_seller_settlements_api();
+  const mapped =
+    res.data?.settlements.map((s) => ({
+      settlementMonth: s.settlementMonth,
+      netAmount: s.netAmount,
+      status: s.status,
+      requestedAt: s.settlementMonth,
+    })) ?? [];
+  return { success: res.success, data: mapped, message: res.message };
 };
 
-export const get_seller_settlement_history_api = async (): Promise<{ success: boolean; data: SellerSettlementHistoryDto[]; message: string }> => {
-  return sellerAxios.get('/api/v1/seller/stats/settlement-history');
-};
+// ─── 명세 외 UI 전용 (Mock에서만 응답) ───
 
-export const request_monthly_settlement_api = async (): Promise<{ success: boolean; message: string }> => {
-  return sellerAxios.post('/api/v1/seller/stats/request-settlement');
-};
+export interface BusinessVerifyPayload {
+  businessNumber: string;
+  representativeName: string;
+  openDate: string;
+}
 
-// =============================================
-// E팀: 고객 리뷰 및 문의 응대
-// =============================================
+export const verify_business_api = async (
+  payload: BusinessVerifyPayload
+): Promise<{ success: boolean; verified: boolean; message: string }> => {
+  return sellerAxios.post('/api/v1/seller/account/verify-business', payload);
+};
 
 export interface SellerReviewDto {
   reviewId: number;
   guestName: string;
   guestInitials: string;
-  rating: number;           // 1-5
+  guestColor?: string;
+  rating: number;
   content: string;
   productName: string;
   reviewedAt: string;
-  hostReply?: string;       // 호스트 답글 (없으면 null)
+  hostReply?: string;
   repliedAt?: string;
 }
 
-export const get_seller_reviews_api = async (): Promise<{ success: boolean; data: SellerReviewDto[]; message: string }> => {
+export const get_seller_reviews_api = async (): Promise<{
+  success: boolean;
+  data: SellerReviewDto[];
+  message: string;
+}> => {
   return sellerAxios.get('/api/v1/seller/reviews');
 };
 
@@ -138,19 +239,72 @@ export const delete_seller_review_reply_api = async (
   return sellerAxios.delete(`/api/v1/seller/reviews/${reviewId}/reply`);
 };
 
-// =============================================
-// C팀: 숙소/렌터카 재고 관리
-// =============================================
+// ─── 판매자 숙소·렌터카 재고 ───
 
 export interface SellerPropertyDto {
   propertyId: number;
   name: string;
-  type: 'STAY' | 'CAR';
-  status: 'ACTIVE' | 'PENDING_REVIEW' | 'INACTIVE';
+  status: 'ACTIVE' | 'PENDING';
   basePrice: number;
-  stockOrRooms: number;   // 차량 대수 or 객실 수
 }
 
-export const get_seller_properties_api = async (): Promise<{ success: boolean; data: SellerPropertyDto[]; message: string }> => {
-  return sellerAxios.get('/api/v1/seller/properties');
+export interface SellerCarInventoryDto {
+  propertyId: number;
+  name: string;
+  stock: number;
+  basePrice: number;
+}
+
+export const get_seller_accommodations_api = async (): Promise<{
+  success: boolean;
+  data: SellerPropertyDto[];
+  message: string;
+}> => {
+  return sellerAxios.get('/api/v1/seller/accommodations');
+};
+
+export const get_seller_cars_inventory_api = async (): Promise<{
+  success: boolean;
+  data: SellerCarInventoryDto[];
+  message: string;
+}> => {
+  return sellerAxios.get('/api/v1/seller/cars');
+};
+
+export interface SellerCalendarCellDto {
+  scheduleId?: number;
+  day?: number;
+  stock: number;
+  price: number;
+  isClosed?: boolean;
+}
+
+export const get_seller_inventory_calendar_api = async (params: {
+  propertyKey: string;
+  month?: string;
+}): Promise<{ success: boolean; data: Record<number, SellerCalendarCellDto>; message: string }> => {
+  return sellerAxios.get('/api/v1/seller/inventory/calendar', { params });
+};
+
+export const patch_seller_inventory_day_api = async (payload: {
+  propertyKey: string;
+  day: number;
+  stock: number;
+  price: number;
+}): Promise<{ success: boolean; message: string }> => {
+  return sellerAxios.patch('/api/v1/seller/inventory/calendar', payload);
+};
+
+export const get_seller_schedule_calendar_api = async (params?: {
+  origin?: string;
+  dest?: string;
+  month?: string;
+}): Promise<{ success: boolean; data: unknown[]; message: string }> => {
+  return sellerAxios.get('/api/v1/seller/schedules/calendar', { params });
+};
+
+export const register_seller_flight_api = async (
+  payload: Record<string, unknown>
+): Promise<{ success: boolean; message: string }> => {
+  return sellerAxios.post('/api/v1/seller/flights', payload);
 };

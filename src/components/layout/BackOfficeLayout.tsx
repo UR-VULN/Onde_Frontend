@@ -47,8 +47,13 @@ export const BackOfficeLayout: React.FC<BackOfficeLayoutProps> = ({
             </button>
 
             <div
-              className="logo select-none"
-              onClick={() => navigate('/')}
+              className="logo select-none cursor-pointer"
+              onClick={() => navigate('/', { replace: true })}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') navigate('/', { replace: true });
+              }}
             >
               <div className="logo-box">
                 <span className="logo-box-line">ON</span>
@@ -123,9 +128,10 @@ export const BackOfficeLayout: React.FC<BackOfficeLayoutProps> = ({
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System</p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => {
                     logout();
-                    navigate('/');
+                    navigate('/', { replace: true });
                   }}
                   className="extranet-item"
                 >

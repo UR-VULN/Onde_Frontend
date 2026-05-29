@@ -1,5 +1,5 @@
 import React from 'react';
-import type { FeedItem } from '@/constants/mockFeeds';
+import type { FeedItem } from '@/types/feed';
 import { getAvatarBg, getInitials, getCategoryLabel, renderStars } from './feedHelpers';
 
 interface FeedDetailModalProps {

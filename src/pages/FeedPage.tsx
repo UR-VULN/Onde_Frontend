@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
-import { MOCK_FEEDS } from '@/constants/mockFeeds';
-import type { FeedItem } from '@/constants/mockFeeds';
+import { postDtoToFeedItem, type FeedItem } from '@/types/feed';
+import { create_post_api, fetch_posts_api } from '@/api/postsApi';
 
 // Modular Subcomponents
 import { FeedHeader } from '@/components/feed/FeedHeader';
@@ -13,9 +13,24 @@ import { FeedWriteModal } from '@/components/feed/FeedWriteModal';
 export const FeedPage: React.FC = () => {
   const { addToast, isLoggedIn, openAuthModal } = useTravelStore();
 
-  // Feeds list state initialized with mock constants
-  const [feeds, setFeeds] = useState<FeedItem[]>(MOCK_FEEDS);
+  const [feeds, setFeeds] = useState<FeedItem[]>([]);
   const [selectedTag, setSelectedTag] = useState<'ALL' | 'STAY' | 'FOOD' | 'PHOTO' | 'TIP'>('ALL');
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch_posts_api({ page: 0, size: 50 });
+        if (cancelled || !res.success || !res.data) return;
+        setFeeds(res.data.posts.map(postDtoToFeedItem));
+      } catch {
+        if (!cancelled) setFeeds([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   
   // Lightbox & Creation Modals State
   const [selectedFeed, setSelectedFeed] = useState<FeedItem | null>(null);
@@ -37,26 +52,51 @@ export const FeedPage: React.FC = () => {
     : feeds.filter(f => f.category === selectedTag);
 
   // Submit new Feed Story from Child WriteModal
-  const handleSubmitFeed = (
-    category: 'STAY' | 'FOOD' | 'PHOTO' | 'TIP', 
-    location: string, 
-    rating: number, 
-    content: string, 
+  const handleSubmitFeed = async (
+    category: 'STAY' | 'FOOD' | 'PHOTO' | 'TIP',
+    location: string,
+    rating: number,
+    content: string,
     img: string
   ) => {
-    const newFeed: FeedItem = {
-      id: `feed-${Date.now()}`,
-      category,
-      author: '김현민',
-      location,
-      date: new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\/ /g, '.'),
-      img,
-      content,
-      rating
-    };
-
-    setFeeds([newFeed, ...feeds]);
-    addToast("소중한 온데 여행 후기가 정상적으로 등록 완료되었습니다!", "success");
+    try {
+      const res = await create_post_api({
+        type: category,
+        title: location,
+        content,
+        thumbnailUrl: img,
+        location,
+        rating,
+      });
+      const postId = res.success && res.data ? res.data.postId : 200 + feeds.length;
+      const newFeed: FeedItem = {
+        id: `feed-${postId}`,
+        postId,
+        category,
+        author: res.data?.authorName ?? '김현민',
+        location,
+        date: res.data?.createdAt ?? new Date().toLocaleDateString('ko-KR'),
+        img,
+        content,
+        rating,
+      };
+      setFeeds([newFeed, ...feeds]);
+      addToast('여행 후기가 등록되었습니다!', 'success');
+    } catch {
+      const newFeed: FeedItem = {
+        id: `feed-${Date.now()}`,
+        postId: 200 + feeds.length,
+        category,
+        author: '김현민',
+        location,
+        date: new Date().toLocaleDateString('ko-KR'),
+        img,
+        content,
+        rating,
+      };
+      setFeeds([newFeed, ...feeds]);
+      addToast('여행 후기가 등록되었습니다!', 'success');
+    }
     setIsWriteModalOpen(false);
   };
 

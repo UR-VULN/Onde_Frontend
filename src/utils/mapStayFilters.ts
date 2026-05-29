@@ -1,4 +1,4 @@
-import type { MockStay } from '@/constants/mockStays';
+import type { MapStayItem } from '@/types/mapStay';
 
 export interface MapBounds {
   south: number;
@@ -7,7 +7,7 @@ export interface MapBounds {
   east: number;
 }
 
-export function filterStaysByQuery(stays: MockStay[], query: string): MockStay[] {
+export function filterStaysByQuery(stays: MapStayItem[], query: string): MapStayItem[] {
   const q = query.trim().toLowerCase();
   if (!q) return stays;
 
@@ -20,7 +20,7 @@ export function filterStaysByQuery(stays: MockStay[], query: string): MockStay[]
 }
 
 /** 현재 지도 영역 안 숙소만 (마커 수 제한으로 렌더 부하 감소) */
-export function filterStaysInBounds(stays: MockStay[], bounds: MapBounds | null): MockStay[] {
+export function filterStaysInBounds(stays: MapStayItem[], bounds: MapBounds | null): MapStayItem[] {
   if (!bounds) return stays;
 
   return stays.filter(
@@ -43,7 +43,7 @@ export function boundsFromLeaflet(
   };
 }
 
-export function stayMatchesCityArea(stay: MockStay, areaLabel: string): boolean {
+export function stayMatchesCityArea(stay: MapStayItem, areaLabel: string): boolean {
   const area = areaLabel.trim().toLowerCase();
   if (!area) return true;
   return (

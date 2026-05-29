@@ -1,4 +1,5 @@
 import { userAxios } from '@/api/axiosInstance';
+import { getMemberId } from '@/utils/authCookies';
 import type { PaymentPrepareDto, PaymentReservationType, PaymentValidateDto } from '@/types/payment';
 
 export interface PaymentPrepareRequest {
@@ -15,8 +16,8 @@ export interface PaymentValidateRequest {
 }
 
 function paymentHeaders() {
-  const memberId = localStorage.getItem('onde_member_id');
-  return memberId ? { 'X-User-Id': memberId } : {};
+  const memberId = getMemberId();
+  return memberId != null ? { 'X-User-Id': String(memberId) } : {};
 }
 
 export const prepare_payment_api = async (
