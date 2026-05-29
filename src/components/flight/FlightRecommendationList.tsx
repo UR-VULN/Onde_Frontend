@@ -9,17 +9,8 @@ function formatDuration(minutes: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
-const AIRLINE_COLORS: Record<string, string> = {
-  KE: '#003580',
-  OZ: '#005ce6',
-  SQ: '#003366',
-  EK: '#C8102E',
-  AF: '#002157',
-  BA: '#075AAA',
-  QF: '#EE0000',
-  CX: '#006564',
-  MH: '#CC0001',
-};
+import { formatAirportLabel } from '@/constants/flightAirports';
+import { getAirlineColor } from '@/constants/flightAirlines';
 
 interface FlightRouteCardProps {
   route: MockFlightRoute;
@@ -48,7 +39,10 @@ const FlightRouteCard: React.FC<FlightRouteCardProps> = ({ route, index, onSelec
   }, []);
 
   const delayMs = (index % 2) * 100;
-  const accentColor = AIRLINE_COLORS[route.airlineCode] ?? '#005ce6';
+  const accentColor =
+    getAirlineColor(route.airline) !== '#005ce6'
+      ? getAirlineColor(route.airline)
+      : getAirlineColor(route.airlineCode);
   const formattedPrice = route.priceFrom.toLocaleString('ko-KR');
   const isOvernight = route.arrivalDate !== route.date;
 
@@ -217,7 +211,7 @@ export const FlightRecommendationList: React.FC<FlightRecommendationListProps> =
         {isSearchMode ? (
           <>
             <h4 className="font-logo font-black text-3xl text-slate-800 tracking-tight">
-              &ldquo;{searchParams!.departures} → {searchParams!.arrivals}&rdquo; 검색 결과
+              &ldquo;{formatAirportLabel(searchParams!.departures.split(',')[0] ?? searchParams!.departures)} → {formatAirportLabel(searchParams!.arrivals.split(',')[0] ?? searchParams!.arrivals)}&rdquo; 검색 결과
             </h4>
             <p className="text-sm text-slate-400 font-bold uppercase tracking-widest">
               {hasNoResults

@@ -1,16 +1,24 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
+export interface SearchListOption {
+  value: string;
+  label: string;
+}
+
+export type SearchListPickerOption = string | SearchListOption;
+
 interface SearchListPickerProps {
   label: string;
   value: string;
-  options: string[];
+  options: SearchListPickerOption[];
   onChange: (value: string) => void;
   iconClass?: string;
   panelTitle?: string;
   panelSubtitle?: string;
   listLabel?: string;
   panelWidth?: number;
+  className?: string;
 }
 
 interface PanelPosition {
@@ -22,6 +30,12 @@ interface PanelPosition {
 const DEFAULT_PANEL_WIDTH = 360;
 const PANEL_GAP = 8;
 const VIEWPORT_PADDING = 16;
+
+function normalizeOptions(options: SearchListPickerOption[]): SearchListOption[] {
+  return options.map((option) =>
+    typeof option === 'string' ? { value: option, label: option } : option
+  );
+}
 
 function clampPanelPosition(triggerRect: DOMRect, panelWidth: number): PanelPosition {
   const width = Math.min(panelWidth, window.innerWidth - VIEWPORT_PADDING * 2);
@@ -48,7 +62,12 @@ export const SearchListPicker: React.FC<SearchListPickerProps> = ({
   panelSubtitle = '항목을 선택하세요',
   listLabel = '목록',
   panelWidth = DEFAULT_PANEL_WIDTH,
+  className = 'flex-1 min-w-0',
 }) => {
+  const normalized = normalizeOptions(options);
+  const selected = normalized.find((o) => o.value === value) ?? normalized[0];
+  const displayLabel = selected?.label ?? value;
+
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -97,8 +116,8 @@ export const SearchListPicker: React.FC<SearchListPickerProps> = ({
     };
   }, []);
 
-  const handleSelect = (option: string) => {
-    onChange(option);
+  const handleSelect = (optionValue: string) => {
+    onChange(optionValue);
     setOpen(false);
   };
 
@@ -128,21 +147,21 @@ export const SearchListPicker: React.FC<SearchListPickerProps> = ({
                   </div>
                   <div className="destination-picker-panel__scroll">
                     <ul className="destination-picker-panel__country-list">
-                      {options.map((option) => {
-                        const isSelected = value === option;
+                      {normalized.map((option) => {
+                        const isSelected = value === option.value;
 
                         return (
-                          <li key={option}>
+                          <li key={option.value}>
                             <button
                               type="button"
-                              onClick={() => handleSelect(option)}
+                              onClick={() => handleSelect(option.value)}
                               className={`destination-picker-panel__country-btn${
                                 isSelected ? ' is-active' : ''
                               }`}
                             >
                               <div style={{ minWidth: 0 }}>
                                 <span className="destination-picker-panel__country-name">
-                                  {option}
+                                  {option.label}
                                 </span>
                               </div>
                               {isSelected && (
@@ -165,7 +184,7 @@ export const SearchListPicker: React.FC<SearchListPickerProps> = ({
 
   return (
     <>
-      <div ref={rootRef} className={`flex-1 min-w-0 relative z-10 ${open ? 'z-[9998]' : ''}`}>
+      <div ref={rootRef} className={`relative z-10 ${className} ${open ? 'z-[9998]' : ''}`}>
         <button
           ref={triggerRef}
           type="button"
@@ -182,7 +201,7 @@ export const SearchListPicker: React.FC<SearchListPickerProps> = ({
 
           <div className="inline-flex items-center justify-center gap-2 max-w-full text-base font-extrabold text-slate-800 pointer-events-none">
             <i className={`${iconClass} text-sm shrink-0`}></i>
-            <span className="truncate">{value}</span>
+            <span className="truncate">{displayLabel}</span>
             <i
               className={`fa-solid fa-chevron-down text-[10px] text-slate-400 shrink-0 transition-transform duration-200 ${
                 open ? 'rotate-180 text-[#005ce6]' : ''

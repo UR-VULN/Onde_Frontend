@@ -4,6 +4,11 @@ import type { FlightSearchQuery } from '@/store/useFlightStore';
 import { search_flights_api } from '@/api/flightApi';
 import { useTravelStore } from '@/store/useTravelStore';
 import { SearchDateField } from '@/components/common/SearchDateField';
+import { SearchListPicker } from '@/components/common/SearchListPicker';
+import {
+  FLIGHT_DEPARTURE_AIRPORTS,
+  FLIGHT_ARRIVAL_AIRPORTS,
+} from '@/constants/flightAirports';
 import { todayStr, toDateStr } from '@/utils/calendarUtils';
 
 function addDays(dateStr: string, days: number): string {
@@ -22,15 +27,9 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch }) 
   const { search_query, set_search_query, set_search_results } = useFlightStore();
   const { addToast } = useTravelStore();
 
-
   const handle_toggle_trip_type = () => {
     const nextType = search_query.tripType === 'RT' ? 'OW' : 'RT';
     handle_trip_type_change(nextType);
-  };
-
-  const handle_change = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    set_search_query({ [name]: value });
   };
 
   const handle_passenger_change = (amount: number) => {
@@ -42,7 +41,7 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch }) 
     const temp = search_query.departures;
     set_search_query({
       departures: search_query.arrivals,
-      arrivals: temp
+      arrivals: temp,
     });
   };
 
@@ -81,33 +80,32 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch }) 
 
   const handle_search = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Notify parent immediately so mock filter updates even if API fails
     onSearch?.(search_query);
     try {
-      addToast("실시간 항공 운항편을 조회 중입니다...", "info");
-      
+      addToast('실시간 항공 운항편을 조회 중입니다...', 'info');
+
       const queryPayload = { ...search_query };
       if (search_query.tripType === 'RT') {
         const datesArray = search_query.dates.split(',');
-        const depDate = datesArray[0] || new Date().toISOString().split('T')[0];
-        const retDate = datesArray[1] || new Date(new Date(depDate).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        
+        const depDate = datesArray[0] || todayStr();
+        const retDate = datesArray[1] || addDays(depDate, 7);
+
         queryPayload.departures = `${search_query.departures},${search_query.arrivals}`;
         queryPayload.arrivals = `${search_query.arrivals},${search_query.departures}`;
         queryPayload.dates = `${depDate},${retDate}`;
       }
-      
+
       const res = await search_flights_api(queryPayload);
       if (res.success && res.data) {
         set_search_results(res.data);
-        addToast("항공 스케줄 통합 검색이 완료되었습니다.", "success");
+        addToast('항공 스케줄 통합 검색이 완료되었습니다.', 'success');
       } else {
         set_search_results(null);
-        addToast(res.message || "검색 결과가 없습니다.", "warning");
+        addToast(res.message || '검색 결과가 없습니다.', 'warning');
       }
     } catch (err: any) {
       set_search_results(null);
-      addToast(err?.error?.message || "항공편 실시간 검색 중 오류가 발생했습니다.", "warning");
+      addToast(err?.error?.message || '항공편 실시간 검색 중 오류가 발생했습니다.', 'warning');
     }
   };
 
@@ -117,161 +115,134 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch }) 
 
   return (
     <div className="w-full !-mt-[40px] relative z-20 transition-all duration-300">
-      
-      {/* Main Search Card */}
-      <div className="w-full bg-white border border-slate-200/80 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] flex flex-col select-none overflow-hidden">
-        {/* Gradient accent bar — mobile/tablet only */}
+      <div className="w-full bg-white border border-slate-200/80 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] flex flex-col select-none overflow-visible">
         <div className="lg:hidden h-1 w-full" style={{ background: 'linear-gradient(135deg, #005ce6 0%, #ff5a5f 100%)' }} />
         <div className="p-4 md:p-5 flex flex-col">
-        <form onSubmit={handle_search} className="w-full">
-          
-          {/* Main search layout: Inputs grid and the standalone action button side-by-side */}
-          <div className="flex flex-col lg:flex-row items-stretch gap-4">
-            
-            {/* Inputs Container Card (Reduced height lg:h-[68px] for vertical slimness) */}
-            <div className="flex-1 bg-slate-50 border border-slate-200/80 rounded-xl flex flex-col lg:flex-row items-stretch min-h-[64px] lg:h-[68px] relative overflow-visible">
-              
-              {/* 1. Trip Type Toggle Box integrated inside (Direct Toggle UX) */}
-              <div className="flex-1 lg:min-w-[110px] min-w-0 flex flex-col justify-center items-center text-center py-2 px-3 relative">
-                <span className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">여정 구분</span>
-                <button
-                  type="button"
-                  onClick={handle_toggle_trip_type}
-                  className="bg-transparent border-none text-base font-extrabold text-slate-800 focus:outline-none w-full text-center flex items-center justify-center cursor-pointer select-none p-0 hover:scale-[1.03] active:scale-[0.97] transition-all"
-                  title="클릭하여 편도/왕복 전환"
-                >
-                  <div className="flex items-center justify-center">
-                    <i className="fa-solid fa-plane-departure text-[#005ce6] text-xs" style={{ marginRight: '6px' }}></i>
-                    <span>{search_query.tripType === 'RT' ? '왕복 여정' : '편도 여정'}</span>
-                  </div>
-                </button>
-              </div>
+          <form onSubmit={handle_search} className="w-full">
+            <div className="flex flex-col lg:flex-row items-stretch gap-4">
+              <div className="flex-1 bg-slate-50 border border-slate-200/80 rounded-xl flex flex-col lg:flex-row items-stretch min-h-[64px] lg:h-[68px] relative overflow-visible">
 
-              {/* Divider */}
-              <div className="lg:hidden" style={{ height: '1px', background: '#e2e8f0', margin: '0 0.75rem' }}></div>
-              <div className="hidden lg:block" style={{ width: '1px', background: '#e2e8f0', margin: '0.625rem 0' }}></div>
+                <div className="flex-1 lg:min-w-[110px] min-w-0 flex flex-col justify-center items-center text-center py-2 px-3 relative">
+                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">여정 구분</span>
+                  <button
+                    type="button"
+                    onClick={handle_toggle_trip_type}
+                    className="bg-transparent border-none text-base font-extrabold text-slate-800 focus:outline-none w-full text-center flex items-center justify-center cursor-pointer select-none p-0 hover:scale-[1.03] active:scale-[0.97] transition-all"
+                    title="클릭하여 편도/왕복 전환"
+                  >
+                    <div className="flex items-center justify-center">
+                      <i className="fa-solid fa-plane-departure text-[#005ce6] text-xs" style={{ marginRight: '6px' }}></i>
+                      <span>{search_query.tripType === 'RT' ? '왕복 여정' : '편도 여정'}</span>
+                    </div>
+                  </button>
+                </div>
 
-              {/* 2. Departures */}
-              <div className="flex-1 lg:min-w-[160px] min-w-0 flex flex-col justify-center items-center text-center py-2 px-3">
-                <span className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">출발 공항</span>
-                <input
-                  type="text"
-                  name="departures"
+                <div className="lg:hidden" style={{ height: '1px', background: '#e2e8f0', margin: '0 0.75rem' }}></div>
+                <div className="hidden lg:block" style={{ width: '1px', background: '#e2e8f0', margin: '0.625rem 0' }}></div>
+
+                <SearchListPicker
+                  className="flex-1 lg:min-w-[150px]"
+                  label="출발 공항"
                   value={search_query.departures}
-                  onChange={handle_change}
-                  className="bg-transparent border-none text-base font-extrabold text-slate-800 focus:outline-none w-full placeholder:text-slate-400 p-0 text-center"
-                  placeholder="인천 국제공항 (ICN)"
-                  required
+                  options={FLIGHT_DEPARTURE_AIRPORTS}
+                  onChange={(value) => set_search_query({ departures: value })}
+                  iconClass="fa-solid fa-plane-departure text-[#005ce6]"
+                  panelTitle="어디서 출발하시나요?"
+                  panelSubtitle="출발 공항을 선택하세요"
+                  listLabel="출발지"
+                  panelWidth={340}
                 />
-              </div>
 
-              {/* Swap Button (Inline, prevents overlapping mathematically) */}
-              <div className="flex items-center justify-center px-0.5 py-0.5 lg:py-0">
-                <button
-                  type="button"
-                  onClick={handle_swap_airports}
-                  className="w-7 h-7 bg-white border border-slate-200 hover:border-slate-300 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex-shrink-0"
-                  style={{ backgroundColor: '#ffffff' }}
-                >
-                  <i className="fa-solid fa-right-left text-[10px] lg:rotate-0 rotate-90"></i>
-                </button>
-              </div>
+                <div className="flex items-center justify-center px-0.5 py-0.5 lg:py-0">
+                  <button
+                    type="button"
+                    onClick={handle_swap_airports}
+                    className="w-7 h-7 bg-white border border-slate-200 hover:border-slate-300 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex-shrink-0"
+                    style={{ backgroundColor: '#ffffff' }}
+                  >
+                    <i className="fa-solid fa-right-left text-[10px] lg:rotate-0 rotate-90"></i>
+                  </button>
+                </div>
 
-              {/* 3. Arrivals */}
-              <div className="flex-1 lg:min-w-[160px] min-w-0 flex flex-col justify-center items-center text-center py-2 px-3">
-                <span className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">도착 공항</span>
-                <input
-                  type="text"
-                  name="arrivals"
+                <SearchListPicker
+                  className="flex-1 lg:min-w-[150px]"
+                  label="도착 공항"
                   value={search_query.arrivals}
-                  onChange={handle_change}
-                  className="bg-transparent border-none text-base font-extrabold text-slate-800 focus:outline-none w-full placeholder:text-slate-400 p-0 text-center"
-                  placeholder="도쿄 나리타 공항 (NRT)"
-                  required
+                  options={FLIGHT_ARRIVAL_AIRPORTS}
+                  onChange={(value) => set_search_query({ arrivals: value })}
+                  iconClass="fa-solid fa-plane-arrival text-[#005ce6]"
+                  panelTitle="어디로 가시나요?"
+                  panelSubtitle="도착 공항을 선택하세요"
+                  listLabel="도착지"
+                  panelWidth={340}
                 />
-              </div>
 
-              {/* Divider */}
-              <div className="lg:hidden" style={{ height: '1px', background: '#e2e8f0', margin: '0 0.75rem' }}></div>
-              <div className="hidden lg:block" style={{ width: '1px', background: '#e2e8f0', margin: '0.625rem 0' }}></div>
+                <div className="lg:hidden" style={{ height: '1px', background: '#e2e8f0', margin: '0 0.75rem' }}></div>
+                <div className="hidden lg:block" style={{ width: '1px', background: '#e2e8f0', margin: '0.625rem 0' }}></div>
 
-              {/* 4. Departure Date */}
-              <SearchDateField
-                label="출발 일시"
-                value={departureDate}
-                onChange={(value) => handle_date_change('departure', value)}
-                min={todayStr()}
-              />
+                <SearchDateField
+                  label="출발 일시"
+                  value={departureDate}
+                  onChange={(value) => handle_date_change('departure', value)}
+                  min={todayStr()}
+                />
 
-              {/* Divider */}
-              <div className="lg:hidden" style={{ height: '1px', background: '#e2e8f0', margin: '0 0.75rem' }}></div>
-              <div className="hidden lg:block" style={{ width: '1px', background: '#e2e8f0', margin: '0.625rem 0' }}></div>
+                <div className="lg:hidden" style={{ height: '1px', background: '#e2e8f0', margin: '0 0.75rem' }}></div>
+                <div className="hidden lg:block" style={{ width: '1px', background: '#e2e8f0', margin: '0.625rem 0' }}></div>
 
-              {/* 5. Return Date */}
-              <SearchDateField
-                label="오는 일시"
-                value={returnDate}
-                onChange={(value) => handle_date_change('return', value)}
-                min={departureDate}
-                disabled={search_query.tripType === 'OW'}
-                disabledContent={(
-                  <div className="flex items-center justify-center text-base font-extrabold text-slate-400 select-none pointer-events-none">
-                    <i className="fa-regular fa-calendar text-slate-300 text-sm mr-2"></i>
-                    <span>편도 여정</span>
+                <SearchDateField
+                  label="오는 일시"
+                  value={returnDate}
+                  onChange={(value) => handle_date_change('return', value)}
+                  min={departureDate}
+                  disabled={search_query.tripType === 'OW'}
+                  disabledContent={(
+                    <div className="flex items-center justify-center text-base font-extrabold text-slate-400 select-none pointer-events-none">
+                      <i className="fa-regular fa-calendar text-slate-300 text-sm mr-2"></i>
+                      <span>편도 여정</span>
+                    </div>
+                  )}
+                  required={search_query.tripType === 'RT'}
+                />
+
+                <div className="lg:hidden" style={{ height: '1px', background: '#e2e8f0', margin: '0 0.75rem' }}></div>
+                <div className="hidden lg:block" style={{ width: '1px', background: '#e2e8f0', margin: '0.625rem 0' }}></div>
+
+                <div className="flex-1 lg:min-w-[180px] min-w-0 flex flex-col justify-center items-center text-center py-2 px-5 relative">
+                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">탑승 인원</span>
+                  <div className="flex items-center justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handle_passenger_change(-1)}
+                      className="w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-800 hover:border-slate-300 transition-all cursor-pointer shadow-sm active:scale-90"
+                    >
+                      <i className="fa-solid fa-minus text-[10px]"></i>
+                    </button>
+                    <div className="flex items-center justify-center min-w-[60px]">
+                      <span className="text-base font-extrabold text-slate-800 whitespace-nowrap">성인 {search_query.passengerCount}명</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handle_passenger_change(1)}
+                      className="w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-800 hover:border-slate-300 transition-all cursor-pointer shadow-sm active:scale-90"
+                    >
+                      <i className="fa-solid fa-plus text-[10px]"></i>
+                    </button>
                   </div>
-                )}
-                required={search_query.tripType === 'RT'}
-              />
-
-              {/* Divider */}
-              <div className="lg:hidden" style={{ height: '1px', background: '#e2e8f0', margin: '0 0.75rem' }}></div>
-              <div className="hidden lg:block" style={{ width: '1px', background: '#e2e8f0', margin: '0.625rem 0' }}></div>
-
-              {/* 6. Passengers */}
-              <div className="flex-1 lg:min-w-[180px] min-w-0 flex flex-col justify-center items-center text-center py-2 px-5 relative">
-                <span className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">탑승 인원</span>
-                <div className="flex items-center justify-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => handle_passenger_change(-1)}
-                    className="w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-800 hover:border-slate-300 transition-all cursor-pointer shadow-sm active:scale-90"
-                  >
-                    <i className="fa-solid fa-minus text-[10px]"></i>
-                  </button>
-                  
-                  <div className="flex items-center justify-center min-w-[60px]">
-                    <span className="text-base font-extrabold text-slate-800 whitespace-nowrap">성인 {search_query.passengerCount}명</span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handle_passenger_change(1)}
-                    className="w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-800 hover:border-slate-300 transition-all cursor-pointer shadow-sm active:scale-90"
-                  >
-                    <i className="fa-solid fa-plus text-[10px]"></i>
-                  </button>
                 </div>
               </div>
 
+              <button
+                type="submit"
+                className="search-submit-btn h-[48px] lg:h-[68px] w-full lg:w-[68px] rounded-xl flex items-center justify-center cursor-pointer flex-shrink-0"
+                title="항공권 검색"
+              >
+                <i className="fa-solid fa-magnifying-glass text-lg text-white"></i>
+              </button>
             </div>
-
-            {/* Premium standalone Search Button with ONLY magnifying glass (Reduced to lg:h-[68px] lg:w-[68px] for visual consistency) */}
-            <button
-              type="submit"
-              className="search-submit-btn h-[48px] lg:h-[68px] w-full lg:w-[68px] rounded-xl flex items-center justify-center cursor-pointer flex-shrink-0"
-              title="항공권 검색"
-            >
-              <i className="fa-solid fa-magnifying-glass text-lg text-white"></i>
-            </button>
-
-          </div>
-        </form>
+          </form>
         </div>
       </div>
-
-
     </div>
   );
 };
-
-
