@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
 import type { CarType } from '@/constants/mockCars';
 import { search_cars_api } from '@/api/carApi';
+import { SearchDateField } from '@/components/common/SearchDateField';
+import { todayStr, toDateStr } from '@/utils/calendarUtils';
 
 export interface CarSearchParams {
   pickupSpot: string;
@@ -20,8 +22,21 @@ export const CarSearchForm: React.FC<CarSearchFormProps> = ({ onSearch }) => {
   // Local state for interactive search values
   const [pickupSpot, setPickupSpot] = useState('도쿄 나리타 공항 (NRT) 지점');
   
-  const [pickupDate, setPickupDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [returnDate, setReturnDate] = useState(() => new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+  const [pickupDate, setPickupDate] = useState(todayStr);
+  const [returnDate, setReturnDate] = useState(() => {
+    const next = new Date();
+    next.setDate(next.getDate() + 1);
+    return toDateStr(next);
+  });
+
+  const handlePickupChange = (value: string) => {
+    setPickupDate(value);
+    if (returnDate <= value) {
+      const next = new Date(`${value}T00:00:00`);
+      next.setDate(next.getDate() + 1);
+      setReturnDate(toDateStr(next));
+    }
+  };
   
   const [carType, setCarType] = useState<CarType>('ALL');
 
@@ -91,43 +106,24 @@ export const CarSearchForm: React.FC<CarSearchFormProps> = ({ onSearch }) => {
             <div className="hidden lg:block" style={{ width: '1px', background: '#e2e8f0', margin: '0.625rem 0' }}></div>
 
             {/* 2. Pickup Date */}
-            <div className="flex-1 min-w-[125px] flex flex-col justify-center items-center text-center py-2 px-3 relative">
-              <span className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">대여 일시</span>
-              <div className="flex items-center justify-center text-base font-extrabold text-slate-800 relative cursor-pointer select-none w-full">
-                <i className="fa-regular fa-calendar text-slate-400 text-sm mr-2 pointer-events-none"></i>
-                <span className="pointer-events-none">{pickupDate}</span>
-                <input
-                  type="date"
-                  value={pickupDate}
-                  onChange={(e) => setPickupDate(e.target.value)}
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full text-center"
-                  style={{ colorScheme: 'light' }}
-                  required
-                />
-              </div>
-            </div>
+            <SearchDateField
+              label="대여 일시"
+              value={pickupDate}
+              onChange={handlePickupChange}
+              min={todayStr()}
+            />
 
             {/* Divider */}
             <div className="lg:hidden" style={{ height: '1px', background: '#e2e8f0', margin: '0 0.75rem' }}></div>
             <div className="hidden lg:block" style={{ width: '1px', background: '#e2e8f0', margin: '0.625rem 0' }}></div>
 
             {/* 3. Return Date */}
-            <div className="flex-1 min-w-[125px] flex flex-col justify-center items-center text-center py-2 px-3 relative">
-              <span className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">반납 일시</span>
-              <div className="flex items-center justify-center text-base font-extrabold text-slate-800 relative cursor-pointer select-none w-full">
-                <i className="fa-regular fa-calendar text-slate-400 text-sm mr-2 pointer-events-none"></i>
-                <span className="pointer-events-none">{returnDate}</span>
-                <input
-                  type="date"
-                  value={returnDate}
-                  onChange={(e) => setReturnDate(e.target.value)}
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full text-center"
-                  min={pickupDate}
-                  style={{ colorScheme: 'light' }}
-                  required
-                />
-              </div>
-            </div>
+            <SearchDateField
+              label="반납 일시"
+              value={returnDate}
+              onChange={setReturnDate}
+              min={pickupDate}
+            />
 
             {/* Divider */}
             <div className="lg:hidden" style={{ height: '1px', background: '#e2e8f0', margin: '0 0.75rem' }}></div>
@@ -145,7 +141,7 @@ export const CarSearchForm: React.FC<CarSearchFormProps> = ({ onSearch }) => {
                   </span>
                   <select
                     value={carType}
-                    onChange={(e) => setCarType(e.target.value)}
+                    onChange={(e) => setCarType(e.target.value as CarType)}
                     className="bg-transparent border-none text-base font-extrabold text-slate-800 focus:outline-none w-full text-left absolute left-[18px] w-[calc(100%-18px)] h-full cursor-pointer appearance-none p-0"
                   >
                     <option value="ALL">전체 차량</option>

@@ -3,6 +3,14 @@ import { useFlightStore } from '@/store/useFlightStore';
 import type { FlightSearchQuery } from '@/store/useFlightStore';
 import { search_flights_api } from '@/api/flightApi';
 import { useTravelStore } from '@/store/useTravelStore';
+import { SearchDateField } from '@/components/common/SearchDateField';
+import { todayStr, toDateStr } from '@/utils/calendarUtils';
+
+function addDays(dateStr: string, days: number): string {
+  const next = new Date(`${dateStr}T00:00:00`);
+  next.setDate(next.getDate() + days);
+  return toDateStr(next);
+}
 
 export type FlightSearchParams = FlightSearchQuery;
 
@@ -41,23 +49,33 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch }) 
   const handle_date_change = (type: 'departure' | 'return', value: string) => {
     if (search_query.tripType === 'OW') {
       set_search_query({ dates: value });
-    } else {
-      const datesArray = search_query.dates.split(',');
-      const dep = type === 'departure' ? value : (datesArray[0] || new Date().toISOString().split('T')[0]);
-      const ret = type === 'return' ? value : (datesArray[1] || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
-      set_search_query({ dates: `${dep},${ret}` });
+      return;
     }
+
+    const datesArray = search_query.dates.split(',');
+    const dep = type === 'departure' ? value : (datesArray[0] || todayStr());
+    let ret = type === 'return' ? value : (datesArray[1] || addDays(dep, 7));
+
+    if (type === 'departure' && ret <= value) {
+      const next = new Date(`${value}T00:00:00`);
+      next.setDate(next.getDate() + 1);
+      ret = toDateStr(next);
+    }
+
+    set_search_query({ dates: `${dep},${ret}` });
   };
 
   const handle_trip_type_change = (type: 'OW' | 'RT') => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = todayStr();
     if (type === 'OW') {
       const depDate = search_query.dates.split(',')[0] || today;
-      set_search_query({ tripType: 'OW', dates: depDate });
+      set_search_query({ tripType: 'OW', dates: depDate >= today ? depDate : today });
     } else {
       const depDate = search_query.dates.split(',')[0] || today;
-      const nextWeek = new Date(new Date(depDate).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      set_search_query({ tripType: 'RT', dates: `${depDate},${nextWeek}` });
+      const safeDep = depDate >= today ? depDate : today;
+      const next = new Date(`${safeDep}T00:00:00`);
+      next.setDate(next.getDate() + 3);
+      set_search_query({ tripType: 'RT', dates: `${safeDep},${toDateStr(next)}` });
     }
   };
 
@@ -94,8 +112,8 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch }) 
   };
 
   const datesArray = search_query.dates.split(',');
-  const departureDate = datesArray[0] || new Date().toISOString().split('T')[0];
-  const returnDate = datesArray[1] || new Date(new Date(departureDate).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const departureDate = datesArray[0] || todayStr();
+  const returnDate = datesArray[1] || addDays(departureDate, 7);
 
   return (
     <div className="w-full !-mt-[40px] relative z-20 transition-all duration-300">
@@ -178,52 +196,32 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch }) 
               <div className="hidden lg:block" style={{ width: '1px', background: '#e2e8f0', margin: '0.625rem 0' }}></div>
 
               {/* 4. Departure Date */}
-              <div className="flex-1 min-w-[125px] flex flex-col justify-center items-center text-center py-2 px-3 relative">
-                <span className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">출발 일시</span>
-                <div className="flex items-center justify-center text-base font-extrabold text-slate-800 relative cursor-pointer select-none w-full">
-                  <i className="fa-regular fa-calendar text-slate-400 text-sm mr-2 pointer-events-none"></i>
-                  <span className="pointer-events-none">{departureDate}</span>
-                  <input
-                    type="date"
-                    value={departureDate}
-                    onChange={(e) => handle_date_change('departure', e.target.value)}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full text-center"
-                    style={{ colorScheme: 'light' }}
-                    required
-                  />
-                </div>
-              </div>
+              <SearchDateField
+                label="출발 일시"
+                value={departureDate}
+                onChange={(value) => handle_date_change('departure', value)}
+                min={todayStr()}
+              />
 
               {/* Divider */}
               <div className="lg:hidden" style={{ height: '1px', background: '#e2e8f0', margin: '0 0.75rem' }}></div>
               <div className="hidden lg:block" style={{ width: '1px', background: '#e2e8f0', margin: '0.625rem 0' }}></div>
 
               {/* 5. Return Date */}
-              <div className={`flex-1 min-w-[125px] flex flex-col justify-center items-center text-center py-2 px-3 relative transition-all duration-300 ${
-                search_query.tripType === 'OW' ? 'bg-slate-100/40 opacity-40 cursor-not-allowed' : ''
-              }`}>
-                <span className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">오는 일시</span>
-                {search_query.tripType === 'OW' ? (
-                  <div className="flex items-center justify-center text-base font-extrabold text-slate-400 select-none">
+              <SearchDateField
+                label="오는 일시"
+                value={returnDate}
+                onChange={(value) => handle_date_change('return', value)}
+                min={departureDate}
+                disabled={search_query.tripType === 'OW'}
+                disabledContent={(
+                  <div className="flex items-center justify-center text-base font-extrabold text-slate-400 select-none pointer-events-none">
                     <i className="fa-regular fa-calendar text-slate-300 text-sm mr-2"></i>
                     <span>편도 여정</span>
                   </div>
-                ) : (
-                  <div className="flex items-center justify-center text-base font-extrabold text-slate-800 relative cursor-pointer select-none w-full">
-                    <i className="fa-regular fa-calendar text-slate-400 text-sm mr-2 pointer-events-none"></i>
-                    <span className="pointer-events-none">{returnDate}</span>
-                    <input
-                      type="date"
-                      value={returnDate}
-                      onChange={(e) => handle_date_change('return', e.target.value)}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full text-center"
-                      min={departureDate}
-                      style={{ colorScheme: 'light' }}
-                      required
-                    />
-                  </div>
                 )}
-              </div>
+                required={search_query.tripType === 'RT'}
+              />
 
               {/* Divider */}
               <div className="lg:hidden" style={{ height: '1px', background: '#e2e8f0', margin: '0 0.75rem' }}></div>
