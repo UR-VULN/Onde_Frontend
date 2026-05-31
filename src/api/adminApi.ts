@@ -96,7 +96,7 @@ export const export_passenger_csv_stream_api = async (
 export const cancel_reservation_api = async (
   reservationId: number
 ): Promise<{ success: boolean; message: string }> => {
-  return adminAxios.delete(`/api/v1/reservations/${reservationId}`);
+  return adminAxios.post(`/api/v1/admin/bookings/${reservationId}/cancel`);
 };
 
 /** @deprecated cancel_reservation_api 사용 */
