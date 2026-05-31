@@ -20,6 +20,9 @@ export function redirectByHttpStatus(status: number): void {
     case 403:
       redirectToErrorPage('/403');
       break;
+    case 404:                       // ✅ 추가: 404 응답 시 에러 페이지로 이동
+      redirectToErrorPage('/404');
+      break;
     case 500:
       redirectToErrorPage('/500');
       break;
