@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { FlightSearchForm, type FlightSearchParams } from '@/components/flight/FlightSearchForm';
 import { FlightRecommendationList } from '@/components/flight/FlightRecommendationList';
 import { FlightReservationModal } from '@/components/flight/FlightReservationModal';
+import { FlightPassengerInputModal } from '@/components/flight/FlightPassengerInputModal';
 import { search_flights_api } from '@/api/flightApi';
 import type { FlightDto, AvailableSeat, FlightSearchResponse } from '@/store/useFlightStore';
 import { useFlightStore } from '@/store/useFlightStore';
@@ -20,13 +21,16 @@ const defaultSearch = (): FlightSearchParams => ({
 
 export const FlightPage: React.FC = () => {
   const { addToast } = useTravelStore();
-  const { set_search_query, set_search_results } = useFlightStore();
+  const { set_search_query, set_search_results, flight_search_results } = useFlightStore();
   const [searchParams, setSearchParams] = useState<FlightSearchParams | null>(null);
   const [results, setResults] = useState<FlightSearchResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedFlight, setSelectedFlight] = useState<FlightDto | null>(null);
   const [selectedSeat, setSelectedSeat] = useState<AvailableSeat | null>(null);
+  const [showPassengerInput, setShowPassengerInput] = useState(false);
+
+  const passengerCount = flight_search_results?.passengerCount || 1;
 
   const loadFlights = useCallback(
     async (params: FlightSearchParams, showToast = false) => {
@@ -76,6 +80,11 @@ export const FlightPage: React.FC = () => {
     loadFlights(params, true);
   };
 
+  const handleGoToPassengerInput = () => {
+    setSelectedFlight(null); // 기존 모달 닫기
+    setShowPassengerInput(true); // 탑승객 정보 입력 모달 열기
+  };
+
   return (
     <div className="w-full !-mt-[40px] relative z-20 transition-all duration-300 animate-[fadeIn_0.35s_ease]">
       <FlightSearchForm onSearch={handleSearch} loading={loading} />
@@ -90,12 +99,33 @@ export const FlightPage: React.FC = () => {
           setSelectedSeat(seat);
         }}
       />
+      
+      {/* 1단계: 상세 여정 요약 모달 */}
       {selectedFlight && selectedSeat && (
         <FlightReservationModal
           flight={selectedFlight}
           seat={selectedSeat}
           onClose={() => {
             setSelectedFlight(null);
+            setSelectedSeat(null);
+          }}
+          onConfirm={handleGoToPassengerInput}
+        />
+      )}
+
+      {/* 2단계: 신규 프리미엄 탑승객 정보 입력 모달 */}
+      {showPassengerInput && selectedSeat && (
+        <FlightPassengerInputModal
+          flightInfo={{
+            flightNumber: selectedFlight?.flightNumber || 'OD-702',
+            departureAirport: selectedFlight?.departureAirport || 'ICN',
+            arrivalAirport: selectedFlight?.arrivalAirport || 'NRT',
+            classType: selectedSeat.classType,
+            basePrice: selectedSeat.basePrice,
+            passengerCount: passengerCount,
+          }}
+          onClose={() => {
+            setShowPassengerInput(false);
             setSelectedSeat(null);
           }}
         />

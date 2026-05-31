@@ -1,191 +1,253 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useFlightStore } from '@/store/useFlightStore';
+import React from 'react';
 import type { FlightDto, AvailableSeat } from '@/store/useFlightStore';
+import { useFlightStore } from '@/store/useFlightStore';
 import { useTravelStore } from '@/store/useTravelStore';
-import { book_flight_reservation_api } from '@/api/flightApi';
-import { buildPaymentCheckout } from '@/utils/paymentCheckout';
 
 interface FlightReservationModalProps {
   flight: FlightDto | null;
   seat: AvailableSeat | null;
   onClose: () => void;
+  onConfirm: () => void; // 2단계 탑승객 정보 입력 모달로 가기 위한 콜백
 }
 
-export const FlightReservationModal: React.FC<FlightReservationModalProps> = ({ flight, seat, onClose }) => {
-  const navigate = useNavigate();
+export const FlightReservationModal: React.FC<FlightReservationModalProps> = ({
+  flight,
+  seat,
+  onClose,
+  onConfirm,
+}) => {
   const { flight_search_results } = useFlightStore();
-  const { addToast, isLoggedIn, openAuthModal } = useTravelStore();
-
+  const { isLoggedIn, openAuthModal, addToast } = useTravelStore();
   const passengerCount = flight_search_results?.passengerCount || 1;
-  const [passengers, setPassengers] = useState<Array<{ name: string; passportNumber: string; birthdate: string }>>([]);
-  const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (passengerCount > 0) {
-      setPassengers(
-        Array.from({ length: passengerCount }, () => ({
-          name: '',
-          passportNumber: '',
-          birthdate: '',
-        }))
-      );
-    }
-  }, [passengerCount]);
 
   if (!flight || !seat) return null;
 
-  const handle_passenger_change = (index: number, field: string, value: string) => {
-    const next = [...passengers];
-    next[index] = { ...next[index], [field]: value };
-    setPassengers(next);
-  };
-
-  const handle_submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleConfirmClick = () => {
+    // 탑승객 정보 열심히 다 적고 결제할 때 튕기는 참사 방지를 위한 선제 로그인 가드
     if (!isLoggedIn) {
-      addToast('로그인 후 항공권을 예약하실 수 있습니다.', 'warning');
-      openAuthModal('login');
+      addToast('로그인 후에 항공권을 예약하실 수 있습니다.', 'warning');
+      onClose(); // 상세 요약창 닫기
+      openAuthModal('login'); // 로그인 모달 강제 팝업
       return;
     }
-
-    for (let i = 0; i < passengers.length; i++) {
-      const p = passengers[i];
-      if (!p.name.trim() || !p.passportNumber.trim() || !p.birthdate) {
-        addToast('모든 탑승객의 정보(영문명, 여권번호, 생년월일)를 입력해 주세요.', 'warning');
-        return;
-      }
-    }
-
-    setSubmitting(true);
-    try {
-      addToast('항공권 예약을 요청 중입니다...', 'info');
-      const res = await book_flight_reservation_api({
-        scheduleId: flight.scheduleId,
-        seatClass: seat.classType,
-        passengers,
-      });
-
-      if (!res.success || !res.data) {
-        addToast(res.message || '항공 예약에 실패했습니다.', 'warning');
-        return;
-      }
-
-      const totalPrice = res.data.totalPrice ?? seat.basePrice * passengerCount;
-      onClose();
-      navigate('/payment', {
-        state: buildPaymentCheckout({
-          reservationType: 'FLIGHT',
-          reservationId: res.data.reservationId,
-          productTitle: `${res.data.flightNumber ?? flight.flightNumber} (${seat.classType})`,
-          productSubtitle: `${flight.departureAirport} → ${flight.arrivalAirport}`,
-          categoryLabel: '항공권',
-          categoryIcon: 'fa-plane',
-          totalAmount: totalPrice,
-          usedMileage: 0,
-          dateSummary: `탑승객 ${passengerCount}명`,
-          detailLines: [`₩${seat.basePrice.toLocaleString()} × ${passengerCount}명`],
-          returnPath: '/flight',
-        }),
-      });
-    } catch (err: unknown) {
-      const msg =
-        (err as { message?: string })?.message ||
-        (err as { error?: { message?: string } })?.error?.message ||
-        '항공 예약 중 오류가 발생했습니다.';
-      addToast(msg, 'warning');
-    } finally {
-      setSubmitting(false);
-    }
+    onConfirm(); // 로그인 완료된 유저만 2단계 탑승객 정보 기입으로 안내
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[1000] flex items-center justify-center p-4 select-none animate-[fadeIn_0.2s_ease-out]">
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(15, 23, 42, 0.65)',
+        backdropFilter: 'blur(8px)',
+        zIndex: 15000,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '1.5rem',
+        fontFamily: 'Pretendard, -apple-system, sans-serif',
+      }}
+      onClick={onClose}
+    >
       <div
-        className="bg-white/95 rounded-[32px] border border-slate-200/80 shadow-2xl w-full max-w-lg p-6 max-h-[85vh] overflow-y-auto flex flex-col gap-6 animate-[scaleUp_0.25s_cubic-bezier(0.16, 1, 0.3, 1)]"
+        style={{
+          background: '#ffffff',
+          borderRadius: '30px',
+          width: '520px',
+          maxWidth: '95%',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          animation: 'zoomIn 0.22s ease',
+          position: 'relative',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-start border-b border-slate-100 pb-3">
+        {/* 상단 럭셔리 데코레이션 */}
+        <div style={{ height: '6px', background: '#005ce6' }} />
+
+        {/* ── Header ── */}
+        <div
+          style={{
+            padding: '1.5rem 1.8rem 1rem 1.8rem',
+            borderBottom: '1px solid #f0f2f5',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
           <div>
-            <h3 className="font-logo font-black text-lg text-slate-800 flex items-center gap-2">
-              <i className="fa-solid fa-passport text-primary"></i> 탑승객 정보 및 예약
+            <h3
+              style={{
+                fontSize: '1.2rem',
+                fontWeight: 900,
+                color: '#1e293b',
+                margin: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              <i className="fa-solid fa-plane-departure" style={{ color: '#005ce6' }}></i>
+              선택한 여정 요약 확인
             </h3>
-            <p className="text-[10px] text-slate-500 font-bold mt-1">
-              {flight.flightNumber}편 ({flight.departureAirport} → {flight.arrivalAirport}) · {seat.classType}
-            </p>
           </div>
           <button
-            type="button"
-            className="w-8 h-8 rounded-full hover:bg-slate-50 flex items-center justify-center text-slate-400"
             onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: '#94a3b8',
+              fontSize: '1.2rem',
+            }}
           >
-            <i className="fa-solid fa-xmark text-lg"></i>
+            <i className="fa-solid fa-xmark"></i>
           </button>
         </div>
 
-        <form onSubmit={handle_submit} className="flex flex-col gap-4">
-          <div className="space-y-4 max-h-[45vh] overflow-y-auto pr-1">
-            {passengers.map((passenger, index) => (
-              <div key={index} className="p-4 bg-slate-50/80 border border-slate-100 rounded-2xl flex flex-col gap-3">
-                <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full w-fit uppercase">
-                  탑승객 {index + 1}
-                </span>
-                <div className="form-group mb-0">
-                  <label className="text-[10px] font-extrabold text-slate-700">영문 성명</label>
-                  <input
-                    type="text"
-                    value={passenger.name}
-                    onChange={(e) => handle_passenger_change(index, 'name', e.target.value)}
-                    className="border border-slate-200/80 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 bg-white focus:border-primary w-full"
-                    placeholder="HONG GILDONG"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="form-group mb-0">
-                    <label className="text-[10px] font-extrabold text-slate-700">여권번호</label>
-                    <input
-                      type="text"
-                      value={passenger.passportNumber}
-                      onChange={(e) => handle_passenger_change(index, 'passportNumber', e.target.value)}
-                      className="border border-slate-200/80 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 bg-white focus:border-primary w-full"
-                      required
-                    />
-                  </div>
-                  <div className="form-group mb-0">
-                    <label className="text-[10px] font-extrabold text-slate-700">생년월일</label>
-                    <input
-                      type="date"
-                      value={passenger.birthdate}
-                      onChange={(e) => handle_passenger_change(index, 'birthdate', e.target.value)}
-                      className="border border-slate-200/80 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 bg-white focus:border-primary w-full"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* ── Scrollable Content ── */}
+        <div style={{ padding: '1.5rem 1.8rem', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+          
+          {/* 보딩패스 스타일 레이아웃 */}
+          <div
+            style={{
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: '20px',
+              padding: '1.5rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b' }}>
+                FLIGHT NO: <strong style={{ color: '#005ce6' }}>{flight.flightNumber}</strong>
+              </span>
+              <span
+                style={{
+                  background: 'rgba(0, 92, 230, 0.08)',
+                  color: '#005ce6',
+                  fontSize: '0.65rem',
+                  fontWeight: 900,
+                  padding: '3px 10px',
+                  borderRadius: '999px',
+                }}
+              >
+                {seat.classType}
+              </span>
+            </div>
 
-          <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex justify-between items-center">
-            <div>
-              <span className="text-[10px] font-bold text-slate-400 block">결제 예정 금액</span>
-              <strong className="text-lg font-black text-secondary">
-                ₩{(seat.basePrice * passengerCount).toLocaleString()}
-              </strong>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '0.8rem 0',
+                borderTop: '1px solid #e2e8f0',
+                borderBottom: '1px solid #e2e8f0',
+              }}
+            >
+              <div>
+                <span style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'block', fontWeight: 700 }}>출발지</span>
+                <strong style={{ fontSize: '1rem', color: '#1e293b', fontWeight: 800 }}>
+                  {flight.departureAirport}
+                </strong>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, padding: '0 0.8rem' }}>
+                <i className="fa-solid fa-arrow-right" style={{ color: '#94a3b8', fontSize: '0.8rem' }}></i>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'block', fontWeight: 700 }}>도착지</span>
+                <strong style={{ fontSize: '1rem', color: '#1e293b', fontWeight: 800 }}>
+                  {flight.arrivalAirport}
+                </strong>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: '#475569', fontWeight: 700 }}>
+              <span>예약 인원</span>
+              <span style={{ color: '#1e293b' }}>성인 {passengerCount}명</span>
+            </div>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: '#475569', fontWeight: 700 }}>
+              <span>좌석 1인 기본 요금</span>
+              <span style={{ color: '#1e293b' }}>₩{seat.basePrice.toLocaleString()}</span>
             </div>
           </div>
 
-          <div className="flex gap-3 justify-end mt-4">
-            <button type="button" className="btn-secondary text-xs py-2 px-5" onClick={onClose}>
-              취소
+          {/* 최종 가격 표시 */}
+          <div
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 90, 95, 0.02) 0%, rgba(255, 90, 95, 0.08) 100%)',
+              border: '1px solid rgba(255, 90, 95, 0.15)',
+              borderRadius: '20px',
+              padding: '1.2rem 1.5rem',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <div>
+              <span style={{ fontSize: '0.7rem', color: '#ff5a5f', fontWeight: 800, display: 'block', marginBottom: '2px' }}>
+                총 예상 금액
+              </span>
+              <strong style={{ fontSize: '1.4rem', fontWeight: 900, color: '#ff5a5f', fontFamily: 'GmarketSansBold' }}>
+                ₩{(seat.basePrice * passengerCount).toLocaleString()}
+              </strong>
+            </div>
+            <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, textAlign: 'right' }}>
+              공항 시설 요금 및 유류할증료 포함
+            </span>
+          </div>
+
+          {/* 동의 안내 문구 */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', background: '#f8fafc', padding: '0.8rem 1rem', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+            <i className="fa-solid fa-circle-info" style={{ color: '#005ce6', marginTop: '2px', fontSize: '0.85rem' }}></i>
+            <p style={{ fontSize: '0.72rem', color: '#64748b', margin: 0, lineHeight: 1.4, fontWeight: 500 }}>
+              다음 단계에서 정부 출입국 보안 규정에 의거하여 모든 승객의 여권에 기재된 영문 성명, 여권번호, 생년월일 수집이 필요합니다.
+            </p>
+          </div>
+
+          {/* ── Action Buttons ── */}
+          <div style={{ display: 'flex', gap: '0.8rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+            <button
+              onClick={onClose}
+              style={{
+                padding: '0.75rem 1.5rem',
+                border: '1px solid #cbd5e1',
+                borderRadius: '12px',
+                background: '#ffffff',
+                color: '#475569',
+                fontSize: '0.8rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+            >
+              돌아가기
             </button>
-            <button type="submit" className="btn-primary text-xs py-2 px-5" disabled={submitting}>
-              {submitting ? '예약 중...' : '예약 후 결제하기'}
+            <button
+              onClick={handleConfirmClick}
+              style={{
+                padding: '0.75rem 1.8rem',
+                border: 'none',
+                borderRadius: '12px',
+                background: '#005ce6',
+                color: '#ffffff',
+                fontSize: '0.8rem',
+                fontWeight: 900,
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(0, 92, 230, 0.2)',
+                transition: 'all 0.15s',
+              }}
+            >
+              예약 및 정보 입력하기
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
