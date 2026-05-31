@@ -57,8 +57,35 @@ export interface FlightBatchRegisterPayload {
   economyPrice: number;
 }
 
-export const seller_register_flights_batch_api = async (payload: FlightBatchRegisterPayload): Promise<{ success: boolean; message: string }> => {
-  return userAxios.post('/api/v1/seller/flights', payload);
+const mapDaysToIntegers = (daysStr: string): number[] => {
+  const dayMap: Record<string, number> = { MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6, SUN: 7 };
+  return daysStr.split(',').map(d => dayMap[d.trim()]).filter(Boolean);
+};
+
+export const seller_register_flights_batch_api = async (
+  payload: FlightBatchRegisterPayload
+): Promise<{ success: boolean; message: string }> => {
+  const formattedTime = payload.departureTime.includes(':') && payload.departureTime.split(':').length === 2
+    ? `${payload.departureTime}:00`
+    : payload.departureTime;
+
+  const backendBody = {
+    flightNumber: payload.flightNumber,
+    departureAirport: payload.departureAirport,
+    arrivalAirport: payload.arrivalAirport,
+    startDate: payload.startDate,
+    endDate: payload.endDate,
+    operatingDays: mapDaysToIntegers(payload.operatingDays),
+    departureTime: formattedTime,
+    durationMinutes: payload.durationMinutes,
+    seatSetup: [
+      { classType: 'FIRST', totalSeats: payload.firstSeats, basePrice: payload.firstPrice },
+      { classType: 'BUSINESS', totalSeats: payload.businessSeats, basePrice: payload.businessPrice },
+      { classType: 'ECONOMY', totalSeats: payload.economySeats, basePrice: payload.economyPrice }
+    ]
+  };
+
+  return userAxios.post('/api/v1/seller/flights', backendBody);
 };
 
 // 4. 판매자용 달력 스케줄 목록 조회
