@@ -1,7 +1,7 @@
 import { userAxios } from '@/api/axiosInstance';
 import type { PremiumEstimate } from '@/store/useInsuranceStore';
 
-/** 명세: POST /api/v1/insurances/calculate */
+/** 명세: POST /api/v1/insurance/calculate */
 export interface CalculatePremiumPayload {
   productId: number;
   birthdate: string;
@@ -14,7 +14,7 @@ export interface CalculatePremiumPayload {
 export const calculate_premium_api = async (
   payload: CalculatePremiumPayload
 ): Promise<{ success: boolean; data: PremiumEstimate; message: string }> => {
-  return userAxios.post('/api/v1/insurances/calculate', payload);
+  return userAxios.post('/api/v1/insurance/calculate', payload);
 };
 
 /** 명세: POST /api/v1/reservations/insurances */
@@ -44,7 +44,7 @@ export const apply_insurance_policy_api = async (
   return userAxios.post('/api/v1/reservations/insurances', payload);
 };
 
-/** 명세: POST /api/v1/seller/insurances */
+/** 명세: POST /api/v1/seller/insurance */
 export interface RegisterInsuranceProductPayload {
   productName: string;
   baseDailyRate: number;
@@ -58,5 +58,5 @@ export const seller_register_insurance_rate_api = async (
     typeof payload.coverageDetails === 'string'
       ? payload
       : { ...payload, coverageDetails: JSON.stringify(payload.coverageDetails) };
-  return userAxios.post('/api/v1/seller/insurances', body);
+  return userAxios.post('/api/v1/seller/insurance', body);
 };
