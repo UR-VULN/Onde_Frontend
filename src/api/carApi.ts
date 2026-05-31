@@ -76,7 +76,7 @@ function mapCarListItemToDto(item: CarListItemDto): CarDto {
 export const search_cars_list_api = async (
   params: CarSearchParams
 ): Promise<{ success: boolean; data: CarListResponse; message: string }> => {
-  return userAxios.get('/api/v1/cars', { params });
+  return userAxios.get('/api/rental_cars/search', { params });
 };
 
 export const search_cars_api = async (
@@ -141,5 +141,5 @@ export interface CarReservationResponse {
 export const book_car_api = async (
   payload: CarReservationPayload
 ): Promise<{ success: boolean; data: CarReservationResponse; message: string }> => {
-  return userAxios.post('/api/v1/reservations/cars', payload);
+  return userAxios.post('/api/rental_cars/reservations', payload);
 };

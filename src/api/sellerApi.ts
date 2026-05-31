@@ -300,7 +300,7 @@ export const get_seller_schedule_calendar_api = async (params?: {
   dest?: string;
   month?: string;
 }): Promise<{ success: boolean; data: unknown[]; message: string }> => {
-  return sellerAxios.get('/api/v1/seller/schedules/calendar', { params });
+  return sellerAxios.get('/api/v1/seller/flights/calendar', { params });
 };
 
 export const register_seller_flight_api = async (

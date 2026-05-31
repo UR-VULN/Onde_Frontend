@@ -81,7 +81,7 @@ export interface SellerCalendarCellDto {
 }
 
 export const seller_get_calendar_schedules_api = async (params: CalendarParams): Promise<{ success: boolean; data: SellerCalendarCellDto[]; message: string }> => {
-  return userAxios.get('/api/v1/seller/schedules/calendar', { params });
+  return userAxios.get('/api/v1/seller/flights/calendar', { params });
 };
 
 // 5. 판매자용 달력 기반 가격/재고 수동 제어 (명세: PATCH .../control)

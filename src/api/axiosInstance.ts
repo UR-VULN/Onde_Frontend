@@ -28,7 +28,6 @@ export const adminAxios = axios.create({
   ...axiosDefaults,
 });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const injectToken = (config: any) => {
   const token = getAccessToken();
   if (token) {

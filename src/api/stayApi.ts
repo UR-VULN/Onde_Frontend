@@ -99,7 +99,7 @@ function mapAccommodationToStayDto(item: AccommodationDto): StayDto {
 export const search_accommodations_api = async (
   params: AccommodationSearchParams
 ): Promise<{ success: boolean; data: AccommodationSearchResponse; message: string }> => {
-  return userAxios.get('/api/v1/accommodations', { params });
+  return userAxios.get('/api/v1/accommodations/search', { params });
 };
 
 export const search_stays_api = async (
@@ -167,7 +167,7 @@ export interface RoomReservationResponse {
 export const book_room_api = async (
   payload: RoomReservationPayload
 ): Promise<{ success: boolean; data: RoomReservationResponse; message: string }> => {
-  return userAxios.post('/api/v1/reservations/rooms', payload);
+  return userAxios.post('/api/v1/accommodations/reservations/rooms', payload);
 };
 
 /** @deprecated book_room_api 사용 (roomId 필요) */
