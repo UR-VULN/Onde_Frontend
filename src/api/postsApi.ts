@@ -21,7 +21,23 @@ export const fetch_posts_api = async (params?: {
   page?: number;
   size?: number;
 }): Promise<{ success: boolean; data: PostsListResponse; message: string }> => {
-  return userAxios.get('/api/v1/posts', { params });
+  const res = (await userAxios.get('/api/v1/posts', { params })) as {
+    success: boolean;
+    data: PostsListResponse | PostDto[];
+    message: string;
+  };
+  if (!res.success || !res.data) return { success: res.success, data: { posts: [], totalCount: 0 }, message: res.message };
+  if (Array.isArray(res.data)) {
+    return {
+      success: true,
+      message: res.message,
+      data: {
+        posts: res.data,
+        totalCount: res.data.length,
+      },
+    };
+  }
+  return res as { success: boolean; data: PostsListResponse; message: string };
 };
 
 export interface CreatePostPayload {
