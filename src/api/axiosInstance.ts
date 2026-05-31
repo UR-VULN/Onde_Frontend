@@ -2,7 +2,7 @@ import axios from 'axios';
 import { refresh_token_api } from '@/api/authApi';
 import { ADMIN_API_BASE, USER_API_BASE } from '@/constants/apiConfig';
 import { clearAuthSession } from '@/utils/authSession';
-import { getAccessToken, getRefreshToken, updateAccessToken } from '@/utils/authCookies';
+import { getAccessToken, getMemberId, updateAccessToken } from '@/utils/authCookies';
 import { isErrorPagePath, redirectByHttpStatus } from '@/utils/errorNavigation';
 
 const axiosDefaults = {
@@ -89,7 +89,7 @@ const createAuthAwareErrorHandler = (instance: typeof userAxios) => {
     const status = error.response?.status;
     const config = error.config;
 
-    if (status === 401 && isRefreshable401(config) && getRefreshToken()) {
+    if (status === 401 && isRefreshable401(config) && getMemberId()) {
       if (isRefreshing) {
         const token = await waitForRefresh();
         if (token && config) {

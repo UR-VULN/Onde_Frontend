@@ -8,8 +8,8 @@
 import { useTravelStore } from '@/store/useTravelStore';
 
 const NAMES = {
-  ACCESS: 'onde_access_token',
-  REFRESH: 'onde_refresh_token',
+  ACCESS: 'accessToken',
+  REFRESH: 'refreshToken',
   MEMBER_ID: 'onde_member_id',
   ROLE: 'onde_member_role',
   USERNAME: 'onde_username',
@@ -64,7 +64,8 @@ export function getUsername(): string | null {
 }
 
 export function hasAuthSession(): boolean {
-  return !!(getAccessToken() && getMemberRole() && getUsername());
+  // 🛡️ HttpOnly 쿠키는 JS에서 읽을 수 없으므로, 메타데이터 쿠키 존재 여부로 세션 확인
+  return !!(getMemberId() && getMemberRole() && getUsername());
 }
 
 export interface PersistAuthPayload {
