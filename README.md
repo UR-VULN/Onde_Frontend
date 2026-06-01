@@ -1,4 +1,4 @@
-# Onde Frontend
+# <img src="./docs/logo.png" width="48" alt="Onde Logo" style="vertical-align: middle; margin-right: 8px;" /> Onde Frontend
 
 Onde 웹 서비스의 프론트엔드 애플리케이션 저장소입니다.
 
