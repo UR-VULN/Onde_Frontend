@@ -168,7 +168,17 @@ export const InsuranceCalculatorForm: React.FC<InsuranceCalculatorFormProps> = (
                   <button
                     key={level}
                     type="button"
-                    onClick={() => set_insured_details({ coverageLevel: level })}
+                    onClick={() => {
+                      const productIdMap: Record<string, number> = {
+                        STANDARD: 1,
+                        DELUXE: 2,
+                        PREMIUM: 3
+                      };
+                      set_insured_details({ 
+                        coverageLevel: level,
+                        insuranceProductId: productIdMap[level]
+                      });
+                    }}
                     className={`py-3.5 rounded-lg text-sm font-black transition-all tracking-widest ${
                       insured_details.coverageLevel === level
                         ? 'bg-white text-slate-900 shadow-sm border border-slate-100'

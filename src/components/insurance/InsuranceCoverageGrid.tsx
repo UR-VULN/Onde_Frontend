@@ -36,7 +36,17 @@ export const InsuranceCoverageGrid: React.FC = () => {
         {plans.map((plan) => (
           <div 
             key={plan.level}
-            onClick={() => set_insured_details({ coverageLevel: plan.level })}
+            onClick={() => {
+              const productIdMap: Record<string, number> = {
+                STANDARD: 1,
+                DELUXE: 2,
+                PREMIUM: 3
+              };
+              set_insured_details({ 
+                coverageLevel: plan.level,
+                insuranceProductId: productIdMap[plan.level]
+              });
+            }}
             style={{ padding: '20px 40px', borderRadius: '12px' }}
             className={`group relative bg-white border-2 transition-all cursor-pointer hover:shadow-2xl flex flex-col justify-center ${
               insured_details.coverageLevel === plan.level 
