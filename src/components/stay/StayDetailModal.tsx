@@ -15,6 +15,8 @@ import {
 } from '@/utils/calendarUtils';
 import { useTravelStore } from '@/store/useTravelStore';
 import { MileageUsagePanel, clampMileageUsage } from '@/components/common/MileageUsagePanel';
+import { ListingThumbnail } from '@/components/common/ListingThumbnail';
+import { hasDisplayImage, hasDisplayPrice } from '@/utils/listingDisplay';
 
 // ─── constants ───────────────────────────────────────────────
 const PRIMARY = '#005ce6';
@@ -67,18 +69,20 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
   const [calYear, setCalYear] = useState(today.getFullYear());
   const [calMonth, setCalMonth] = useState(today.getMonth());
 
+  const nightlyRate = stay.pricePerNight ?? 0;
+
   const cells = useMemo(
-    () => buildCalendarMonth(calYear, calMonth, stay.pricePerNight, {
+    () => buildCalendarMonth(calYear, calMonth, nightlyRate, {
       weekendSurchargeRate: 0.2,
       disabledDays: soldOutDaysSet,
       disableBeforeToday: true,
     }),
-    [calYear, calMonth, stay.pricePerNight]
+    [calYear, calMonth, nightlyRate, soldOutDaysSet]
   );
 
   // Billing
   const nights = countNights(checkIn, checkOut);
-  const rawTotal = nights * stay.pricePerNight;
+  const rawTotal = nights * nightlyRate;
   const mileageDiscount = mileageUsed;
   const finalTotal = Math.max(0, rawTotal - mileageDiscount);
 
@@ -103,11 +107,12 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
   }, [checkIn, checkOut]);
   const weekendCount = nights - weekdayCount;
 
-  const weekdayPrice = stay.pricePerNight;
-  const weekendPrice = Math.round((stay.pricePerNight * 1.2) / 1000) * 1000;
+  const weekdayPrice = nightlyRate;
+  const weekendPrice = Math.round((nightlyRate * 1.2) / 1000) * 1000;
 
   function buildBillingDesc(): string {
     if (nights === 0) return '일정을 선택해 주세요';
+    if (!hasDisplayPrice(nightlyRate)) return '—';
     const parts: string[] = [];
     if (weekdayCount > 0) parts.push(`평일 ${weekdayCount}박 × ₩${weekdayPrice.toLocaleString()}`);
     if (weekendCount > 0) parts.push(`주말 ${weekendCount}박 × ₩${weekendPrice.toLocaleString()}`);
@@ -235,14 +240,16 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
           reservationId: res.data.reservationId,
           productTitle: stay.title,
           productSubtitle: stay.location,
-          productImageUrl: stay.imageUrl,
+          productImageUrl: hasDisplayImage(stay.imageUrl) ? stay.imageUrl : undefined,
           categoryLabel: '숙소',
           categoryIcon: 'fa-hotel',
           totalAmount: res.data.totalPrice ?? finalTotal + mileageUsed,
           usedMileage: mileageUsed,
           dateSummary: `${checkIn} ~ ${checkOut} (${nights}박)`,
           detailLines: [
-            `₩${stay.pricePerNight.toLocaleString('ko-KR')} × ${nights}박`,
+            ...(hasDisplayPrice(nightlyRate)
+              ? [`₩${nightlyRate.toLocaleString('ko-KR')} × ${nights}박`]
+              : []),
             `성인 ${adultCount}명`,
           ],
           returnPath: '/',
@@ -311,10 +318,12 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
             width: '65px', height: '65px', borderRadius: '12px',
             overflow: 'hidden', flexShrink: 0, background: '#f0f2f5',
           }}>
-            <img
-              src={stay.imageUrl}
+            <ListingThumbnail
+              imageUrl={stay.imageUrl}
               alt={stay.title}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              iconClass="fa-hotel"
+              className="w-full h-full text-xl"
+              imgClassName="w-full h-full object-cover"
             />
           </div>
           <div>

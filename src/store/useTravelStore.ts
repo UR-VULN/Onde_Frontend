@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { DEFAULT_MEMBERSHIP_GRADE } from '@/constants/appConstants';
 import type { MemberProfileDto } from '@/api/userApi';
 import { clearAllAuthCookies } from '@/utils/authCookies';
 
@@ -171,32 +170,12 @@ export const useTravelStore = create<TravelState>((set) => ({
   closeAuthModal: () => set({ isAuthModalOpen: false }),
   setAuthModalTab: (tab) => set({ authModalTab: tab }),
 
-  signupSuccess: (username, role) => {
-    if (role === 'sell') {
-      set({ isAuthModalOpen: false });
-      setTimeout(() => set({ isSellerPendingPopupOpen: true }), 450);
-      return;
-    }
+  /** 판매자 가입 완료 — 승인 대기 안내만 (로그인 상태는 설정하지 않음) */
+  signupSuccess: (_username, role) => {
+    if (role !== 'sell') return;
 
-    const apiRole = role === 'adm' ? 'GENERAL_ADMIN' : 'USER';
-    set({
-      isLoggedIn: true,
-      username,
-      memberRole: apiRole,
-      mileage: 0,
-      membershipGrade: DEFAULT_MEMBERSHIP_GRADE,
-      isAuthModalOpen: false,
-    });
-
-    const toastId = Math.random().toString();
-    set((state) => ({
-      toastStack: [...state.toastStack, { id: toastId, message: '👥 회원가입이 완료되었습니다!', type: 'success' }],
-    }));
-    setTimeout(() => useTravelStore.getState().removeToast(toastId), 4500);
-
-    if (role === 'cust') {
-      setTimeout(() => set({ isWelcomePopupOpen: true }), 450);
-    }
+    set({ isAuthModalOpen: false });
+    setTimeout(() => set({ isSellerPendingPopupOpen: true }), 450);
   },
 
   addReservation: (res) =>
