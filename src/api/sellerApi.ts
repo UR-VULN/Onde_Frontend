@@ -1,6 +1,5 @@
 import { sellerAxios } from '@/api/axiosInstance';
-
-// ─── 명세: PUT/GET /api/v1/seller/settlements/accounts ───
+import { unwrapApi } from '@/utils/apiResponse';
 
 export interface SellerSettlementAccountPayload {
   bankName: string;
@@ -21,16 +20,22 @@ export const get_seller_settlement_account_api = async (): Promise<{
   data: SellerSettlementAccountDto;
   message: string;
 }> => {
-  return sellerAxios.get('/api/v1/seller/settlements/accounts');
+  const raw = await sellerAxios.get('/api/v1/seller/settlements/accounts');
+  return unwrapApi<SellerSettlementAccountDto>(raw);
 };
 
 export const put_seller_settlement_account_api = async (
   payload: SellerSettlementAccountPayload
-): Promise<{ success: boolean; data: SellerSettlementAccountDto; message: string }> => {
-  return sellerAxios.put('/api/v1/seller/settlements/accounts', payload);
+): Promise<{ success: boolean; data: SellerSettlementAccountDto | null; message: string }> => {
+  const raw = await sellerAxios.put('/api/v1/seller/settlements/accounts', payload);
+  const res = unwrapApi<SellerSettlementAccountDto | null>(raw);
+  return {
+    success: res.success,
+    message: res.message,
+    data: res.data ?? null,
+  };
 };
 
-/** @deprecated put_seller_settlement_account_api */
 export const save_seller_profile_api = async (payload: {
   businessName: string;
   contactPhone: string;
@@ -53,8 +58,6 @@ export const save_seller_profile_api = async (payload: {
   return { success: res.success, message: res.message };
 };
 
-// ─── 명세: GET /api/v1/seller/settlements ───
-
 export interface SellerSettlementDto {
   settlementId: number;
   settlementMonth: string;
@@ -64,41 +67,58 @@ export interface SellerSettlementDto {
   status: string;
 }
 
+function mapSettlementItem(raw: Record<string, unknown>): SellerSettlementDto {
+  const dateRaw = raw.settlementDate ?? raw.settlementMonth;
+  let settlementMonth = '';
+  if (typeof dateRaw === 'string') {
+    settlementMonth = dateRaw.length >= 7 ? dateRaw.slice(0, 7) : dateRaw;
+  }
+  return {
+    settlementId: Number(raw.id ?? raw.settlementId ?? 0),
+    settlementMonth,
+    grossAmount: Number(raw.grossAmount ?? 0),
+    commission: Number(raw.commission ?? 0),
+    netAmount: Number(raw.netAmount ?? 0),
+    status: String(raw.status ?? ''),
+  };
+}
+
 export interface SellerSettlementsResponse {
   settlements: SellerSettlementDto[];
   totalCount: number;
 }
 
 export const get_seller_settlements_api = async (
-  year?: number,
   page = 0,
   size = 12
 ): Promise<{ success: boolean; data: SellerSettlementsResponse; message: string }> => {
-  return sellerAxios.get('/api/v1/seller/settlements', { params: { year, page, size } });
+  const raw = await sellerAxios.get('/api/v1/seller/settlements', { params: { page, size } });
+  const res = unwrapApi<{ settlements: Array<Record<string, unknown>>; totalCount: number }>(raw);
+  const settlements = (res.data?.settlements ?? []).map(mapSettlementItem);
+  return {
+    success: res.success,
+    message: res.message,
+    data: { settlements, totalCount: res.data?.totalCount ?? settlements.length },
+  };
 };
 
-/** 명세: POST /api/v1/seller/settlements/{settlementId}/request */
 export const request_settlement_api = async (
   settlementId: number
 ): Promise<{ success: boolean; data: { settlementId: number; status: string }; message: string }> => {
-  return sellerAxios.post(`/api/v1/seller/settlements/${settlementId}/request`);
+  const raw = await sellerAxios.post(`/api/v1/seller/settlements/${settlementId}/request`);
+  return unwrapApi<{ settlementId: number; status: string }>(raw);
 };
 
-/** @deprecated request_settlement_api(settlementId) — UI에서 settlementId 전달 필요 */
 export const request_monthly_settlement_api = async (): Promise<{
   success: boolean;
   message: string;
 }> => {
-  const list = await get_seller_settlements_api(new Date().getFullYear());
-  const pending = list.data?.settlements?.[0];
-  if (!pending) {
-    return { success: false, message: '정산 대상이 없습니다.' };
-  }
+  const list = await get_seller_settlements_api(0, 20);
+  const pending = list.data?.settlements?.find((s) => s.status === 'PENDING');
+  if (!pending) return { success: false, message: '정산 대상이 없습니다.' };
   const res = await request_settlement_api(pending.settlementId);
   return { success: res.success, message: res.message };
 };
-
-// ─── 명세: GET /api/v1/seller/dashboard/statistics ───
 
 export interface SellerDashboardStatisticsDto {
   period: string;
@@ -112,10 +132,17 @@ export const get_seller_dashboard_statistics_api = async (params?: {
   startDate?: string;
   endDate?: string;
 }): Promise<{ success: boolean; data: SellerDashboardStatisticsDto; message: string }> => {
-  return sellerAxios.get('/api/v1/seller/dashboard/statistics', { params });
+  const now = new Date();
+  const year = now.getFullYear();
+  const defaults = {
+    period: params?.period ?? 'MONTHLY',
+    startDate: params?.startDate ?? `${year}-01-01`,
+    endDate: params?.endDate ?? `${year}-12-31`,
+  };
+  const raw = await sellerAxios.get('/api/v1/seller/dashboard/statistics', { params: defaults });
+  return unwrapApi<SellerDashboardStatisticsDto>(raw);
 };
 
-/** UI 호환 */
 export interface SellerSalesStatDto {
   totalSalesAmount: number;
   completedBookingsCount: number;
@@ -147,7 +174,7 @@ export const get_seller_sales_stat_api = async (): Promise<{
       message: res.message,
     };
   }
-  const last = res.data.breakdown[res.data.breakdown.length - 1];
+  const last = res.data.breakdown?.[res.data.breakdown.length - 1];
   return {
     success: true,
     message: res.message,
@@ -184,8 +211,6 @@ export const get_seller_settlement_history_api = async (): Promise<{
   return { success: res.success, data: mapped, message: res.message };
 };
 
-// ─── 명세 외 UI 전용 (Mock에서만 응답) ───
-
 export interface BusinessVerifyPayload {
   businessNumber: string;
   representativeName: string;
@@ -195,56 +220,23 @@ export interface BusinessVerifyPayload {
 export const verify_business_api = async (
   payload: BusinessVerifyPayload
 ): Promise<{ success: boolean; verified: boolean; message: string }> => {
-  return sellerAxios.post('/api/v1/seller/account/verify-business', payload);
+  const raw = await sellerAxios.post('/api/v1/seller/account/verify-business', {
+    businessNumber: payload.businessNumber,
+    representativeName: payload.representativeName,
+    openDate: payload.openDate,
+  });
+  const res = unwrapApi<{ verified?: boolean }>(raw);
+  return {
+    success: res.success,
+    verified: Boolean(res.data?.verified),
+    message: res.message,
+  };
 };
-
-export interface SellerReviewDto {
-  reviewId: number;
-  guestName: string;
-  guestInitials: string;
-  guestColor?: string;
-  rating: number;
-  content: string;
-  productName: string;
-  reviewedAt: string;
-  hostReply?: string;
-  repliedAt?: string;
-}
-
-export const get_seller_reviews_api = async (): Promise<{
-  success: boolean;
-  data: SellerReviewDto[];
-  message: string;
-}> => {
-  return sellerAxios.get('/api/v1/seller/reviews');
-};
-
-export const post_seller_review_reply_api = async (
-  reviewId: number,
-  reply: string
-): Promise<{ success: boolean; message: string }> => {
-  return sellerAxios.post(`/api/v1/seller/reviews/${reviewId}/reply`, { reply });
-};
-
-export const update_seller_review_reply_api = async (
-  reviewId: number,
-  reply: string
-): Promise<{ success: boolean; message: string }> => {
-  return sellerAxios.put(`/api/v1/seller/reviews/${reviewId}/reply`, { reply });
-};
-
-export const delete_seller_review_reply_api = async (
-  reviewId: number
-): Promise<{ success: boolean; message: string }> => {
-  return sellerAxios.delete(`/api/v1/seller/reviews/${reviewId}/reply`);
-};
-
-// ─── 판매자 숙소·렌터카 재고 ───
 
 export interface SellerPropertyDto {
   propertyId: number;
   name: string;
-  status: 'ACTIVE' | 'PENDING';
+  status: 'ACTIVE' | 'PENDING' | 'REJECTED';
   basePrice: number;
 }
 
@@ -260,7 +252,13 @@ export const get_seller_accommodations_api = async (): Promise<{
   data: SellerPropertyDto[];
   message: string;
 }> => {
-  return sellerAxios.get('/api/v1/seller/accommodations');
+  const raw = await sellerAxios.get('/api/v1/seller/accommodations');
+  const res = unwrapApi<{ accommodations: SellerPropertyDto[] }>(raw);
+  return {
+    success: res.success,
+    message: res.message,
+    data: res.data?.accommodations ?? [],
+  };
 };
 
 export const get_seller_cars_inventory_api = async (): Promise<{
@@ -268,22 +266,38 @@ export const get_seller_cars_inventory_api = async (): Promise<{
   data: SellerCarInventoryDto[];
   message: string;
 }> => {
-  return sellerAxios.get('/api/v1/seller/cars');
+  const raw = await sellerAxios.get('/api/v1/seller/cars');
+  const res = unwrapApi<{ cars: Array<{ propertyId: number; name: string; status?: string; basePrice: number }> }>(
+    raw
+  );
+  const cars = (res.data?.cars ?? []).map((c) => ({
+    propertyId: c.propertyId,
+    name: c.name,
+    stock: 1,
+    basePrice: c.basePrice,
+  }));
+  return { success: res.success, message: res.message, data: cars };
 };
 
 export interface SellerCalendarCellDto {
-  scheduleId?: number;
-  day?: number;
   stock: number;
   price: number;
   isClosed?: boolean;
 }
 
+function defaultMonth(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
 export const get_seller_inventory_calendar_api = async (params: {
   propertyKey: string;
   month?: string;
-}): Promise<{ success: boolean; data: Record<number, SellerCalendarCellDto>; message: string }> => {
-  return sellerAxios.get('/api/v1/seller/inventory/calendar', { params });
+}): Promise<{ success: boolean; data: Record<string, SellerCalendarCellDto>; message: string }> => {
+  const raw = await sellerAxios.get('/api/v1/seller/inventory/calendar', {
+    params: { propertyKey: params.propertyKey, month: params.month ?? defaultMonth() },
+  });
+  return unwrapApi<Record<string, SellerCalendarCellDto>>(raw);
 };
 
 export const patch_seller_inventory_day_api = async (payload: {
@@ -291,20 +305,35 @@ export const patch_seller_inventory_day_api = async (payload: {
   day: number;
   stock: number;
   price: number;
+  month?: string;
 }): Promise<{ success: boolean; message: string }> => {
-  return sellerAxios.patch('/api/v1/seller/inventory/calendar', payload);
+  const raw = await sellerAxios.patch('/api/v1/seller/inventory/calendar', {
+    propertyKey: payload.propertyKey,
+    day: payload.day,
+    stock: payload.stock,
+    price: payload.price,
+    month: payload.month ?? defaultMonth(),
+  });
+  const res = unwrapApi<unknown>(raw);
+  return { success: res.success, message: res.message };
 };
 
 export const get_seller_schedule_calendar_api = async (params?: {
-  origin?: string;
-  dest?: string;
-  month?: string;
+  year?: number;
+  month?: number;
 }): Promise<{ success: boolean; data: unknown[]; message: string }> => {
-  return sellerAxios.get('/api/v1/seller/flights/calendar', { params });
+  const now = new Date();
+  const year = params?.year ?? now.getFullYear();
+  const month = params?.month ?? now.getMonth() + 1;
+  const raw = await sellerAxios.get('/api/v1/seller/flights/calendar', { params: { year, month } });
+  const res = unwrapApi<unknown[]>(raw);
+  return { success: res.success, data: res.data ?? [], message: res.message };
 };
 
 export const register_seller_flight_api = async (
   payload: Record<string, unknown>
 ): Promise<{ success: boolean; message: string }> => {
-  return sellerAxios.post('/api/v1/seller/flights', payload);
+  const raw = await sellerAxios.post('/api/v1/seller/flights', payload);
+  const res = unwrapApi<unknown>(raw);
+  return { success: res.success, message: res.message };
 };

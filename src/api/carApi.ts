@@ -1,21 +1,27 @@
 import { userAxios } from '@/api/axiosInstance';
+import { unwrapApi } from '@/utils/apiResponse';
+import { getMemberId } from '@/utils/authCookies';
 
-/** 명세: GET /api/v1/cars */
 export interface CarSearchParams {
+  location?: string;
+  pickup: string;
+  returnTime: string;
   carType?: string;
-  pickupDate: string;
-  returnDate: string;
-  page?: number;
-  size?: number;
+  sort?: string;
+}
+
+interface BackendCarItem {
+  id: number;
+  modelName: string;
+  carType: string;
+  price: number;
 }
 
 export interface CarListItemDto {
   carId: number;
   modelName: string;
   carType: string;
-  licensePlate: string;
   dailyPrice: number;
-  available: boolean;
 }
 
 export interface CarListResponse {
@@ -23,7 +29,6 @@ export interface CarListResponse {
   totalCount: number;
 }
 
-/** UI 호환 */
 export interface CarSearchFormParams {
   pickupSpot: string;
   pickupDate: string;
@@ -57,6 +62,19 @@ export interface CarSearchResponse {
 const DEFAULT_CAR_IMAGE =
   'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=600';
 
+function toDateTime(dateStr: string, time = '10:00:00'): string {
+  return `${dateStr}T${time}`;
+}
+
+function mapBackendCar(item: BackendCarItem): CarListItemDto {
+  return {
+    carId: item.id,
+    modelName: item.modelName,
+    carType: item.carType,
+    dailyPrice: item.price ?? 0,
+  };
+}
+
 function mapCarListItemToDto(item: CarListItemDto): CarDto {
   return {
     id: item.carId,
@@ -76,18 +94,24 @@ function mapCarListItemToDto(item: CarListItemDto): CarDto {
 export const search_cars_list_api = async (
   params: CarSearchParams
 ): Promise<{ success: boolean; data: CarListResponse; message: string }> => {
-  return userAxios.get('/api/rental_cars/search', { params });
+  const raw = await userAxios.get('/api/v1/rental_cars/search', { params });
+  const res = unwrapApi<{ cars: BackendCarItem[] }>(raw);
+  const cars = (res.data?.cars ?? []).map(mapBackendCar);
+  return {
+    success: res.success,
+    message: res.message,
+    data: { cars, totalCount: cars.length },
+  };
 };
 
 export const search_cars_api = async (
   params: CarSearchFormParams
 ): Promise<{ success: boolean; data: CarSearchResponse; message: string }> => {
   const res = await search_cars_list_api({
+    location: params.pickupSpot || undefined,
     carType: params.carType === 'ALL' ? undefined : params.carType,
-    pickupDate: params.pickupDate,
-    returnDate: params.returnDate,
-    page: params.page ?? 0,
-    size: params.size ?? 20,
+    pickup: toDateTime(params.pickupDate),
+    returnTime: toDateTime(params.returnDate, '18:00:00'),
   });
 
   if (!res.success || !res.data) {
@@ -111,7 +135,12 @@ export const search_cars_api = async (
 export const get_car_detail_api = async (
   carId: number
 ): Promise<{ success: boolean; data: CarDto; message: string }> => {
-  const res = await search_cars_list_api({ pickupDate: '2026-06-01', returnDate: '2026-06-03', page: 0, size: 100 });
+  const today = new Date().toISOString().split('T')[0];
+  const end = new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0];
+  const res = await search_cars_list_api({
+    pickup: toDateTime(today),
+    returnTime: toDateTime(end, '18:00:00'),
+  });
   const found = res.data?.cars.find((c) => c.carId === carId);
   if (!found) {
     return { success: false, data: {} as CarDto, message: '차량을 찾을 수 없습니다.' };
@@ -119,27 +148,47 @@ export const get_car_detail_api = async (
   return { success: true, data: mapCarListItemToDto(found), message: '조회되었습니다.' };
 };
 
-/** 명세: POST /api/v1/reservations/cars */
 export interface CarReservationPayload {
+  memberId?: number;
   carId: number;
-  insuranceType: 'BASIC' | 'FULL';
-  pickupDate: string;
-  returnDate: string;
+  startDate: string;
+  endDate: string;
+  totalPrice: number;
 }
 
 export interface CarReservationResponse {
   reservationId: number;
-  targetType: 'CAR';
-  targetId: number;
-  modelName: string;
-  pickupDate: string;
-  returnDate: string;
-  totalPrice: number;
   status: string;
+  message: string;
 }
 
 export const book_car_api = async (
   payload: CarReservationPayload
-): Promise<{ success: boolean; data: CarReservationResponse; message: string }> => {
-  return userAxios.post('/api/rental_cars/reservations', payload);
+): Promise<{ success: boolean; data: CarReservationResponse & { totalPrice: number }; message: string }> => {
+  const memberId = payload.memberId ?? getMemberId();
+  if (!memberId) {
+    return {
+      success: false,
+      message: '로그인이 필요합니다.',
+      data: { reservationId: 0, status: '', message: '', totalPrice: 0 },
+    };
+  }
+  const raw = await userAxios.post('/api/v1/reservations/cars', {
+    memberId,
+    carId: payload.carId,
+    startDate: payload.startDate,
+    endDate: payload.endDate,
+    totalPrice: payload.totalPrice,
+  });
+  const res = unwrapApi<{ reservationId: number; status: string; message?: string }>(raw);
+  return {
+    success: res.success,
+    message: res.message,
+    data: {
+      reservationId: res.data.reservationId,
+      status: String(res.data.status),
+      message: res.data.message ?? res.message,
+      totalPrice: payload.totalPrice,
+    },
+  };
 };

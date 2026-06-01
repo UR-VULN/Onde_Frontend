@@ -50,7 +50,7 @@ export const SellerSchedulePanel: React.FC = () => {
 
   const fetchSchedules = async () => {
     try {
-      const res = await seller_get_calendar_schedules_api({ origin, dest, year, month });
+      const res = await seller_get_calendar_schedules_api({ year, month });
       if (res.success && res.data) {
         setSchedules(res.data);
       }
@@ -85,9 +85,13 @@ export const SellerSchedulePanel: React.FC = () => {
     try {
       addToast("가격 및 잔여 좌석 상태 변경 내용을 반영 중입니다...", "info");
       const res = await seller_control_schedule_api(selectedCell.scheduleId, {
-        seatClass: selectedCell.classType ?? 'ECONOMY',
-        availableSeats: remainingSeats ? parseInt(remainingSeats, 10) : undefined,
-        newPrice: overridePrice ? parseFloat(overridePrice) : undefined,
+        controlType:
+          remainingSeats && parseInt(remainingSeats, 10) === 0
+            ? 'INVENTORY_CLOSE'
+            : 'PRICE_OVERRIDE',
+        classType: selectedCell.classType ?? 'ECONOMY',
+        remainingSeats: remainingSeats ? parseInt(remainingSeats, 10) : undefined,
+        overridePrice: overridePrice ? parseFloat(overridePrice) : undefined,
       });
 
       if (res.success) {

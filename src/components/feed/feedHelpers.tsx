@@ -16,12 +16,15 @@ export const getAvatarBg = (name: string) => {
 };
 
 // Helper to format category labels in Korean
-export const getCategoryLabel = (cat: 'STAY' | 'FOOD' | 'PHOTO' | 'TIP') => {
+export const getCategoryLabel = (cat: 'STAY' | 'FOOD' | 'PHOTO' | 'TIP' | 'REVIEW' | 'COMPANION') => {
   switch (cat) {
     case 'STAY': return '🏡 감성숙소';
     case 'FOOD': return '🍳 맛집탐방';
-    case 'PHOTO': return '📸 인생샷';
-    case 'TIP': return '💡 꿀팁공유';
+    case 'PHOTO':
+    case 'REVIEW': return '📸 인생샷';
+    case 'TIP':
+    case 'COMPANION': return '💡 꿀팁공유';
+    default: return '📸 여행기';
   }
 };
 

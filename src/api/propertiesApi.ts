@@ -1,4 +1,5 @@
 import { userAxios } from '@/api/axiosInstance';
+import { unwrapApi } from '@/utils/apiResponse';
 
 export interface PropertyMarkerDto {
   propertyId: number;
@@ -6,8 +7,8 @@ export interface PropertyMarkerDto {
   name: string;
   latitude: number;
   longitude: number;
-  thumbnailUrl: string;
-  minPrice: number;
+  thumbnailUrl?: string;
+  minPrice?: number;
 }
 
 export interface PropertiesResponse {
@@ -22,26 +23,43 @@ export interface PropertiesBoundsParams {
   neLng: number;
 }
 
+interface BackendPropertyMarker {
+  propertyId: number;
+  addressName: string;
+  latitude: number;
+  longitude: number;
+  memberId?: number;
+}
+
+function mapMarker(item: BackendPropertyMarker): PropertyMarkerDto {
+  return {
+    propertyId: item.propertyId,
+    accommodationId: item.propertyId,
+    name: item.addressName,
+    latitude: item.latitude,
+    longitude: item.longitude,
+    thumbnailUrl: '',
+    minPrice: 0,
+  };
+}
+
 export const fetch_properties_in_bounds_api = async (
   params: PropertiesBoundsParams
 ): Promise<{ success: boolean; data: PropertiesResponse; message: string }> => {
-  const res = (await userAxios.get('/api/v1/properties', { params })) as {
-    success: boolean;
-    data: any;
-    message: string;
-  };
-  if (!res.success || !res.data) return { success: res.success, data: { properties: [], totalCount: 0 }, message: res.message };
-  
-  const properties: PropertyMarkerDto[] = Array.isArray(res.data)
-    ? res.data
-    : (res.data.properties ?? res.data.markers ?? []);
-  
+  const raw = await userAxios.get('/api/v1/properties', { params });
+  const res = unwrapApi<BackendPropertyMarker[] | { properties?: BackendPropertyMarker[] }>(raw);
+
+  let list: BackendPropertyMarker[] = [];
+  if (Array.isArray(res.data)) {
+    list = res.data;
+  } else if (res.data && Array.isArray(res.data.properties)) {
+    list = res.data.properties;
+  }
+
+  const properties = list.map(mapMarker);
   return {
-    success: true,
+    success: res.success,
     message: res.message,
-    data: { 
-      properties, 
-      totalCount: Array.isArray(res.data) ? res.data.length : (res.data.totalCount ?? properties.length) 
-    },
+    data: { properties, totalCount: properties.length },
   };
 };

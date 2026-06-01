@@ -7,6 +7,15 @@ import {
 } from '@/api/adminApi';
 import { ROLE_BADGE_CLASS } from '@/constants/appConstants';
 
+function isProtectedAdminRole(role: string): boolean {
+  return (
+    role === 'ROLE_SUPER_ADMIN' ||
+    role === 'ROLE_GENERAL_ADMIN' ||
+    role === 'ROLE_ADMIN' ||
+    role.includes('ADMIN')
+  );
+}
+
 export const AdminUserPanel: React.FC = () => {
   const { addToast, openConfirmPopup } = useTravelStore();
   const [users, setUsers] = useState<AdminMemberDto[]>([]);
@@ -31,7 +40,7 @@ export const AdminUserPanel: React.FC = () => {
 
   const handle_role_change = (userId: number) => {
     const user = users.find((u) => u.id === userId);
-    if (!user || user.role === 'ROLE_ADMIN') return;
+    if (!user || isProtectedAdminRole(user.role)) return;
 
     const nextRole = user.role === 'ROLE_USER' ? 'ROLE_SELLER' : 'ROLE_USER';
 
@@ -40,19 +49,21 @@ export const AdminUserPanel: React.FC = () => {
       const res = await patch_admin_member_api(userId, { role: nextRole });
       if (res.success) {
         setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: nextRole } : u)));
-        addToast(`#${userId} ?? ??? ${nextRole}? ???????.`, 'success');
+        addToast(`#${userId} 회원 권한을 ${nextRole}(으)로 변경했습니다.`, 'success');
+      } else {
+        addToast(res.message || '권한 변경에 실패했습니다.', 'warning');
       }
     }, {
-      title: '?? ?? ??',
-      description: `${user.email} ??? ??? ${nextRole}? ?????.`,
-      yesLabel: '??',
-      noLabel: '??',
+      title: '회원 권한 변경',
+      description: `${user.email} 회원의 권한을 ${nextRole}(으)로 변경합니다.`,
+      yesLabel: '변경',
+      noLabel: '취소',
     });
   };
 
   const handle_blacklist = (userId: number) => {
     const user = users.find((u) => u.id === userId);
-    if (!user || user.role === 'ROLE_ADMIN') return;
+    if (!user || isProtectedAdminRole(user.role)) return;
 
     const nextBlind = !user.isBlacklisted;
 
@@ -67,13 +78,15 @@ export const AdminUserPanel: React.FC = () => {
               : u
           )
         );
-        addToast(nextBlind ? '????? ?? ??' : '????? ?? ??', 'success');
+        addToast(nextBlind ? '블랙리스트 처리 완료' : '블랙리스트 해제 완료', 'success');
+      } else {
+        addToast(res.message || '처리에 실패했습니다.', 'warning');
       }
     }, {
-      title: nextBlind ? '????? ??' : '????? ??',
-      description: `${user.email} ??? ?????.`,
-      yesLabel: '??',
-      noLabel: '??',
+      title: nextBlind ? '블랙리스트 등록' : '블랙리스트 해제',
+      description: `${user.email} 회원을 ${nextBlind ? '블랙리스트에 등록' : '블랙리스트에서 해제'}합니다.`,
+      yesLabel: '확인',
+      noLabel: '취소',
     });
   };
 
@@ -81,9 +94,9 @@ export const AdminUserPanel: React.FC = () => {
     <div className="admin-panel">
       <div className="section-header">
         <div>
-          <h2 className="section-title">?? ?? ?? ? ?? ? ????? ??</h2>
+          <h2 className="section-title">전사 회원 통합 관리 및 권한 · 블랙리스트 제어</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            ?? ?? ??? API? ???? ?????? ?????.
+            관리자 회원 목록을 API로 조회하고 권한 및 블랙리스트를 관리합니다.
           </p>
         </div>
       </div>
@@ -91,7 +104,7 @@ export const AdminUserPanel: React.FC = () => {
       <div className="data-table-container">
         <div style={{ padding: '1.2rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
           <h4 style={{ fontWeight: 700 }}>
-            <i className="fa-solid fa-users-viewfinder" style={{ color: 'var(--primary)' }}></i> ?? ??
+            <i className="fa-solid fa-users-viewfinder" style={{ color: 'var(--primary)' }}></i> 회원 목록
           </h4>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <input
@@ -100,10 +113,10 @@ export const AdminUserPanel: React.FC = () => {
               onChange={(e) => setSearchKeyword(e.target.value)}
               className="form-input"
               style={{ width: 220, padding: '0.5rem 0.75rem' }}
-              placeholder="??? ?? ID ??"
+              placeholder="이메일 또는 ID 검색"
             />
             <button type="button" className="btn-primary" style={{ padding: '0.5rem 1rem' }} onClick={() => loadMembers()}>
-              ??
+              검색
             </button>
           </div>
         </div>
@@ -111,12 +124,12 @@ export const AdminUserPanel: React.FC = () => {
         <table className="data-table">
           <thead>
             <tr>
-              <th>?? ID</th>
-              <th>???</th>
-              <th>??(Role)</th>
-              <th className="text-center">?? ??</th>
-              <th className="text-center">?? ??</th>
-              <th className="text-right">?????</th>
+              <th>회원 ID</th>
+              <th>이메일</th>
+              <th>권한(Role)</th>
+              <th className="text-center">계정 상태</th>
+              <th className="text-center">권한 변경</th>
+              <th className="text-right">블랙리스트</th>
             </tr>
           </thead>
           <tbody>
@@ -135,20 +148,20 @@ export const AdminUserPanel: React.FC = () => {
                   </span>
                 </td>
                 <td className="text-center">
-                  {user.role !== 'ROLE_ADMIN' && (
+                  {!isProtectedAdminRole(user.role) && (
                     <button type="button" className="btn-secondary text-[11px] py-1.5 px-4" onClick={() => handle_role_change(user.id)}>
-                      {user.role === 'ROLE_USER' ? 'SELLER ??' : 'USER ??'}
+                      {user.role === 'ROLE_USER' ? 'SELLER 전환' : 'USER 전환'}
                     </button>
                   )}
                 </td>
                 <td className="text-right">
-                  {user.role !== 'ROLE_ADMIN' && (
+                  {!isProtectedAdminRole(user.role) && (
                     <button
                       type="button"
                       className={`text-[11px] py-1.5 px-4 rounded-xl font-black ${user.isBlacklisted ? 'bg-slate-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}
                       onClick={() => handle_blacklist(user.id)}
                     >
-                      {user.isBlacklisted ? '??' : '??'}
+                      {user.isBlacklisted ? '해제' : '등록'}
                     </button>
                   )}
                 </td>
@@ -157,7 +170,7 @@ export const AdminUserPanel: React.FC = () => {
             {filteredUsers.length === 0 && (
               <tr>
                 <td colSpan={6} className="text-center py-16 text-slate-400 font-bold">
-                  ?? ??? ????.
+                  검색 결과가 없습니다.
                 </td>
               </tr>
             )}

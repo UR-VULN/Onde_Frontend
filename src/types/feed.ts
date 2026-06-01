@@ -3,7 +3,7 @@ import type { PostDto } from '@/api/postsApi';
 export interface FeedItem {
   id: string;
   postId: number;
-  category: 'STAY' | 'FOOD' | 'PHOTO' | 'TIP';
+  category: 'STAY' | 'FOOD' | 'PHOTO' | 'TIP' | 'REVIEW' | 'COMPANION';
   author: string;
   location: string;
   date: string;
@@ -12,11 +12,20 @@ export interface FeedItem {
   rating: number;
 }
 
-const FEED_CATEGORIES = new Set<FeedItem['category']>(['STAY', 'FOOD', 'PHOTO', 'TIP']);
+const UI_CATEGORIES = new Set<FeedItem['category']>(['STAY', 'FOOD', 'PHOTO', 'TIP']);
+
+/** UI 카테고리 → 백엔드 PostType */
+export function feedCategoryToPostType(category: FeedItem['category']): 'REVIEW' | 'COMPANION' {
+  return category === 'TIP' ? 'COMPANION' : 'REVIEW';
+}
 
 function toFeedCategory(type: string): FeedItem['category'] {
   const upper = type.toUpperCase();
-  return FEED_CATEGORIES.has(upper as FeedItem['category']) ? (upper as FeedItem['category']) : 'TIP';
+  if (upper === 'REVIEW') return 'PHOTO';
+  if (upper === 'COMPANION') return 'TIP';
+  return UI_CATEGORIES.has(upper as FeedItem['category'])
+    ? (upper as FeedItem['category'])
+    : 'PHOTO';
 }
 
 export function postDtoToFeedItem(p: PostDto): FeedItem {
@@ -28,7 +37,7 @@ export function postDtoToFeedItem(p: PostDto): FeedItem {
     location: p.title,
     date: p.createdAt,
     img: p.thumbnailUrl,
-    content: p.title,
+    content: p.content ?? p.title,
     rating: 5,
   };
 }

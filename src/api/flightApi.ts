@@ -1,54 +1,88 @@
 import { userAxios } from '@/api/axiosInstance';
-import type { FlightSearchQuery, FlightSearchResponse } from '@/store/useFlightStore';
+import type { FlightSearchResponse } from '@/store/useFlightStore';
+import { unwrapApi } from '@/utils/apiResponse';
 
-// 1. 고객용 항공권 통합 실시간 검색
-export const search_flights_api = async (params: FlightSearchQuery): Promise<{ success: boolean; data: FlightSearchResponse; message: string }> => {
-  return userAxios.get('/api/v1/flights/search', { params });
-};
-
-/** 명세: POST /api/v1/reservations/flights — 숙소·렌터카와 동일 예약 후 결제 */
-export interface FlightReservationPayload {
-  scheduleId: number;
-  seatClass: string;
-  passengers: Array<{
-    name: string;
-    passportNumber: string;
-    birthdate: string;
-  }>;
+/** 백엔드 SeatInventoryDto.price → UI basePrice */
+function normalizeFlightSearchResponse(data: FlightSearchResponse): FlightSearchResponse {
+  return {
+    ...data,
+    journeys: (data.journeys ?? []).map((journey) => ({
+      ...journey,
+      flights: (journey.flights ?? []).map((flight) => ({
+        ...flight,
+        availableSeats: (flight.availableSeats ?? []).map((seat) => {
+          const raw = seat as { basePrice?: number; price?: number };
+          return {
+            classType: seat.classType,
+            remainingSeats: seat.remainingSeats,
+            basePrice: Number(raw.basePrice ?? raw.price ?? 0),
+          };
+        }),
+      })),
+    })),
+  };
 }
 
-export interface FlightReservationResponse {
-  reservationId: number;
-  bookingId: number;
-  bookingCode: string;
+export const search_flights_api = async (
+  params: Record<string, string | number>
+): Promise<{ success: boolean; data: FlightSearchResponse; message: string }> => {
+  const raw = await userAxios.get('/api/v1/flights/search', { params });
+  const res = unwrapApi<FlightSearchResponse>(raw);
+  return {
+    success: res.success,
+    message: res.message,
+    data: normalizeFlightSearchResponse(res.data),
+  };
+};
+
+/** 백엔드 FlightBookingRequest — 탑승객 1명 */
+export interface FlightBookingPayload {
   scheduleId: number;
-  flightNumber: string;
+  seatClass: string;
+  passengerName: string;
+  passengerPassport: string;
+  passengerBirthdate: string;
+  totalPrice: number;
+}
+
+export interface FlightBookingResult {
+  bookingCode: string;
+  passengerName: string;
   seatClass: string;
   totalPrice: number;
   status: string;
 }
 
 export const book_flight_reservation_api = async (
-  payload: FlightReservationPayload
-): Promise<{ success: boolean; data: FlightReservationResponse; message: string }> => {
-  return userAxios.post('/api/v1/reservations/flights', payload);
+  payload: FlightBookingPayload
+): Promise<{ success: boolean; data: FlightBookingResult; message: string }> => {
+  const raw = await userAxios.post('/api/v1/reservations/flights', payload);
+  return unwrapApi<FlightBookingResult>(raw);
 };
 
-/** @deprecated book_flight_reservation_api */
-export const book_flight_seat_api = book_flight_reservation_api;
+export const confirm_flight_payment_api = async (
+  bookingCode: string,
+  pgTransactionId: string,
+  paymentAmount: number
+): Promise<{ success: boolean; data: Record<string, unknown>; message: string }> => {
+  const raw = await userAxios.post(`/api/v1/reservations/flights/${bookingCode}/confirm`, {
+    pgTransactionId,
+    paymentAmount: String(paymentAmount),
+  });
+  return unwrapApi<Record<string, unknown>>(raw);
+};
 
-// 3. 판매자용 정기 스케줄 일괄 등록 신청
 export interface FlightBatchRegisterPayload {
   departureAirport: string;
   arrivalAirport: string;
   distanceKm: number;
   flightNumber: string;
-  departureTime: string; // "HH:mm"
-  arrivalTime: string;   // "HH:mm"
+  departureTime: string;
+  arrivalTime: string;
   durationMinutes: number;
-  startDate: string;     // "YYYY-MM-DD"
-  endDate: string;       // "YYYY-MM-DD"
-  operatingDays: string; // "MON,WED,FRI"
+  startDate: string;
+  endDate: string;
+  operatingDays: string;
   firstSeats: number;
   firstPrice: number;
   businessSeats: number;
@@ -59,15 +93,16 @@ export interface FlightBatchRegisterPayload {
 
 const mapDaysToIntegers = (daysStr: string): number[] => {
   const dayMap: Record<string, number> = { MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6, SUN: 7 };
-  return daysStr.split(',').map(d => dayMap[d.trim()]).filter(Boolean);
+  return daysStr.split(',').map((d) => dayMap[d.trim()]).filter(Boolean);
 };
 
 export const seller_register_flights_batch_api = async (
   payload: FlightBatchRegisterPayload
 ): Promise<{ success: boolean; message: string }> => {
-  const formattedTime = payload.departureTime.includes(':') && payload.departureTime.split(':').length === 2
-    ? `${payload.departureTime}:00`
-    : payload.departureTime;
+  const formattedTime =
+    payload.departureTime.includes(':') && payload.departureTime.split(':').length === 2
+      ? `${payload.departureTime}:00`
+      : payload.departureTime;
 
   const backendBody = {
     flightNumber: payload.flightNumber,
@@ -81,20 +116,19 @@ export const seller_register_flights_batch_api = async (
     seatSetup: [
       { classType: 'FIRST', totalSeats: payload.firstSeats, basePrice: payload.firstPrice },
       { classType: 'BUSINESS', totalSeats: payload.businessSeats, basePrice: payload.businessPrice },
-      { classType: 'ECONOMY', totalSeats: payload.economySeats, basePrice: payload.economyPrice }
-    ]
+      { classType: 'ECONOMY', totalSeats: payload.economySeats, basePrice: payload.economyPrice },
+    ],
   };
 
-  return userAxios.post('/api/v1/seller/flights', backendBody);
+  const raw = await userAxios.post('/api/v1/seller/flights', backendBody);
+  const res = unwrapApi<unknown>(raw);
+  return { success: res.success, message: res.message };
 };
 
-// 4. 판매자용 달력 스케줄 목록 조회
+/** 백엔드: year, month(Integer)만 사용 */
 export interface CalendarParams {
-  origin: string;
-  dest: string;
   year: number;
   month: number;
-  seatClass?: string;
 }
 
 export interface SellerCalendarCellDto {
@@ -107,20 +141,35 @@ export interface SellerCalendarCellDto {
   basePrice: number;
 }
 
-export const seller_get_calendar_schedules_api = async (params: CalendarParams): Promise<{ success: boolean; data: SellerCalendarCellDto[]; message: string }> => {
-  return userAxios.get('/api/v1/seller/flights/calendar', { params });
+export const seller_get_calendar_schedules_api = async (
+  params: CalendarParams
+): Promise<{ success: boolean; data: SellerCalendarCellDto[]; message: string }> => {
+  const raw = await userAxios.get('/api/v1/seller/flights/calendar', {
+    params: { year: params.year, month: params.month },
+  });
+  return unwrapApi<SellerCalendarCellDto[]>(raw);
 };
 
-// 5. 판매자용 달력 기반 가격/재고 수동 제어 (명세: PATCH .../control)
+/** 백엔드 SellerScheduleControlRequest */
 export interface ScheduleControlPayload {
-  seatClass: string;
-  newPrice?: number;
-  availableSeats?: number;
+  controlType: 'PRICE_OVERRIDE' | 'INVENTORY_CLOSE';
+  classType: string;
+  remainingSeats?: number;
+  overridePrice?: number;
 }
 
 export const seller_control_schedule_api = async (
   scheduleId: number,
   payload: ScheduleControlPayload
 ): Promise<{ success: boolean; message: string }> => {
-  return userAxios.patch(`/api/v1/seller/schedules/${scheduleId}/control`, payload);
+  const body: Record<string, unknown> = {
+    controlType: payload.controlType,
+    classType: payload.classType,
+  };
+  if (payload.remainingSeats != null) body.remainingSeats = payload.remainingSeats;
+  if (payload.overridePrice != null) body.overridePrice = payload.overridePrice;
+
+  const raw = await userAxios.patch(`/api/v1/seller/schedules/${scheduleId}/control`, body);
+  const res = unwrapApi<unknown>(raw);
+  return { success: res.success, message: res.message };
 };

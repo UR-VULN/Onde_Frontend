@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
-import { postDtoToFeedItem, type FeedItem } from '@/types/feed';
+import { postDtoToFeedItem, feedCategoryToPostType, type FeedItem } from '@/types/feed';
 import { create_post_api, fetch_posts_api } from '@/api/postsApi';
 
 // Modular Subcomponents
@@ -57,23 +57,26 @@ export const FeedPage: React.FC = () => {
     location: string,
     rating: number,
     content: string,
+    imageFile: File | null,
     img: string
   ) => {
     try {
       const res = await create_post_api({
-        type: category,
+        type: feedCategoryToPostType(category),
         title: location,
-        content,
-        thumbnailUrl: img,
-        location,
-        rating,
+        content: `${content}\n\n평점: ${rating}/5`,
+        images: imageFile ? [imageFile] : undefined,
       });
-      const postId = res.success && res.data ? res.data.postId : 200 + feeds.length;
+      if (!res.success) {
+        addToast(res.message || '후기 등록에 실패했습니다.', 'warning');
+        return;
+      }
+      const postId = res.data?.postId ?? Date.now();
       const newFeed: FeedItem = {
         id: `feed-${postId}`,
         postId,
         category,
-        author: res.data?.authorName ?? '김현민',
+        author: res.data?.authorName ?? '회원',
         location,
         date: res.data?.createdAt ?? new Date().toLocaleDateString('ko-KR'),
         img,
@@ -82,20 +85,12 @@ export const FeedPage: React.FC = () => {
       };
       setFeeds([newFeed, ...feeds]);
       addToast('여행 후기가 등록되었습니다!', 'success');
-    } catch {
-      const newFeed: FeedItem = {
-        id: `feed-${Date.now()}`,
-        postId: 200 + feeds.length,
-        category,
-        author: '김현민',
-        location,
-        date: new Date().toLocaleDateString('ko-KR'),
-        img,
-        content,
-        rating,
-      };
-      setFeeds([newFeed, ...feeds]);
-      addToast('여행 후기가 등록되었습니다!', 'success');
+    } catch (err: unknown) {
+      const msg =
+        (err as { message?: string })?.message ||
+        (err as { error?: { message?: string } })?.error?.message ||
+        '후기 등록에 실패했습니다.';
+      addToast(msg, 'warning');
     }
     setIsWriteModalOpen(false);
   };

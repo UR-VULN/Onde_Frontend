@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import type { StayDto } from '@/api/stayApi';
-import { book_room_api } from '@/api/stayApi';
+import { book_stay_api } from '@/api/stayApi';
 import { buildPaymentCheckout } from '@/utils/paymentCheckout';
 import {
   buildCalendarMonth,
@@ -217,8 +217,14 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
 
     setBooking(true);
     try {
-      const res = await book_room_api({ roomId, checkIn, checkOut });
-      if (!res.success || !res.data) {
+      const res = await book_stay_api({
+        roomId,
+        checkIn,
+        checkOut,
+        guests: adultCount,
+        totalPrice: finalTotal + mileageUsed,
+      });
+      if (!res.success || !res.data?.reservationId) {
         addToast(res.message || '숙소 예약에 실패했습니다.', 'warning');
         return;
       }
@@ -232,7 +238,7 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
           productImageUrl: stay.imageUrl,
           categoryLabel: '숙소',
           categoryIcon: 'fa-hotel',
-          totalAmount: res.data.totalPrice,
+          totalAmount: res.data.totalPrice ?? finalTotal + mileageUsed,
           usedMileage: mileageUsed,
           dateSummary: `${checkIn} ~ ${checkOut} (${nights}박)`,
           detailLines: [

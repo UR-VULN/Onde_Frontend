@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login_api, signup_api } from '@/api/authApi';
 import { fetch_member_profile_api } from '@/api/userApi';
+import { USER_API_BASE } from '@/constants/apiConfig';
 import { DEFAULT_MEMBERSHIP_GRADE } from '@/constants/appConstants';
 import { useTravelStore } from '@/store/useTravelStore';
 import { persistAuthSession } from '@/utils/authCookies';
@@ -49,19 +50,19 @@ export const useAuthForm = () => {
     setIsLoading(true);
 
     try {
-      const res = await login_api({ email, password });
-      if (!res.success || !res.data) {
-        addToast(res.message || '로그인에 실패했습니다.', 'warning');
+      const data = await login_api({ email, password });
+      if (!data?.accessToken) {
+        addToast('로그인에 실패했습니다.', 'warning');
         return;
       }
 
       persistAuthSession({
-        accessToken: res.data.accessToken,
-        refreshToken: res.data.refreshToken,
-        memberId: res.data.memberId,
-        role: res.data.role,
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        memberId: data.memberId,
+        role: data.role,
         username: email,
-        expiresIn: res.data.expiresIn,
+        expiresIn: data.expiresIn,
       });
 
       let profile = { mileage: 0, membershipGrade: DEFAULT_MEMBERSHIP_GRADE };
@@ -74,7 +75,7 @@ export const useAuthForm = () => {
         // 마일리지 API 실패 시 기본값 유지
       }
 
-      finishLogin(email, res.data.role, res.data.memberId, profile);
+      finishLogin(email, data.role, data.memberId, profile);
     } catch (err: unknown) {
       const msg =
         (err as { message?: string })?.message ||
@@ -91,10 +92,8 @@ export const useAuthForm = () => {
     password: string;
     passwordConfirm: string;
     role: 'cust' | 'sell' | 'adm';
-    isEmailChecked: boolean;
-    name?: string;
   }) => {
-    const { email, password, passwordConfirm, role, isEmailChecked, name } = payload;
+    const { email, password, passwordConfirm, role } = payload;
 
     if (!email || !password || !passwordConfirm) {
       addToast('모든 항목을 입력해주세요.', 'warning');
@@ -102,11 +101,6 @@ export const useAuthForm = () => {
     }
 
     if (!validateEmail(email)) return;
-
-    if (!isEmailChecked) {
-      addToast('이메일 중복 확인을 먼저 해주세요.', 'warning');
-      return;
-    }
 
     if (password.length < 8) {
       addToast('비밀번호는 8자 이상이어야 합니다.', 'warning');
@@ -127,14 +121,14 @@ export const useAuthForm = () => {
 
     try {
       const apiRole = role === 'sell' ? 'SELLER' : 'USER';
-      await signup_api({
+      const message = await signup_api({
         email,
         password,
-        name: name || email.split('@')[0],
+        passwordConfirm,
         role: apiRole,
       });
       signupSuccess(email, role);
-      addToast('회원가입이 완료되었습니다.', 'success');
+      addToast(message || '회원가입이 완료되었습니다.', 'success');
       if (role === 'cust') {
         navigate('/', { replace: true });
       }
@@ -149,8 +143,9 @@ export const useAuthForm = () => {
     }
   };
 
-  const handleSocialLogin = (_platform: 'Kakao' | 'Google') => {
-    // 소셜 로그인은 추후 OAuth 연동
+  const handleSocialLogin = (platform: 'Kakao' | 'Google') => {
+    const provider = platform === 'Kakao' ? 'kakao' : 'google';
+    window.location.href = `${USER_API_BASE}/oauth2/authorization/${provider}`;
   };
 
   return {

@@ -30,7 +30,7 @@ export const AuthBootstrap: React.FC = () => {
         }
       })
       .catch(() => {
-        /* Mock/오프라인 시 스토어 기본값 유지 */
+        /* 프로필/예약 API 실패 시 스토어 기본값 유지 */
       });
 
     return () => {

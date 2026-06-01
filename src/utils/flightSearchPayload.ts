@@ -7,17 +7,40 @@ function addDays(dateStr: string, days: number): string {
   return next.toISOString().split('T')[0];
 }
 
-/** API 검색용 페이로드 (왕복 시 출발·도착·일자 배열 변환) */
-export function build_flight_search_payload(query: FlightSearchQuery): FlightSearchQuery {
-  const payload = { ...query };
-  if (query.tripType === 'RT') {
+const TRIP_TYPE_MAP: Record<string, string> = {
+  OW: 'ONE_WAY',
+  RT: 'ROUND_TRIP',
+  MC: 'MULTI_CITY',
+  ONE_WAY: 'ONE_WAY',
+  ROUND_TRIP: 'ROUND_TRIP',
+  MULTI_CITY: 'MULTI_CITY',
+};
+
+/** UI tripType → 백엔드 FlightSearchRequest */
+export function build_flight_search_payload(query: FlightSearchQuery): Record<string, string | number> {
+  const tripType = TRIP_TYPE_MAP[query.tripType] ?? query.tripType;
+  const payload: Record<string, string | number> = {
+    tripType,
+    departures: query.departures,
+    arrivals: query.arrivals,
+    dates: query.dates,
+    passengerCount: query.passengerCount,
+  };
+
+  if (query.seatClass && query.seatClass !== 'ALL') {
+    payload.seatClass = query.seatClass;
+  }
+
+  if (query.tripType === 'RT' || query.tripType === 'ROUND_TRIP') {
     const datesArray = query.dates.split(',');
     const depDate = datesArray[0] || todayStr();
     const retDate = datesArray[1] || addDays(depDate, 7);
     payload.departures = `${query.departures},${query.arrivals}`;
     payload.arrivals = `${query.arrivals},${query.departures}`;
     payload.dates = `${depDate},${retDate}`;
+    payload.tripType = 'ROUND_TRIP';
   }
+
   return payload;
 }
 

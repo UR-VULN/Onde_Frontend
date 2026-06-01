@@ -102,11 +102,11 @@ const createAuthAwareErrorHandler = (instance: typeof userAxios) => {
       isRefreshing = true;
       try {
         const res = await refresh_token_api();
-        if (res.success && res.data?.accessToken) {
-          updateAccessToken(res.data.accessToken, res.data.expiresIn);
-          flushRefreshWaiters(res.data.accessToken);
+        if (res?.accessToken) {
+          updateAccessToken(res.accessToken, res.expiresIn);
+          flushRefreshWaiters(res.accessToken);
           if (config) {
-            config.headers.Authorization = `Bearer ${res.data.accessToken}`;
+            config.headers.Authorization = `Bearer ${res.accessToken}`;
             config._retry = true;
             return instance.request(config);
           }

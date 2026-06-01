@@ -1,7 +1,7 @@
 /**
  * 인증 정보 쿠키 저장소
  *
- * - Mock/SPA: 로그인 응답 JWT를 쿠키에 저장 후 Bearer 헤더로 전송
+ * - 로그인 응답 JWT를 쿠키에 저장 후 Bearer 헤더로 전송
  * - 실서버 권장: Spring이 HttpOnly + Secure Set-Cookie → axios `withCredentials: true`만 사용
  *   (HttpOnly는 JS에서 읽을 수 없으므로 프론트 setAccessToken은 제거)
  */

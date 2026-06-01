@@ -1,11 +1,10 @@
 import { userAxios } from '@/api/axiosInstance';
 import type { PremiumEstimate } from '@/store/useInsuranceStore';
+import { unwrapApi } from '@/utils/apiResponse';
 
-/** 명세: POST /api/v1/insurance/calculate */
 export interface CalculatePremiumPayload {
-  productId: number;
+  insuranceProductId: number;
   birthdate: string;
-  destination?: string;
   startDate: string;
   endDate: string;
   coverageLevel: string;
@@ -14,37 +13,37 @@ export interface CalculatePremiumPayload {
 export const calculate_premium_api = async (
   payload: CalculatePremiumPayload
 ): Promise<{ success: boolean; data: PremiumEstimate; message: string }> => {
-  return userAxios.post('/api/v1/insurance/calculate', payload);
+  const raw = await userAxios.post('/api/v1/insurance/calculate', payload);
+  return unwrapApi<PremiumEstimate>(raw);
 };
 
-/** 명세: POST /api/v1/reservations/insurances */
 export interface InsuranceReservationPayload {
-  productId: number;
+  insuranceProductId: number;
   insuredName: string;
   insuredBirthdate: string;
   startDate: string;
   endDate: string;
   coverageLevel: string;
+  totalPremium: number;
 }
 
 export interface InsurancePolicyResponse {
-  policyId: number;
   policyCode: string;
-  productName: string;
   insuredName: string;
-  startDate: string;
-  endDate: string;
+  startDate?: string;
+  endDate?: string;
   totalPremium: number;
   status: string;
+  coverageLevel?: string;
 }
 
 export const apply_insurance_policy_api = async (
   payload: InsuranceReservationPayload
 ): Promise<{ success: boolean; data: InsurancePolicyResponse; message: string }> => {
-  return userAxios.post('/api/v1/reservations/insurances', payload);
+  const raw = await userAxios.post('/api/v1/reservations/insurances', payload);
+  return unwrapApi<InsurancePolicyResponse>(raw);
 };
 
-/** 명세: POST /api/v1/seller/insurance */
 export interface RegisterInsuranceProductPayload {
   productName: string;
   baseDailyRate: number;
@@ -58,5 +57,7 @@ export const seller_register_insurance_rate_api = async (
     typeof payload.coverageDetails === 'string'
       ? payload
       : { ...payload, coverageDetails: JSON.stringify(payload.coverageDetails) };
-  return userAxios.post('/api/v1/seller/insurance', body);
+  const raw = await userAxios.post('/api/v1/seller/insurance', body);
+  const res = unwrapApi<unknown>(raw);
+  return { success: res.success, message: res.message };
 };

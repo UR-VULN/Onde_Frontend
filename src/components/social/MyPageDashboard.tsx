@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
 import { fetch_member_profile_api, fetch_member_mileage_history_api } from '@/api/userApi';
 import type { MileageLogDto } from '@/api/userApi';
-import { fetch_my_reservations_api, mapReservationDtoToMyPage } from '@/api/reservationsApi';
+import { fetch_my_reservations_api, mapReservationDtoToMyPage, cancel_member_reservation_api } from '@/api/reservationsApi';
 
 type ReservationFilter = 'all' | 'stay' | 'flight' | 'car' | 'ins';
 
@@ -193,35 +193,56 @@ export const MyPageDashboard: React.FC = () => {
 
             <div className="mypage-list-wrapper">
               {filteredReservations.length > 0 ? (
-                filteredReservations.map((res) => (
-                  <article key={res.id} className="mp-card">
-                    <div className={`mp-card-icon ${res.category}`}>
-                      {res.category === 'flight' && <i className="fa-solid fa-plane"></i>}
-                      {res.category === 'ins' && <i className="fa-solid fa-shield-halved"></i>}
-                      {res.category === 'car' && <i className="fa-solid fa-car"></i>}
-                      {res.category === 'stay' && <i className="fa-solid fa-hotel"></i>}
+                filteredReservations.map((reservationItem) => (
+                  <article key={reservationItem.id} className="mp-card">
+                    <div className={`mp-card-icon ${reservationItem.category}`}>
+                      {reservationItem.category === 'flight' && <i className="fa-solid fa-plane"></i>}
+                      {reservationItem.category === 'ins' && <i className="fa-solid fa-shield-halved"></i>}
+                      {reservationItem.category === 'car' && <i className="fa-solid fa-car"></i>}
+                      {reservationItem.category === 'stay' && <i className="fa-solid fa-hotel"></i>}
                     </div>
                     <div className="mp-card-body">
                       <div className="mp-card-head">
-                        <strong className="mp-card-title">{res.title}</strong>
-                        <span className={`mp-badge ${res.badgeType}`}>{res.badge}</span>
+                        <strong className="mp-card-title">{reservationItem.title}</strong>
+                        <span className={`mp-badge ${reservationItem.badgeType}`}>{reservationItem.badge}</span>
                       </div>
                       <p className="mp-card-line">
                         <i className="fa-regular fa-calendar-check" style={{ marginRight: '0.25rem' }}></i>
-                        일정: <strong>{res.date}</strong>
+                        일정: <strong>{reservationItem.date}</strong>
                       </p>
-                      <p className="mp-card-line-muted">{res.details}</p>
+                      <p className="mp-card-line-muted">{reservationItem.details}</p>
                     </div>
                     <div className="mp-card-footer">
-                      <strong className="mp-card-price">{res.price}</strong>
+                      <strong className="mp-card-price">{reservationItem.price}</strong>
                       <button
                         type="button"
                         className="mp-card-cancel"
+                        disabled={reservationItem.category === 'flight' || reservationItem.category === 'ins'}
+                        title={
+                          reservationItem.category === 'flight' || reservationItem.category === 'ins'
+                            ? '항공·보험 취소는 백엔드 미지원'
+                            : undefined
+                        }
                         onClick={() => {
-                          openConfirmPopup((choice) => {
-                            if (choice) {
-                              cancelReservation(res.id);
-                              addToast('예약 취소 처리가 완료되었습니다.', 'info');
+                          if (reservationItem.category === 'flight' || reservationItem.category === 'ins') {
+                            addToast('항공·보험 예약 취소는 현재 지원되지 않습니다.', 'info');
+                            return;
+                          }
+                          openConfirmPopup(async (choice) => {
+                            if (!choice) return;
+                            try {
+                              const cancelRes = await cancel_member_reservation_api(
+                                Number(reservationItem.id),
+                                reservationItem.category
+                              );
+                              if (cancelRes.success) {
+                                cancelReservation(reservationItem.id);
+                                addToast('예약 취소 처리가 완료되었습니다.', 'info');
+                              } else {
+                                addToast(cancelRes.message || '예약 취소에 실패했습니다.', 'warning');
+                              }
+                            } catch {
+                              addToast('예약 취소 중 오류가 발생했습니다.', 'warning');
                             }
                           });
                         }}

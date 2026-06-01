@@ -172,13 +172,14 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
 
     setBooking(true);
     try {
+      const orderTotal = finalTotal + mileageUsed;
       const res = await book_car_api({
         carId: car.carId,
-        insuranceType: 'BASIC',
-        pickupDate,
-        returnDate,
+        startDate: pickupDate,
+        endDate: returnDate,
+        totalPrice: orderTotal,
       });
-      if (!res.success || !res.data) {
+      if (!res.success || !res.data?.reservationId) {
         addToast(res.message || '렌터카 예약에 실패했습니다.', 'warning');
         return;
       }
@@ -192,7 +193,7 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
           productImageUrl: car.imageUrl,
           categoryLabel: '렌터카',
           categoryIcon: 'fa-car',
-          totalAmount: res.data.totalPrice,
+          totalAmount: res.data.totalPrice ?? orderTotal,
           usedMileage: mileageUsed,
           dateSummary: `${pickupDate} ~ ${returnDate} (${rentalDays}일 대여)`,
           detailLines: [

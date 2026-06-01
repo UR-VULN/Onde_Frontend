@@ -1,11 +1,13 @@
 import { userAxios } from '@/api/axiosInstance';
 import type { MapStayItem } from '@/types/mapStay';
+import { unwrapApi } from '@/utils/apiResponse';
+import { getMemberId } from '@/utils/authCookies';
 
-/** 명세: GET /api/v1/accommodations */
 export interface AccommodationSearchParams {
-  location?: string;
+  region?: string;
   checkIn: string;
   checkOut: string;
+  guests?: number;
   page?: number;
   size?: number;
 }
@@ -17,7 +19,7 @@ export interface AccommodationDto {
   location: string;
   thumbnailUrl: string;
   minPrice: number;
-  availableRooms: number;
+  availableRooms?: number;
 }
 
 export interface AccommodationSearchResponse {
@@ -25,7 +27,6 @@ export interface AccommodationSearchResponse {
   totalCount: number;
 }
 
-/** UI 호환 검색 파라미터 */
 export interface StaySearchParams {
   destination: string;
   checkIn: string;
@@ -36,7 +37,6 @@ export interface StaySearchParams {
   size?: number;
 }
 
-/** UI 카드용 (검색 결과 매핑) */
 export interface StayDto {
   id: number;
   accommodationId: number;
@@ -58,6 +58,26 @@ export interface StaySearchResponse {
   page: number;
   size: number;
   stays: StayDto[];
+}
+
+interface BackendAccommodationItem {
+  id: number;
+  name: string;
+  category: string;
+  location: string;
+  thumbnailUrl: string;
+  minPrice: number;
+}
+
+function mapBackendItem(item: BackendAccommodationItem): AccommodationDto {
+  return {
+    accommodationId: item.id,
+    name: item.name,
+    category: item.category,
+    location: item.location,
+    thumbnailUrl: item.thumbnailUrl ?? '',
+    minPrice: item.minPrice ?? 0,
+  };
 }
 
 export function mapStayToStayDto(stay: MapStayItem): StayDto {
@@ -83,6 +103,8 @@ function mapAccommodationToStayDto(item: AccommodationDto): StayDto {
   return {
     id: item.accommodationId,
     accommodationId: item.accommodationId,
+    /** 백엔드 room 상세 API 없음 — 1:1 매핑 가정 */
+    roomId: item.accommodationId,
     title: item.name,
     location: item.location,
     city,
@@ -99,16 +121,25 @@ function mapAccommodationToStayDto(item: AccommodationDto): StayDto {
 export const search_accommodations_api = async (
   params: AccommodationSearchParams
 ): Promise<{ success: boolean; data: AccommodationSearchResponse; message: string }> => {
-  return userAxios.get('/api/v1/accommodations/search', { params });
+  const raw = await userAxios.get('/api/v1/accommodations/search', { params });
+  const res = unwrapApi<{ accommodations: BackendAccommodationItem[] }>(raw);
+  const list = res.data?.accommodations ?? [];
+  const accommodations = list.map(mapBackendItem);
+  return {
+    success: res.success,
+    message: res.message,
+    data: { accommodations, totalCount: accommodations.length },
+  };
 };
 
 export const search_stays_api = async (
   params: StaySearchParams
 ): Promise<{ success: boolean; data: StaySearchResponse; message: string }> => {
   const res = await search_accommodations_api({
-    location: params.destination,
+    region: params.destination || undefined,
     checkIn: params.checkIn,
     checkOut: params.checkOut,
+    guests: params.guests,
     page: params.page ?? 0,
     size: params.size ?? 20,
   });
@@ -147,34 +178,72 @@ export const get_stay_detail_api = async (
   return { success: true, data: mapAccommodationToStayDto(found), message: '조회되었습니다.' };
 };
 
-/** 명세: POST /api/v1/reservations/rooms */
 export interface RoomReservationPayload {
+  memberId?: number;
   roomId: number;
-  checkIn: string;
-  checkOut: string;
+  checkInDate: string;
+  checkOutDate: string;
+  guests: number;
 }
 
 export interface RoomReservationResponse {
   reservationId: number;
-  targetType: 'ROOM';
-  targetId: number;
-  checkIn: string;
-  checkOut: string;
-  totalPrice: number;
   status: string;
+  message: string;
 }
 
 export const book_room_api = async (
   payload: RoomReservationPayload
 ): Promise<{ success: boolean; data: RoomReservationResponse; message: string }> => {
-  return userAxios.post('/api/v1/accommodations/reservations/rooms', payload);
+  const memberId = payload.memberId ?? getMemberId();
+  if (!memberId) {
+    return {
+      success: false,
+      message: '로그인이 필요합니다.',
+      data: { reservationId: 0, status: '', message: '' },
+    };
+  }
+  const raw = await userAxios.post('/api/v1/reservations/rooms', {
+    memberId,
+    roomId: payload.roomId,
+    checkInDate: payload.checkInDate,
+    checkOutDate: payload.checkOutDate,
+    guests: payload.guests,
+  });
+  const res = unwrapApi<{ reservationId: number; status: string; message?: string }>(raw);
+  return {
+    success: res.success,
+    message: res.message,
+    data: {
+      reservationId: res.data.reservationId,
+      status: String(res.data.status),
+      message: res.data.message ?? res.message,
+    },
+  };
 };
 
-/** @deprecated book_room_api 사용 (roomId 필요) */
+/** UI 호환 래퍼 */
 export interface StayBookingPayload {
   roomId: number;
   checkIn: string;
   checkOut: string;
+  guests?: number;
+  totalPrice?: number;
 }
 
-export const book_stay_api = book_room_api;
+export const book_stay_api = async (
+  payload: StayBookingPayload
+): Promise<{ success: boolean; data: RoomReservationResponse & { totalPrice?: number }; message: string }> => {
+  const res = await book_room_api(
+    {
+      roomId: payload.roomId,
+      checkInDate: payload.checkIn,
+      checkOutDate: payload.checkOut,
+      guests: payload.guests ?? 2,
+    }
+  );
+  return {
+    ...res,
+    data: { ...res.data, totalPrice: payload.totalPrice },
+  };
+};

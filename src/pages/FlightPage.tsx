@@ -114,13 +114,15 @@ export const FlightPage: React.FC = () => {
       )}
 
       {/* 2단계: 신규 프리미엄 탑승객 정보 입력 모달 */}
-      {showPassengerInput && selectedSeat && (
+      {showPassengerInput && selectedSeat && selectedFlight && (
         <FlightPassengerInputModal
           flightInfo={{
-            flightNumber: selectedFlight?.flightNumber || 'OD-702',
-            departureAirport: selectedFlight?.departureAirport || 'ICN',
-            arrivalAirport: selectedFlight?.arrivalAirport || 'NRT',
+            scheduleId: selectedFlight.scheduleId,
+            flightNumber: selectedFlight.flightNumber,
+            departureAirport: selectedFlight.departureAirport,
+            arrivalAirport: selectedFlight.arrivalAirport,
             classType: selectedSeat.classType,
+            seatClass: selectedSeat.classType,
             basePrice: selectedSeat.basePrice,
             passengerCount: passengerCount,
           }}

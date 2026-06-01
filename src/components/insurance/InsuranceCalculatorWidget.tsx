@@ -60,7 +60,7 @@ export const InsuranceCalculatorWidget: React.FC = () => {
       setQuoteHint('');
       try {
         const res = await calculate_premium_api({
-          productId: insured_details.insuranceProductId,
+          insuranceProductId: insured_details.insuranceProductId,
           birthdate: insured_details.birthdate,
           startDate: insured_details.startDate,
           endDate: insured_details.endDate,
@@ -153,12 +153,13 @@ export const InsuranceCalculatorWidget: React.FC = () => {
       try {
         addToast('보험 가입을 처리 중입니다...', 'info');
         const res = await apply_insurance_policy_api({
-          productId: insured_details.insuranceProductId,
+          insuranceProductId: insured_details.insuranceProductId,
           insuredName: insuredName.trim(),
           insuredBirthdate: insured_details.birthdate,
           startDate: insured_details.startDate,
           endDate: insured_details.endDate,
           coverageLevel: insured_details.coverageLevel,
+          totalPremium: premium_estimate.calculatedPremium,
         });
         if (!res.success || !res.data) {
           addToast(res.message || '보험 가입에 실패했습니다.', 'warning');
@@ -167,9 +168,9 @@ export const InsuranceCalculatorWidget: React.FC = () => {
         const policyCode = res.data.policyCode;
         addToast('여행자 보험 가입이 완료되었습니다!', 'success');
         addReservation({
-          id: String(res.data.policyId),
+          id: policyCode,
           category: 'ins',
-          title: `🛡️ ${res.data.productName} (${insured_details.coverageLevel})`,
+          title: `🛡️ 여행자 보험 (${insured_details.coverageLevel})`,
           badge: '가입 완료',
           badgeType: 'active',
           date: `${insured_details.startDate} ~ ${insured_details.endDate}`,

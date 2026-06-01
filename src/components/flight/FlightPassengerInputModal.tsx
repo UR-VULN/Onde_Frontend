@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { book_flight_reservation_api } from '@/api/flightApi';
 import { buildPaymentCheckout } from '@/utils/paymentCheckout';
 import { useTravelStore } from '@/store/useTravelStore';
 
@@ -11,12 +12,14 @@ interface Passenger {
 
 interface FlightPassengerInputModalProps {
   flightInfo?: {
+    scheduleId: number;
     flightNumber: string;
     departureAirport: string;
     departureTime?: string;
     arrivalAirport: string;
     arrivalTime?: string;
     classType: string;
+    seatClass: string;
     basePrice: number;
     passengerCount: number;
   };
@@ -25,14 +28,16 @@ interface FlightPassengerInputModalProps {
 
 export const FlightPassengerInputModal: React.FC<FlightPassengerInputModalProps> = ({
   flightInfo = {
+    scheduleId: 0,
     flightNumber: 'OD-702',
     departureAirport: 'ICN (서울/인천)',
     departureTime: '10:15',
     arrivalAirport: 'NRT (도쿄/나리타)',
     arrivalTime: '12:45',
     classType: 'Business Class',
+    seatClass: 'BUSINESS',
     basePrice: 650000,
-    passengerCount: 2,
+    passengerCount: 1,
   },
   onClose,
 }) => {
@@ -60,10 +65,9 @@ export const FlightPassengerInputModal: React.FC<FlightPassengerInputModalProps>
     setPassengers(updated);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 브라우저 required를 완전히 걷어내고 수동 100% 검증 & 이쁜 토스트 메시지 연동
     for (let i = 0; i < passengers.length; i++) {
       const p = passengers[i];
       if (!p.name || !p.name.trim()) {
@@ -80,31 +84,66 @@ export const FlightPassengerInputModal: React.FC<FlightPassengerInputModalProps>
       }
     }
 
-    setIsSubmitting(true);
-    addToast('탑승객 정보를 확인하고 예약 조율을 마쳤습니다. 결제 단계로 진입합니다.', 'success');
+    if (!flightInfo.scheduleId) {
+      addToast('항공 스케줄 정보가 없습니다. 다시 검색해 주세요.', 'warning');
+      return;
+    }
 
+    if (passengers.length > 1) {
+      addToast('현재 백엔드는 1명씩 예약만 지원합니다. 첫 번째 탑승객으로 진행합니다.', 'info');
+    }
+
+    const primary = passengers[0];
     const totalAmount = flightInfo.basePrice * flightInfo.passengerCount;
-    const checkoutState = buildPaymentCheckout({
-      reservationType: 'FLIGHT',
-      reservationId: Math.floor(100000 + Math.random() * 900000),
-      productTitle: `${flightInfo.flightNumber} (${flightInfo.classType})`,
-      productSubtitle: `${flightInfo.departureAirport} → ${flightInfo.arrivalAirport}`,
-      categoryLabel: '항공권',
-      categoryIcon: 'fa-plane',
-      totalAmount,
-      usedMileage: 0,
-      dateSummary: `탑승객 ${flightInfo.passengerCount}명`,
-      detailLines: [
-        `₩${flightInfo.basePrice.toLocaleString()} × ${flightInfo.passengerCount}명`,
-        ...passengers.map((p, idx) => `Passenger ${idx + 1}: ${p.name}`),
-      ],
-      returnPath: '/flight',
-    });
 
-    setTimeout(() => {
+    setIsSubmitting(true);
+    try {
+      const res = await book_flight_reservation_api({
+        scheduleId: flightInfo.scheduleId,
+        seatClass: flightInfo.seatClass,
+        passengerName: primary.name.trim(),
+        passengerPassport: primary.passportNumber.trim(),
+        passengerBirthdate: primary.birthdate,
+        totalPrice: totalAmount,
+      });
+
+      if (!res.success || !res.data?.bookingCode) {
+        addToast(res.message || '항공 예약에 실패했습니다.', 'warning');
+        return;
+      }
+
+      addToast('좌석 선점이 완료되었습니다. 결제 단계로 이동합니다.', 'success');
+
+      const checkoutState = buildPaymentCheckout({
+        reservationType: 'FLIGHT',
+        reservationId: 0,
+        flightBookingCode: res.data.bookingCode,
+        productTitle: `${flightInfo.flightNumber} (${flightInfo.classType})`,
+        productSubtitle: `${flightInfo.departureAirport} → ${flightInfo.arrivalAirport}`,
+        categoryLabel: '항공권',
+        categoryIcon: 'fa-plane',
+        totalAmount: Number(res.data.totalPrice ?? totalAmount),
+        usedMileage: 0,
+        dateSummary: `탑승객 ${flightInfo.passengerCount}명`,
+        detailLines: [
+          `₩${flightInfo.basePrice.toLocaleString()} × ${flightInfo.passengerCount}명`,
+          `Booking: ${res.data.bookingCode}`,
+          `Passenger: ${primary.name}`,
+        ],
+        returnPath: '/flight',
+      });
+
       onClose();
       navigate('/payment', { state: checkoutState });
-    }, 850);
+    } catch (err: unknown) {
+      const msg =
+        (err as { message?: string })?.message ||
+        (err as { error?: { message?: string } })?.error?.message ||
+        '항공 예약 중 오류가 발생했습니다.';
+      addToast(msg, 'warning');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const totalAmount = flightInfo.basePrice * flightInfo.passengerCount;

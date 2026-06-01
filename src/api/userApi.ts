@@ -1,17 +1,15 @@
 import { userAxios } from '@/api/axiosInstance';
+import { unwrapApi } from '@/utils/apiResponse';
 
-/** 명세: GET /api/v1/members/me */
+/** GET /api/v1/members/me */
 export interface MemberMeDto {
   memberId: number;
   email: string;
-  name: string;
   role: string;
-  provider: string;
   status: string;
-  createdAt: string;
 }
 
-/** 명세: GET /api/v1/members/me/mileage */
+/** GET /api/v1/members/me/mileage */
 export interface MileageSummaryDto {
   memberId: number;
   memberGrade: string;
@@ -46,7 +44,8 @@ export const fetch_member_me_api = async (): Promise<{
   data: MemberMeDto;
   message: string;
 }> => {
-  return userAxios.get('/api/v1/members/me');
+  const raw = await userAxios.get('/api/v1/members/me');
+  return unwrapApi<MemberMeDto>(raw);
 };
 
 export const fetch_member_mileage_api = async (): Promise<{
@@ -54,14 +53,38 @@ export const fetch_member_mileage_api = async (): Promise<{
   data: MileageSummaryDto;
   message: string;
 }> => {
-  return userAxios.get('/api/v1/members/me/mileage');
+  const raw = await userAxios.get('/api/v1/members/me/mileage');
+  return unwrapApi<MileageSummaryDto>(raw);
 };
 
 export const fetch_member_mileage_history_api = async (
   page = 0,
   size = 20
 ): Promise<{ success: boolean; data: MileageHistoryResponse; message: string }> => {
-  return userAxios.get('/api/v1/members/me/mileage/history', { params: { page, size } });
+  const raw = await userAxios.get('/api/v1/members/me/mileage/history', { params: { page, size } });
+  const res = unwrapApi<{
+    logs?: Array<Record<string, unknown>>;
+    totalCount?: number;
+    page?: number;
+    size?: number;
+  }>(raw);
+  const logs: MileageLogDto[] = (res.data?.logs ?? []).map((log) => ({
+    logId: Number(log.logId ?? log.id ?? 0),
+    logType: String(log.logType ?? 'EARN') as MileageLogDto['logType'],
+    amount: Number(log.amount ?? 0),
+    description: String(log.description ?? ''),
+    createdAt: String(log.createdAt ?? ''),
+  }));
+  return {
+    success: res.success,
+    message: res.message,
+    data: {
+      logs,
+      totalCount: Number(res.data?.totalCount ?? logs.length),
+      page: Number(res.data?.page ?? page),
+      size: Number(res.data?.size ?? size),
+    },
+  };
 };
 
 /** 마이페이지: 마일리지 요약 → UI 프로필 DTO */

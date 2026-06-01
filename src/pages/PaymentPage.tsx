@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { prepare_payment_api, validate_payment_api } from '@/api/paymentApi';
+import { confirm_flight_payment_api } from '@/api/flightApi';
 import { PAYMENT_PRODUCT_NAME, PORTONE_PG } from '@/constants/paymentConfig';
 import { MileageUsagePanel } from '@/components/common/MileageUsagePanel';
 import { useTravelStore } from '@/store/useTravelStore';
@@ -114,6 +115,14 @@ export const PaymentPage: React.FC = () => {
 
       if (!validateRes.success || !validateRes.data) {
         throw new Error(validateRes.message || '결제 사후 검증에 실패했습니다.');
+      }
+
+      if (order.reservationType === 'FLIGHT' && order.flightBookingCode) {
+        await confirm_flight_payment_api(
+          order.flightBookingCode,
+          portOneRes.imp_uid,
+          portOneRes.paid_amount ?? serverPgAmount
+        );
       }
 
       setValidatedPaymentId(validateRes.data.paymentId);

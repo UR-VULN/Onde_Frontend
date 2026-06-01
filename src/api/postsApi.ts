@@ -1,4 +1,7 @@
 import { userAxios } from '@/api/axiosInstance';
+import { unwrapApi } from '@/utils/apiResponse';
+
+export type BackendPostType = 'REVIEW' | 'COMPANION';
 
 export interface PostDto {
   postId: number;
@@ -9,6 +12,7 @@ export interface PostDto {
   commentCount: number;
   thumbnailUrl: string;
   createdAt: string;
+  content?: string;
 }
 
 export interface PostsListResponse {
@@ -17,40 +21,65 @@ export interface PostsListResponse {
 }
 
 export const fetch_posts_api = async (params?: {
-  type?: string;
+  type?: BackendPostType | string;
   page?: number;
   size?: number;
 }): Promise<{ success: boolean; data: PostsListResponse; message: string }> => {
-  const res = (await userAxios.get('/api/v1/posts', { params })) as {
-    success: boolean;
-    data: PostsListResponse | PostDto[];
-    message: string;
-  };
-  if (!res.success || !res.data) return { success: res.success, data: { posts: [], totalCount: 0 }, message: res.message };
+  const raw = await userAxios.get('/api/v1/posts', { params });
+  const res = unwrapApi<PostDto[] | PostsListResponse>(raw);
   if (Array.isArray(res.data)) {
     return {
-      success: true,
+      success: res.success,
       message: res.message,
-      data: {
-        posts: res.data,
-        totalCount: res.data.length,
-      },
+      data: { posts: res.data, totalCount: res.data.length },
     };
   }
-  return res as { success: boolean; data: PostsListResponse; message: string };
+  const list = res.data as PostsListResponse;
+  return {
+    success: res.success,
+    message: res.message,
+    data: {
+      posts: list.posts ?? [],
+      totalCount: list.totalCount ?? list.posts?.length ?? 0,
+    },
+  };
 };
 
 export interface CreatePostPayload {
-  type: string;
+  type: BackendPostType;
   title: string;
   content: string;
-  thumbnailUrl: string;
-  location?: string;
-  rating?: number;
+  images?: File[];
 }
 
 export const create_post_api = async (
   payload: CreatePostPayload
 ): Promise<{ success: boolean; data: PostDto; message: string }> => {
-  return userAxios.post('/api/v1/posts', payload);
+  const form = new FormData();
+  form.append('title', payload.title);
+  form.append('content', payload.content);
+  form.append('type', payload.type);
+  payload.images?.forEach((file) => form.append('images', file));
+
+  const raw = await userAxios.post('/api/v1/posts', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  const res = unwrapApi<PostDto>(raw);
+  return { success: res.success, data: res.data, message: res.message };
+};
+
+export const delete_post_api = async (
+  postId: number
+): Promise<{ success: boolean; message: string }> => {
+  const raw = await userAxios.delete(`/api/v1/posts/${postId}`);
+  const res = unwrapApi<unknown>(raw);
+  return { success: res.success, message: res.message };
+};
+
+export const like_post_api = async (
+  postId: number
+): Promise<{ success: boolean; message: string }> => {
+  const raw = await userAxios.post(`/api/v1/posts/${postId}/likes`);
+  const res = unwrapApi<unknown>(raw);
+  return { success: res.success, message: res.message };
 };

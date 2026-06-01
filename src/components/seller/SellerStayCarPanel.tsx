@@ -5,7 +5,6 @@ import {
   get_seller_cars_inventory_api,
   get_seller_inventory_calendar_api,
   patch_seller_inventory_day_api,
-  register_seller_flight_api,
   type SellerCarInventoryDto,
   type SellerPropertyDto,
 } from '@/api/sellerApi';
@@ -26,7 +25,10 @@ export const SellerStayCarPanel: React.FC = () => {
         get_seller_accommodations_api(),
         get_seller_cars_inventory_api(),
       ]);
-      if (stayRes.success && stayRes.data) setStays(stayRes.data);
+      if (stayRes.success && stayRes.data) {
+        setStays(stayRes.data);
+        if (stayRes.data[0]) setSelectedPropertyKey(`stay-${stayRes.data[0].propertyId}`);
+      }
       if (carRes.success && carRes.data) setCars(carRes.data);
     } finally {
       setLoading(false);
@@ -38,8 +40,7 @@ export const SellerStayCarPanel: React.FC = () => {
     if (res.success && res.data) {
       const mapped: Record<number, { stock: number; price: number; isClosed?: boolean }> = {};
       Object.entries(res.data).forEach(([day, cell]) => {
-        const d = Number(day);
-        mapped[d] = {
+        mapped[Number(day)] = {
           stock: cell.stock,
           price: cell.price,
           isClosed: cell.isClosed,
@@ -90,7 +91,7 @@ export const SellerStayCarPanel: React.FC = () => {
           {data ? (
             <div className="calendar-cell-data flex flex-col gap-0.5 mt-1">
               {data.isClosed ? (
-                <span className="text-rose-500 font-black">?? ??</span>
+                <span className="text-rose-500 font-black">??</span>
               ) : (
                 <>
                   <span className="text-emerald-600">{data.stock}? ??</span>
@@ -113,23 +114,9 @@ export const SellerStayCarPanel: React.FC = () => {
         <div>
           <h2 className="section-title">?? · ??? ?? ? ?? ??</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            ?? ?? ??? ?? ??·??? API? ??·?????.
+            ??? ?? ??? ?? ??·??? API? ??·?????.
           </p>
         </div>
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={async () => {
-            try {
-              await register_seller_flight_api({ flightNumber: 'OZ999', origin: 'ICN', destination: 'NRT' });
-              addToast('?? ??? ?? ??? ???????.', 'success');
-            } catch {
-              addToast('?? ??? ?? ??? ???????.', 'info');
-            }
-          }}
-        >
-          <i className="fa-solid fa-plus"></i> ?? ?? ??? ??
-        </button>
       </div>
 
       {loading ? (
@@ -154,7 +141,7 @@ export const SellerStayCarPanel: React.FC = () => {
                     <td className="font-bold text-slate-700">{item.name}</td>
                     <td className="text-center">
                       <span className={`status-badge ${item.status === 'ACTIVE' ? 'status-active' : 'status-pending'}`}>
-                        {item.status === 'ACTIVE' ? '???' : '???'}
+                        {item.status === 'ACTIVE' ? '???' : '??'}
                       </span>
                     </td>
                     <td className="font-black text-slate-900 text-right">?{item.basePrice.toLocaleString()}</td>
@@ -193,7 +180,7 @@ export const SellerStayCarPanel: React.FC = () => {
       <div className="data-table-container" style={{ padding: '1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
           <h4 style={{ fontWeight: 700, color: 'var(--text-dark)' }}>
-            <i className="fa-solid fa-calendar-check" style={{ color: 'var(--primary)' }}></i> ?? ?? · ?? ???
+            <i className="fa-solid fa-calendar-check" style={{ color: 'var(--primary)' }}></i> ?? ?? · ?? ??
           </h4>
           <select
             value={selectedPropertyKey}
@@ -217,7 +204,9 @@ export const SellerStayCarPanel: React.FC = () => {
         <div className="calendar-grid">
           {['?', '?', '?', '?', '?', '?', '?'].map((d, idx) => (
             <div key={d} className="calendar-header-cell">
-              <span style={{ color: idx === 0 ? 'var(--secondary)' : idx === 6 ? 'var(--primary)' : undefined }}>{d}</span>
+              <span style={{ color: idx === 0 ? 'var(--secondary)' : idx === 6 ? 'var(--primary)' : undefined }}>
+                {d}
+              </span>
             </div>
           ))}
           {renderCalendarCells()}
@@ -254,20 +243,38 @@ const OverrideModal: React.FC<OverrideModalProps> = ({ date, initialStock, initi
       <div className="app-modal" style={{ width: '420px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>?? ?? · ?? ??</h3>
-          <button type="button" onClick={onClose}><i className="fa-solid fa-xmark"></i></button>
+          <button type="button" onClick={onClose}>
+            <i className="fa-solid fa-xmark"></i>
+          </button>
         </div>
         <p style={{ marginBottom: '1rem', fontWeight: 700 }}>??: {date}</p>
         <div className="form-group">
           <label className="form-label">?? ??: {stock}</label>
-          <input type="range" min={0} max={20} value={stock} onChange={(e) => setStock(Number(e.target.value))} style={{ width: '100%' }} />
+          <input
+            type="range"
+            min={0}
+            max={20}
+            value={stock}
+            onChange={(e) => setStock(Number(e.target.value))}
+            style={{ width: '100%' }}
+          />
         </div>
         <div className="form-group">
           <label className="form-label">?? ?? (KRW)</label>
-          <input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} className="form-input" />
+          <input
+            type="number"
+            value={price}
+            onChange={(e) => setPrice(Number(e.target.value))}
+            className="form-input"
+          />
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
-          <button type="button" onClick={onClose} className="btn-secondary" style={{ flex: 1 }}>??</button>
-          <button type="button" onClick={() => onSave(stock, price)} className="btn-primary" style={{ flex: 1 }}>??</button>
+          <button type="button" onClick={onClose} className="btn-secondary" style={{ flex: 1 }}>
+            ??
+          </button>
+          <button type="button" onClick={() => onSave(stock, price)} className="btn-primary" style={{ flex: 1 }}>
+            ??
+          </button>
         </div>
       </div>
     </div>

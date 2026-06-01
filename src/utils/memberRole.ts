@@ -1,4 +1,4 @@
-/** API 명세·Mock 공통 회원 역할 */
+/** 백엔드 회원 역할 */
 export type ApiMemberRole =
   | 'USER'
   | 'SELLER'
