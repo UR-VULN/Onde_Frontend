@@ -1,4 +1,3 @@
-/** Generated from flights_collected.csv */
 export interface FlightAirportOption {
   value: string;
   label: string;
