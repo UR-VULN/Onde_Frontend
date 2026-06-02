@@ -2,6 +2,8 @@ import { adminAxios } from '@/api/axiosInstance';
 
 import { unwrapApi, unwrapPage } from '@/utils/apiResponse';
 
+import { getMemberId, getMemberRole } from '@/utils/authCookies';
+
 
 
 export interface PendingApprovalDto {
@@ -438,6 +440,12 @@ function currentMonthParam(): string {
 
 }
 
+function currentAdminRole(): string {
+
+  return (getMemberRole() ?? '').replace(/^ROLE_/, '').toUpperCase();
+
+}
+
 
 
 export const get_admin_dashboard_api = async (
@@ -446,23 +454,41 @@ export const get_admin_dashboard_api = async (
 
 ): Promise<{ success: boolean; data: AdminDashboardDto; message: string }> => {
 
+  const role = currentAdminRole();
+  const canReadSummary = role === 'SUPER_ADMIN' || role === 'SALES_ADMIN';
+  const canReadOperational = role === 'GENERAL_ADMIN';
+  const canReadCharts =
+    role === 'SUPER_ADMIN' || role === 'SALES_ADMIN' || role === 'GENERAL_ADMIN';
+
   const [summaryRaw, chartsRaw, operationalRaw] = await Promise.all([
 
-    adminAxios.get('/api/v1/admin/dashboard/summary', { params: { month } }),
+    canReadSummary
+      ? adminAxios.get('/api/v1/admin/dashboard/summary', { params: { month } })
+      : Promise.resolve(null),
 
-    adminAxios.get('/api/v1/admin/dashboard/charts', { params: { month } }),
+    canReadCharts
+      ? adminAxios.get('/api/v1/admin/dashboard/charts', { params: { month } })
+      : Promise.resolve(null),
 
-    adminAxios.get('/api/v1/admin/dashboard/operational'),
+    canReadOperational
+      ? adminAxios.get('/api/v1/admin/dashboard/operational')
+      : Promise.resolve(null),
 
   ]);
 
 
 
-  const summary = unwrapApi<Record<string, unknown>>(summaryRaw);
+  const summary = summaryRaw
+    ? unwrapApi<Record<string, unknown>>(summaryRaw)
+    : { success: false, message: '대시보드 요약 권한 없음', data: {} };
 
-  const charts = unwrapApi<Record<string, unknown>>(chartsRaw);
+  const charts = chartsRaw
+    ? unwrapApi<Record<string, unknown>>(chartsRaw)
+    : { success: false, message: '대시보드 차트 권한 없음', data: {} };
 
-  const operational = unwrapApi<Record<string, unknown>>(operationalRaw);
+  const operational = operationalRaw
+    ? unwrapApi<Record<string, unknown>>(operationalRaw)
+    : { success: false, message: '운영 지표 권한 없음', data: {} };
 
 
 
@@ -500,9 +526,9 @@ export const get_admin_dashboard_api = async (
 
   return {
 
-    success: summary.success,
+    success: summary.success || charts.success || operational.success,
 
-    message: summary.message,
+    message: [summary.message, charts.message, operational.message].filter(Boolean).join(' / '),
 
     data: {
 
@@ -790,7 +816,11 @@ export const deploy_property_marker_api = async (
 
 ): Promise<{ success: boolean; message: string }> => {
 
-  const raw = await adminAxios.post('/api/v1/admin/markers', payload);
+  const adminId = getMemberId();
+
+  const raw = await adminAxios.post('/api/v1/admin/markers', payload, {
+    headers: adminId ? { 'X-Admin-Id': String(adminId) } : undefined,
+  });
 
   const res = unwrapApi<unknown>(raw);
 
