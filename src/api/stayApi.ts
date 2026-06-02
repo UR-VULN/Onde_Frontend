@@ -122,13 +122,13 @@ export const search_accommodations_api = async (
   params: AccommodationSearchParams
 ): Promise<{ success: boolean; data: AccommodationSearchResponse; message: string }> => {
   const raw = await userAxios.get('/api/v1/accommodations/search', { params });
-  const res = unwrapApi<{ accommodations: BackendAccommodationItem[] }>(raw);
+  const res = unwrapApi<{ accommodations: BackendAccommodationItem[]; totalCount?: number }>(raw);
   const list = res.data?.accommodations ?? [];
   const accommodations = list.map(mapBackendItem);
   return {
     success: res.success,
     message: res.message,
-    data: { accommodations, totalCount: accommodations.length },
+    data: { accommodations, totalCount: Number(res.data?.totalCount ?? accommodations.length) },
   };
 };
 
@@ -210,7 +210,7 @@ export const book_room_api = async (
     checkOutDate: payload.checkOutDate,
     guests: payload.guests,
   });
-  const res = unwrapApi<{ reservationId: number; status: string; message?: string }>(raw);
+  const res = unwrapApi<{ reservationId: number; status: string; message?: string; totalPrice?: number }>(raw);
   return {
     success: res.success,
     message: res.message,

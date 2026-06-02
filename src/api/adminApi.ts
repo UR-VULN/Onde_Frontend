@@ -114,9 +114,13 @@ export interface PendingAccommodationDto {
 
   id: number;
 
+  type?: 'ACCOMMODATION' | 'CAR' | string;
+
   name: string;
 
   approvalStatus: string;
+
+  sellerId?: number;
 
 }
 
@@ -134,9 +138,11 @@ export const get_pending_accommodations_api = async (): Promise<{
 
   const raw = await adminAxios.get('/api/v1/admin/accommodations/pending');
 
-  const res = unwrapApi<PendingAccommodationDto[]>(raw);
+  const res = unwrapApi<{ items?: PendingAccommodationDto[]; totalCount?: number } | PendingAccommodationDto[]>(raw);
 
-  return { success: res.success, data: res.data ?? [], message: res.message };
+  const data = Array.isArray(res.data) ? res.data : res.data?.items ?? [];
+
+  return { success: res.success, data, message: res.message };
 
 };
 
@@ -150,10 +156,8 @@ export const update_accommodation_status_api = async (
 
 ): Promise<{ success: boolean; message: string }> => {
 
-  const raw = await adminAxios.put(`/api/v1/admin/accommodations/${id}/status`, null, {
-
-    params: { status },
-
+  const raw = await adminAxios.put(`/api/v1/admin/accommodations/${id}/status`, {
+    approvalStatus: status,
   });
 
   const res = unwrapApi<unknown>(raw);
@@ -510,6 +514,10 @@ export interface AdminMemberDto {
 
   status: string;
 
+  provider?: string;
+
+  name?: string;
+
   isBlacklisted: boolean;
 
 }
@@ -529,6 +537,9 @@ export interface AdminMembersResponse {
 export const get_admin_members_api = async (params?: {
 
   keyword?: string;
+  name?: string;
+  role?: string;
+  status?: string;
 
   page?: number;
 
@@ -536,13 +547,43 @@ export const get_admin_members_api = async (params?: {
 
 }): Promise<{ success: boolean; data: AdminMembersResponse; message: string }> => {
 
-  const raw = await adminAxios.get('/api/v1/admin/members', { params });
+  const query = {
+    ...params,
+    name: params?.name ?? params?.keyword,
+  };
 
-  const page = unwrapPage<{ id: number; email: string; role: string; status: string }>(raw);
+  if (!query.name) {
+    delete query.name;
+  }
+
+  const raw = await adminAxios.get('/api/v1/admin/members', { params: query });
+
+  const res = unwrapApi<{
+    members?: Array<{
+      id?: number;
+      memberId?: number;
+      email: string;
+      name?: string;
+      role: string;
+      status: string;
+      provider?: string;
+    }>;
+    totalCount?: number;
+  }>(raw);
+
+  const page = unwrapPage<{
+    id?: number;
+    memberId?: number;
+    email: string;
+    name?: string;
+    role: string;
+    status: string;
+    provider?: string;
+  }>(res.data);
 
   const members: AdminMemberDto[] = page.items.map((m) => ({
 
-    id: m.id,
+    id: Number(m.memberId ?? m.id ?? 0),
 
     email: m.email,
 
@@ -550,7 +591,16 @@ export const get_admin_members_api = async (params?: {
 
     status: m.status,
 
-    isBlacklisted: m.status === 'BLACKLIST' || m.status === 'BLACKLISTED',
+    provider: m.provider,
+
+    name: m.name,
+
+    isBlacklisted:
+      m.role === 'BLACKLIST' ||
+      m.role === 'ROLE_BLACKLIST' ||
+      m.status === 'BANNED' ||
+      m.status === 'BLACKLIST' ||
+      m.status === 'BLACKLISTED',
 
   }));
 
@@ -560,7 +610,7 @@ export const get_admin_members_api = async (params?: {
 
     data: { members, totalCount: page.totalCount },
 
-    message: '',
+    message: res.message,
 
   };
 
@@ -578,9 +628,11 @@ export const patch_admin_member_role_api = async (
 
   try {
 
-    const raw = await adminAxios.patch(`/api/v1/admin/roles/${memberId}`, { newRole });
+    const role = newRole.replace(/^ROLE_/, '');
+    const raw = await adminAxios.patch(`/api/v1/admin/roles/${memberId}`, { roles: [role] });
+    const res = unwrapApi<unknown>(raw);
 
-    return { success: true, message: typeof raw === 'string' ? raw : '권한이 변경되었습니다.' };
+    return { success: res.success, message: res.message || '권한이 변경되었습니다.' };
 
   } catch (err: unknown) {
 
@@ -598,19 +650,21 @@ export const patch_admin_member_role_api = async (
 
 export const blacklist_admin_member_api = async (
 
-  memberId: number
+  memberId: number,
+  reason = '관리자 블랙리스트 처리'
 
 ): Promise<{ success: boolean; message: string }> => {
 
   try {
 
-    const raw = await adminAxios.post(`/api/v1/admin/members/${memberId}/blacklist`);
+    const raw = await adminAxios.post(`/api/v1/admin/members/${memberId}/blacklist`, { reason });
+    const res = unwrapApi<unknown>(raw);
 
     return {
 
-      success: true,
+      success: res.success,
 
-      message: typeof raw === 'string' ? raw : '블랙리스트 처리되었습니다.',
+      message: res.message || '블랙리스트 처리되었습니다.',
 
     };
 
@@ -757,5 +811,4 @@ export const deploy_mail_template_api = async (_payload: {
   return { success: false, message: '메일 템플릿 API는 백엔드에 아직 없습니다.' };
 
 };
-
 

@@ -45,8 +45,8 @@ export function build_flight_search_payload(query: FlightSearchQuery): Record<st
 }
 
 export function count_flights_in_results(
-  results: { journeys: Array<{ flights: unknown[] }> } | null
+  results: { journeys?: Array<{ flights?: unknown[] }> } | null
 ): number {
   if (!results) return 0;
-  return results.journeys.reduce((sum, j) => sum + j.flights.length, 0);
+  return (results.journeys ?? []).reduce((sum, j) => sum + (j.flights ?? []).length, 0);
 }

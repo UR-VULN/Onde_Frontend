@@ -29,6 +29,10 @@ export const adminAxios = axios.create({
 });
 
 const injectToken = (config: any) => {
+  const url = config.url ?? '';
+  if (url.includes('/api/v1/auth/refresh')) {
+    return config;
+  }
   const token = getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

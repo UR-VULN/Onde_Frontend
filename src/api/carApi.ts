@@ -94,13 +94,13 @@ function mapCarListItemToDto(item: CarListItemDto): CarDto {
 export const search_cars_list_api = async (
   params: CarSearchParams
 ): Promise<{ success: boolean; data: CarListResponse; message: string }> => {
-  const raw = await userAxios.get('/api/v1/rental_cars/search', { params });
-  const res = unwrapApi<{ cars: BackendCarItem[] }>(raw);
+  const raw = await userAxios.get('/api/v1/cars/search', { params });
+  const res = unwrapApi<{ cars: BackendCarItem[]; totalCount?: number }>(raw);
   const cars = (res.data?.cars ?? []).map(mapBackendCar);
   return {
     success: res.success,
     message: res.message,
-    data: { cars, totalCount: cars.length },
+    data: { cars, totalCount: Number(res.data?.totalCount ?? cars.length) },
   };
 };
 
