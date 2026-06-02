@@ -3,7 +3,7 @@ import { useTravelStore } from '@/store/useTravelStore';
 import {
   get_pending_approvals_api,
   get_pending_accommodations_api,
-  update_accommodation_status_api,
+  process_property_approval_action_api,
   process_approval_action_api,
   get_all_bookings_api,
   export_passenger_csv_stream_api
@@ -29,6 +29,9 @@ const DOMAIN_BADGE: Record<string, { label: string; bg: string; color: string }>
   STAYS:     { label: '숙소',   bg: '#fff7ed', color: '#c2410c' },
   CARS:      { label: '렌터카', bg: '#f0fdf4', color: '#166534' },
 };
+
+const isPropertyApprovalCategory = (category?: string) =>
+  category === 'STAYS' || category === 'CARS';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -76,8 +79,9 @@ export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approv
         const mapped: PendingApprovalDto[] = (staysRes.value.data ?? []).map((a) => ({
           requestId: a.id,
           productName: a.name,
-          category: 'STAYS',
-          details: a.approvalStatus,
+          category: a.type === 'CAR' ? 'CARS' : 'STAYS',
+          registeredBy: a.sellerId ? `seller-${a.sellerId}` : undefined,
+          details: `${a.type ?? 'ACCOMMODATION'} / ${a.approvalStatus}`,
         }));
         setStaysPendingList(mapped);
       }
@@ -124,10 +128,14 @@ export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approv
   const handle_approve = async (requestId: number, category?: string) => {
     try {
       addToast('상품 등록 신청을 승인하고 실시간 노선 캐시를 갱신 중입니다...', 'info');
-      if (category === 'STAYS') {
-        const res = await update_accommodation_status_api(requestId, 'APPROVED');
+      if (isPropertyApprovalCategory(category)) {
+        const res = await process_property_approval_action_api(
+          requestId,
+          category as 'STAYS' | 'CARS',
+          'APPROVED'
+        );
         if (res.success) {
-          addToast('숙소 매물이 승인되었습니다.', 'success');
+          addToast(`${category === 'CARS' ? '렌터카' : '숙소'} 매물이 승인되었습니다.`, 'success');
           fetchAllPendingApprovals();
         }
         return;
@@ -156,8 +164,13 @@ export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approv
     try {
       addToast('상품 등록을 반려하고 기록 중입니다...', 'info');
       let res;
-      if (selectedRequest.category === 'STAYS') {
-        res = await update_accommodation_status_api(selectedRequest.requestId, 'REJECTED');
+      if (isPropertyApprovalCategory(selectedRequest.category)) {
+        res = await process_property_approval_action_api(
+          selectedRequest.requestId,
+          selectedRequest.category as 'STAYS' | 'CARS',
+          'REJECTED',
+          rejectReason
+        );
       } else {
         const approvalCategory =
           selectedRequest.category === 'INSURANCE' ? 'INSURANCE' : 'FLIGHT';

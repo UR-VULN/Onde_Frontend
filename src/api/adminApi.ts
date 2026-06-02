@@ -206,6 +206,40 @@ export const process_approval_action_api = async (
 
 };
 
+export type PropertyApprovalCategory = 'STAYS' | 'CARS' | 'ACCOMMODATION' | 'CAR';
+
+export const process_property_approval_action_api = async (
+
+  targetId: number,
+
+  category: PropertyApprovalCategory,
+
+  status: 'APPROVED' | 'REJECTED' | 'PENDING',
+
+  rejectReason?: string
+
+): Promise<{ success: boolean; message: string }> => {
+
+  const approvalType = category === 'CARS' || category === 'CAR' ? 'CAR' : 'ACCOMMODATION';
+
+  const raw = await adminAxios.post('/api/v1/admin/approvals/process', {
+
+    approvalType,
+
+    targetId,
+
+    status,
+
+    rejectReason,
+
+  });
+
+  const res = unwrapApi<unknown>(raw);
+
+  return { success: res.success, message: res.message };
+
+};
+
 
 
 export interface AdminBookingDto {
@@ -811,4 +845,3 @@ export const deploy_mail_template_api = async (_payload: {
   return { success: false, message: '메일 템플릿 API는 백엔드에 아직 없습니다.' };
 
 };
-

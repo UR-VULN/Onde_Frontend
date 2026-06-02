@@ -88,12 +88,8 @@ export const SellerAccountPanel: React.FC = () => {
         addToast(res.message || '사업자 정보가 일치하지 않습니다. 입력 내용을 다시 확인해 주세요.', 'warning');
       }
     } catch (err: any) {
-      if (rawNum.length === 10 && representativeName && openDate.length === 8) {
-        setIsBusinessVerified(true);
-        addToast('✅ [데모] 사업자 진위 확인이 완료되었습니다. 저장하기 버튼이 활성화됩니다.', 'success');
-      } else {
-        addToast(err?.error?.message || '사업자 진위 확인 중 오류가 발생했습니다.', 'warning');
-      }
+      setIsBusinessVerified(false);
+      addToast(err?.error?.message || '사업자 진위 확인 중 오류가 발생했습니다.', 'warning');
     } finally {
       setIsVerifying(false);
     }
@@ -127,9 +123,11 @@ export const SellerAccountPanel: React.FC = () => {
 
       if (res.success) {
         addToast('업체 프로필 정보와 정산 계좌가 안전하게 갱신 완료되었습니다.', 'success');
+      } else {
+        addToast(res.message || '업체 프로필 정보 저장에 실패했습니다.', 'warning');
       }
-    } catch {
-      addToast('[데모] 업체 프로필 정보 저장이 완료되었습니다.', 'success');
+    } catch (err: any) {
+      addToast(err?.error?.message || '업체 프로필 정보 저장에 실패했습니다.', 'warning');
     } finally {
       setIsSaving(false);
     }
@@ -325,10 +323,19 @@ export const SellerAccountPanel: React.FC = () => {
 
           <button
             className="btn-primary"
-            style={{ width: '100%', padding: '0.8rem', marginTop: '0.5rem', background: '#008a05', border: 'none' }}
-            onClick={() => addToast('보안 계좌 정보 변경 신청이 완료되었습니다.', 'success')}
+            style={{
+              width: '100%',
+              padding: '0.8rem',
+              marginTop: '0.5rem',
+              background: '#008a05',
+              border: 'none',
+              opacity: (!isBusinessVerified || isSaving) ? 0.5 : 1,
+              cursor: (!isBusinessVerified || isSaving) ? 'not-allowed' : 'pointer',
+            }}
+            onClick={handle_save}
+            disabled={!isBusinessVerified || isSaving}
           >
-            정산 계좌 정보 업데이트
+            {isSaving ? '저장 중...' : '정산 계좌 정보 업데이트'}
           </button>
         </div>
       </div>

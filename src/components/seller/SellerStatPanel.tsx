@@ -15,7 +15,7 @@ export const SellerStatPanel: React.FC = () => {
   const [totalSales, setTotalSales] = useState(0);
   const [completedBookings, setCompletedBookings] = useState(0);
   const [settlementPending, setSettlementPending] = useState(0);
-  const [commissionRate, setCommissionRate] = useState(0.1);
+  const [commissionRate, setCommissionRate] = useState(0.03);
   const [settlementHistory, setSettlementHistory] = useState<SellerSettlementHistoryDto[]>([]);
   const [dailySales, setDailySales] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
 
@@ -47,19 +47,39 @@ export const SellerStatPanel: React.FC = () => {
     setIsRequesting(true);
     addToast('정산 대금 지급 수동 신청을 처리 중입니다...', 'info');
     try {
-      await request_monthly_settlement_api();
-      addToast('정산 대금 지급 수동 신청이 완료되었습니다. 본사 정산 심사를 거쳐 지급됩니다.', 'success');
-    } catch {
-      addToast('[데모] 월말 정산 신청이 완료되었습니다. 본사 심사를 거쳐 지급됩니다.', 'success');
+      const res = await request_monthly_settlement_api();
+      if (res.success) {
+        addToast('정산 대금 지급 수동 신청이 완료되었습니다. 본사 정산 심사를 거쳐 지급됩니다.', 'success');
+        const histRes = await get_seller_settlement_history_api();
+        if (histRes.success && histRes.data) setSettlementHistory(histRes.data);
+      } else {
+        addToast(res.message || '정산 신청에 실패했습니다.', 'warning');
+      }
+    } catch (err: any) {
+      addToast(err?.error?.message || '정산 신청 중 오류가 발생했습니다.', 'warning');
     } finally {
       setIsRequesting(false);
     }
   };
 
   const getStatusBadge = (status: string) => {
-    if (status === 'PAID') return <span className="status-badge status-approved">지급 완료</span>;
-    if (status === 'PENDING_REVIEW') return <span className="status-badge status-pending">지급 검수중</span>;
-    return <span className="status-badge status-rejected">반려됨</span>;
+    const normalized = status.toUpperCase();
+    if (normalized === 'COMPLETED' || normalized === 'PAID') {
+      return <span className="status-badge status-approved">지급 완료</span>;
+    }
+    if (normalized === 'APPROVED_1ST') {
+      return <span className="status-badge status-approved">1차 승인</span>;
+    }
+    if (normalized === 'REQUESTED' || normalized === 'PENDING_REVIEW') {
+      return <span className="status-badge status-pending">지급 심사중</span>;
+    }
+    if (normalized === 'PENDING') {
+      return <span className="status-badge status-pending">신청 가능</span>;
+    }
+    if (normalized === 'REJECTED') {
+      return <span className="status-badge status-rejected">반려됨</span>;
+    }
+    return <span className="status-badge">{status || '-'}</span>;
   };
 
   return (

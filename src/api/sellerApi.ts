@@ -1,6 +1,8 @@
 import { sellerAxios } from '@/api/axiosInstance';
 import { unwrapApi } from '@/utils/apiResponse';
 
+const PLATFORM_COMMISSION_RATE = 0.03;
+
 export interface SellerSettlementAccountPayload {
   bankName: string;
   accountNumber: string;
@@ -114,6 +116,7 @@ export const request_monthly_settlement_api = async (): Promise<{
   message: string;
 }> => {
   const list = await get_seller_settlements_api(0, 20);
+  if (!list.success) return { success: false, message: list.message };
   const pending = list.data?.settlements?.find((s) => s.status === 'PENDING');
   if (!pending) return { success: false, message: '정산 대상이 없습니다.' };
   const res = await request_settlement_api(pending.settlementId);
@@ -156,11 +159,15 @@ export const get_seller_sales_stat_api = async (): Promise<{
   data: SellerSalesStatDto;
   message: string;
 }> => {
-  const res = await get_seller_dashboard_statistics_api({
-    period: 'MONTHLY',
-    startDate: '2026-01-01',
-    endDate: '2026-12-31',
-  });
+  const year = new Date().getFullYear();
+  const [res, settlementsRes] = await Promise.all([
+    get_seller_dashboard_statistics_api({
+      period: 'MONTHLY',
+      startDate: `${year}-01-01`,
+      endDate: `${year}-12-31`,
+    }),
+    get_seller_settlements_api(0, 100).catch(() => null),
+  ]);
   if (!res.success || !res.data) {
     return {
       success: false,
@@ -168,21 +175,29 @@ export const get_seller_sales_stat_api = async (): Promise<{
         totalSalesAmount: 0,
         completedBookingsCount: 0,
         settlementPendingAmount: 0,
-        commissionRate: 0.1,
+        commissionRate: PLATFORM_COMMISSION_RATE,
         month: '',
       },
       message: res.message,
     };
   }
   const last = res.data.breakdown?.[res.data.breakdown.length - 1];
+  const completedBookingsCount =
+    res.data.breakdown?.reduce((sum, item) => sum + Number(item.bookingCount ?? 0), 0) ?? 0;
+  const settlementPendingAmount =
+    settlementsRes?.success
+      ? settlementsRes.data.settlements
+          .filter((s) => s.status === 'PENDING')
+          .reduce((sum, item) => sum + item.netAmount, 0)
+      : 0;
   return {
     success: true,
     message: res.message,
     data: {
       totalSalesAmount: res.data.totalRevenue,
-      completedBookingsCount: last?.bookingCount ?? 0,
-      settlementPendingAmount: Math.floor(res.data.totalRevenue * 0.1),
-      commissionRate: 0.1,
+      completedBookingsCount,
+      settlementPendingAmount,
+      commissionRate: PLATFORM_COMMISSION_RATE,
       month: last?.month ?? '',
     },
   };
@@ -221,9 +236,9 @@ export const verify_business_api = async (
   payload: BusinessVerifyPayload
 ): Promise<{ success: boolean; verified: boolean; message: string }> => {
   const raw = await sellerAxios.post('/api/v1/seller/account/verify-business', {
-    businessNumber: payload.businessNumber,
-    representativeName: payload.representativeName,
-    openDate: payload.openDate,
+    businessNumber: payload.businessNumber.replace(/\D/g, ''),
+    representativeName: payload.representativeName.trim(),
+    openDate: payload.openDate.replace(/\D/g, ''),
   });
   const res = unwrapApi<{ verified?: boolean }>(raw);
   return {
