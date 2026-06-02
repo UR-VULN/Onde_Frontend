@@ -61,22 +61,25 @@ export interface StaySearchResponse {
 }
 
 interface BackendAccommodationItem {
-  id: number;
+  id?: number;
+  accommodationId?: number;
   name: string;
   category: string;
   location: string;
   thumbnailUrl: string;
   minPrice: number;
+  availableRooms?: number;
 }
 
 function mapBackendItem(item: BackendAccommodationItem): AccommodationDto {
   return {
-    accommodationId: item.id,
+    accommodationId: Number(item.accommodationId ?? item.id ?? 0),
     name: item.name,
     category: item.category,
     location: item.location,
     thumbnailUrl: item.thumbnailUrl ?? '',
     minPrice: item.minPrice ?? 0,
+    availableRooms: item.availableRooms,
   };
 }
 

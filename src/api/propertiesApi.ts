@@ -26,6 +26,7 @@ export interface PropertiesBoundsParams {
 interface BackendPropertyMarker {
   propertyId: number;
   addressName: string;
+  name?: string;
   latitude: number;
   longitude: number;
   memberId?: number;
@@ -35,7 +36,7 @@ function mapMarker(item: BackendPropertyMarker): PropertyMarkerDto {
   return {
     propertyId: item.propertyId,
     accommodationId: item.propertyId,
-    name: item.addressName,
+    name: item.addressName ?? item.name ?? '',
     latitude: item.latitude,
     longitude: item.longitude,
     thumbnailUrl: '',
@@ -47,19 +48,25 @@ export const fetch_properties_in_bounds_api = async (
   params: PropertiesBoundsParams
 ): Promise<{ success: boolean; data: PropertiesResponse; message: string }> => {
   const raw = await userAxios.get('/api/v1/properties', { params });
-  const res = unwrapApi<BackendPropertyMarker[] | { properties?: BackendPropertyMarker[] }>(raw);
+  const res = unwrapApi<
+    BackendPropertyMarker[] | {
+      markers?: BackendPropertyMarker[];
+      properties?: BackendPropertyMarker[];
+      totalCount?: number;
+    }
+  >(raw);
 
   let list: BackendPropertyMarker[] = [];
   if (Array.isArray(res.data)) {
     list = res.data;
-  } else if (res.data && Array.isArray(res.data.properties)) {
-    list = res.data.properties;
+  } else if (res.data) {
+    list = res.data.markers ?? res.data.properties ?? [];
   }
 
   const properties = list.map(mapMarker);
   return {
     success: res.success,
     message: res.message,
-    data: { properties, totalCount: properties.length },
+    data: { properties, totalCount: Array.isArray(res.data) ? properties.length : Number(res.data?.totalCount ?? properties.length) },
   };
 };

@@ -11,10 +11,12 @@ export interface CarSearchParams {
 }
 
 interface BackendCarItem {
-  id: number;
+  id?: number;
+  carId?: number;
   modelName: string;
   carType: string;
-  price: number;
+  price?: number;
+  dailyPrice?: number;
 }
 
 export interface CarListItemDto {
@@ -68,10 +70,10 @@ function toDateTime(dateStr: string, time = '10:00:00'): string {
 
 function mapBackendCar(item: BackendCarItem): CarListItemDto {
   return {
-    carId: item.id,
+    carId: Number(item.carId ?? item.id ?? 0),
     modelName: item.modelName,
     carType: item.carType,
-    dailyPrice: item.price ?? 0,
+    dailyPrice: Number(item.dailyPrice ?? item.price ?? 0),
   };
 }
 
