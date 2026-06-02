@@ -35,7 +35,7 @@ interface InsuranceState {
 
 export const useInsuranceStore = create<InsuranceState>((set) => ({
   insured_details: {
-    insuranceProductId: 2,
+    insuranceProductId: 1,
     name: '',
     birthdate: '1995-05-25',
     startDate: '2026-07-01',

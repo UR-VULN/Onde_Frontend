@@ -5,6 +5,12 @@ import { clearAuthSession } from '@/utils/authSession';
 import { getAccessToken, getMemberId, updateAccessToken } from '@/utils/authCookies';
 import { isErrorPagePath, redirectByHttpStatus } from '@/utils/errorNavigation';
 
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    skipErrorRedirect?: boolean;
+  }
+}
+
 const axiosDefaults = {
   timeout: 15000,
   withCredentials: true,
@@ -65,13 +71,14 @@ function isRefreshable401(config: { url?: string; _retry?: boolean } | undefined
 
 const finalizeResponseError = (error: {
   response?: { status?: number; data?: unknown };
+  config?: { skipErrorRedirect?: boolean };
 }) => {
   console.error('[API ERROR INTERCEPTOR]:', error);
 
   const status = error.response?.status;
   const onErrorPage = isErrorPagePath(window.location.pathname);
 
-  if (status && !onErrorPage) {
+  if (status && !onErrorPage && !error.config?.skipErrorRedirect) {
     if (status === 401) {
       clearAuthSession();
     }
@@ -87,7 +94,7 @@ const finalizeResponseError = (error: {
 const createAuthAwareErrorHandler = (instance: typeof userAxios) => {
   return async (error: {
     response?: { status?: number; data?: unknown };
-    config?: { url?: string; _retry?: boolean; headers: Record<string, string> };
+    config?: { url?: string; _retry?: boolean; headers: Record<string, string>; skipErrorRedirect?: boolean };
   }) => {
     const status = error.response?.status;
     const config = error.config;

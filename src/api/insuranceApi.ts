@@ -20,7 +20,7 @@ export const calculate_premium_api = async (
     startDate: payload.startDate,
     endDate: payload.endDate,
     coverageLevel: payload.coverageLevel,
-  });
+  }, { skipErrorRedirect: true });
   return unwrapApi<PremiumEstimate>(raw);
 };
 
@@ -56,7 +56,7 @@ export const apply_insurance_policy_api = async (
     endDate: payload.endDate,
     coverageLevel: payload.coverageLevel,
     totalPremium: payload.totalPremium,
-  });
+  }, { skipErrorRedirect: true });
   return unwrapApi<InsurancePolicyResponse>(raw);
 };
 
