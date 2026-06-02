@@ -6,10 +6,10 @@ export interface MapStayItem {
   city: string;
   country: string;
   description: string;
-  imageUrl: string;
-  pricePerNight: number;
-  rating: number;
-  reviewCount: number;
+  imageUrl?: string;
+  pricePerNight?: number;
+  rating?: number;
+  reviewCount?: number;
   tags: string[];
   soldOutDays: number[];
   mileageDiscount: number;

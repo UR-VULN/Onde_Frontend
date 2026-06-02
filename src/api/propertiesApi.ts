@@ -39,8 +39,6 @@ function mapMarker(item: BackendPropertyMarker): PropertyMarkerDto {
     name: item.addressName ?? item.name ?? '',
     latitude: item.latitude,
     longitude: item.longitude,
-    thumbnailUrl: '',
-    minPrice: 0,
   };
 }
 

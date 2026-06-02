@@ -15,6 +15,8 @@ import {
 } from '@/utils/calendarUtils';
 import { useTravelStore } from '@/store/useTravelStore';
 import { MileageUsagePanel, clampMileageUsage } from '@/components/common/MileageUsagePanel';
+import { ListingThumbnail } from '@/components/common/ListingThumbnail';
+import { hasDisplayImage, hasDisplayPrice } from '@/utils/listingDisplay';
 
 // ─── constants ───────────────────────────────────────────────
 const PRIMARY = '#005ce6';
@@ -190,15 +192,23 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
           reservationId: res.data.reservationId,
           productTitle: car.name,
           productSubtitle: car.typeLabel,
-          productImageUrl: car.imageUrl,
+          productImageUrl: hasDisplayImage(car.imageUrl) ? car.imageUrl : undefined,
           categoryLabel: '렌터카',
           categoryIcon: 'fa-car',
           totalAmount: res.data.totalPrice ?? orderTotal,
           usedMileage: mileageUsed,
           dateSummary: `${pickupDate} ~ ${returnDate} (${rentalDays}일 대여)`,
           detailLines: [
-            `₩${car.pricePerDay.toLocaleString('ko-KR')} × ${rentalDays}일`,
-            `${car.fuel} · ${car.seats}인승`,
+            ...(hasDisplayPrice(car.pricePerDay)
+              ? [`₩${car.pricePerDay.toLocaleString('ko-KR')} × ${rentalDays}일`]
+              : []),
+            ...(car.fuel && car.seats
+              ? [`${car.fuel} · ${car.seats}인승`]
+              : car.fuel
+                ? [car.fuel]
+                : car.seats
+                  ? [`${car.seats}인승`]
+                  : []),
           ],
           returnPath: '/car',
         }),
@@ -265,10 +275,12 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
             width: '65px', height: '65px', borderRadius: '12px',
             overflow: 'hidden', flexShrink: 0, background: '#f0f2f5',
           }}>
-            <img
-              src={car.imageUrl}
+            <ListingThumbnail
+              imageUrl={car.imageUrl}
               alt={car.name}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              iconClass="fa-car"
+              className="w-full h-full text-xl"
+              imgClassName="w-full h-full object-cover"
             />
           </div>
           <div>
@@ -277,12 +289,24 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
             </h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', fontSize: '0.78rem', color: '#717171', flexWrap: 'wrap' }}>
               <span><i className="fa-solid fa-car" /> {car.typeLabel}</span>
-              <span>•</span>
-              <span><i className="fa-solid fa-users" /> {car.seats}인승</span>
-              <span>•</span>
-              <span><i className="fa-solid fa-gas-pump" /> {car.fuel}</span>
-              <span>•</span>
-              <span style={{ color: SECONDARY, fontWeight: 700 }}>₩{car.pricePerDay.toLocaleString('ko-KR')} / per Day</span>
+              {car.seats != null && (
+                <>
+                  <span>•</span>
+                  <span><i className="fa-solid fa-users" /> {car.seats}인승</span>
+                </>
+              )}
+              {car.fuel && (
+                <>
+                  <span>•</span>
+                  <span><i className="fa-solid fa-gas-pump" /> {car.fuel}</span>
+                </>
+              )}
+              {hasDisplayPrice(car.pricePerDay) && (
+                <>
+                  <span>•</span>
+                  <span style={{ color: SECONDARY, fontWeight: 700 }}>₩{car.pricePerDay.toLocaleString('ko-KR')} / per Day</span>
+                </>
+              )}
             </div>
           </div>
         </div>

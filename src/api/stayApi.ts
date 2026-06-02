@@ -46,10 +46,10 @@ export interface StayDto {
   city: string;
   country: string;
   description: string;
-  imageUrl: string;
-  pricePerNight: number;
-  rating: number;
-  reviewCount: number;
+  imageUrl?: string;
+  pricePerNight?: number;
+  rating?: number;
+  reviewCount?: number;
   tags: string[];
 }
 
@@ -93,10 +93,10 @@ export function mapStayToStayDto(stay: MapStayItem): StayDto {
     city: stay.city,
     country: stay.country,
     description: stay.description,
-    imageUrl: stay.imageUrl,
-    pricePerNight: stay.pricePerNight,
-    rating: stay.rating,
-    reviewCount: stay.reviewCount,
+    ...(stay.imageUrl?.trim() ? { imageUrl: stay.imageUrl } : {}),
+    ...(stay.pricePerNight != null && stay.pricePerNight > 0 ? { pricePerNight: stay.pricePerNight } : {}),
+    ...(stay.rating != null && stay.rating > 0 ? { rating: stay.rating } : {}),
+    ...(stay.reviewCount != null && stay.reviewCount > 0 ? { reviewCount: stay.reviewCount } : {}),
     tags: stay.tags,
   };
 }
@@ -113,10 +113,8 @@ function mapAccommodationToStayDto(item: AccommodationDto): StayDto {
     city,
     country,
     description: item.name,
-    imageUrl: item.thumbnailUrl,
-    pricePerNight: item.minPrice,
-    rating: 4.8,
-    reviewCount: 0,
+    ...(item.thumbnailUrl?.trim() ? { imageUrl: item.thumbnailUrl } : {}),
+    ...(item.minPrice > 0 ? { pricePerNight: item.minPrice } : {}),
     tags: [item.category],
   };
 }

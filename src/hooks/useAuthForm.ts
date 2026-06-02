@@ -10,7 +10,7 @@ import { getDefaultPathForRole } from '@/utils/memberRole';
 
 export const useAuthForm = () => {
   const navigate = useNavigate();
-  const { login, signupSuccess, closeAuthModal, addToast } = useTravelStore();
+  const { login, signupSuccess, closeAuthModal, openAuthModal, addToast } = useTravelStore();
   const [isLoading, setIsLoading] = useState(false);
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -31,12 +31,50 @@ export const useAuthForm = () => {
     email: string,
     apiRole: string,
     memberId: number,
-    profile: { mileage: number; membershipGrade: string }
+    profile: { mileage: number; membershipGrade: string },
+    options?: { successToast?: string; showWelcomePopup?: boolean }
   ) => {
     login(email, apiRole, profile, memberId);
-    addToast('🔑 로그인이 완료되었습니다!', 'success');
+    addToast(options?.successToast ?? '🔑 로그인이 완료되었습니다!', 'success');
     closeAuthModal();
     navigate(getDefaultPathForRole(apiRole), { replace: true });
+
+    if (options?.showWelcomePopup) {
+      setTimeout(() => useTravelStore.getState().openWelcomePopup(), 450);
+    }
+  };
+
+  const establishSession = async (
+    email: string,
+    password: string,
+    options?: { successToast?: string; showWelcomePopup?: boolean }
+  ): Promise<boolean> => {
+    const data = await login_api({ email, password });
+    if (!data?.accessToken) {
+      return false;
+    }
+
+    persistAuthSession({
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+      memberId: data.memberId,
+      role: data.role,
+      username: email,
+      expiresIn: data.expiresIn,
+    });
+
+    let profile = { mileage: 0, membershipGrade: DEFAULT_MEMBERSHIP_GRADE };
+    try {
+      const profileRes = await fetch_member_profile_api();
+      if (profileRes.success && profileRes.data) {
+        profile = profileRes.data;
+      }
+    } catch {
+      // 마일리지 API 실패 시 기본값 유지
+    }
+
+    finishLogin(email, data.role, data.memberId, profile, options);
+    return true;
   };
 
   const handleLogin = async (email: string, password: string) => {
@@ -50,32 +88,10 @@ export const useAuthForm = () => {
     setIsLoading(true);
 
     try {
-      const data = await login_api({ email, password });
-      if (!data?.accessToken) {
+      const ok = await establishSession(email, password);
+      if (!ok) {
         addToast('로그인에 실패했습니다.', 'warning');
-        return;
       }
-
-      persistAuthSession({
-        accessToken: data.accessToken,
-        refreshToken: data.refreshToken,
-        memberId: data.memberId,
-        role: data.role,
-        username: email,
-        expiresIn: data.expiresIn,
-      });
-
-      let profile = { mileage: 0, membershipGrade: DEFAULT_MEMBERSHIP_GRADE };
-      try {
-        const profileRes = await fetch_member_profile_api();
-        if (profileRes.success && profileRes.data) {
-          profile = profileRes.data;
-        }
-      } catch {
-        // 마일리지 API 실패 시 기본값 유지
-      }
-
-      finishLogin(email, data.role, data.memberId, profile);
     } catch (err: unknown) {
       const msg =
         (err as { message?: string })?.message ||
@@ -127,10 +143,25 @@ export const useAuthForm = () => {
         passwordConfirm,
         role: apiRole,
       });
-      signupSuccess(email, role);
-      addToast(message || '회원가입이 완료되었습니다.', 'success');
-      if (role === 'cust') {
-        navigate('/', { replace: true });
+
+      if (role === 'sell') {
+        signupSuccess(email, role);
+        addToast(message || '회원가입이 완료되었습니다.', 'success');
+        return;
+      }
+
+      try {
+        const loggedIn = await establishSession(email, password, {
+          successToast: message || '회원가입 및 로그인이 완료되었습니다.',
+          showWelcomePopup: role === 'cust',
+        });
+        if (!loggedIn) {
+          addToast('가입은 완료되었습니다. 로그인해 주세요.', 'warning');
+          openAuthModal('login');
+        }
+      } catch {
+        addToast('가입은 완료되었습니다. 로그인해 주세요.', 'warning');
+        openAuthModal('login');
       }
     } catch (err: unknown) {
       const msg =

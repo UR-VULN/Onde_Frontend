@@ -3,6 +3,8 @@ import type { StayDto } from '@/api/stayApi';
 import type { StaySearchParams } from './StaySearchForm';
 import { StayDetailModal } from './StayDetailModal';
 import { addDaysStr, todayStr } from '@/utils/calendarUtils';
+import { ListingThumbnail } from '@/components/common/ListingThumbnail';
+import { formatKrwPriceOrDash } from '@/utils/listingDisplay';
 
 interface StayCardProps {
   stay: StayDto;
@@ -41,11 +43,12 @@ const StayCard: React.FC<StayCardProps> = ({ stay, index, onSelect }) => {
       onClick={() => onSelect(stay)}
     >
       <div className="w-full aspect-[16/10] rounded-xl overflow-hidden relative mb-3 border border-slate-100">
-        <img
-          src={stay.imageUrl}
+        <ListingThumbnail
+          imageUrl={stay.imageUrl}
           alt={stay.title}
-          loading="lazy"
-          className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
+          iconClass="fa-hotel"
+          className="w-full h-full text-3xl"
+          imgClassName="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
         />
       </div>
       <div className="px-1">
@@ -56,8 +59,10 @@ const StayCard: React.FC<StayCardProps> = ({ stay, index, onSelect }) => {
           {stay.description}
         </p>
         <div className="text-[1.3rem] lg:text-[0.9rem] text-slate-700">
-          <span className="font-bold text-slate-900">₩{stay.pricePerNight.toLocaleString('ko-KR')}</span>
-          <span className="text-slate-400 font-normal"> / per Day</span>
+          <span className="font-bold text-slate-900">{formatKrwPriceOrDash(stay.pricePerNight)}</span>
+          {stay.pricePerNight != null && stay.pricePerNight > 0 && (
+            <span className="text-slate-400 font-normal"> / per Day</span>
+          )}
         </div>
       </div>
     </div>

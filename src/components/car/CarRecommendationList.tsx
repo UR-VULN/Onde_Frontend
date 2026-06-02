@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import type { CarDto } from '@/api/carApi';
 import type { CarSearchParams } from './CarSearchForm';
 import { CarDetailModal } from './CarDetailModal';
+import { ListingThumbnail } from '@/components/common/ListingThumbnail';
+import { formatKrwPriceOrDash, hasDisplayPrice } from '@/utils/listingDisplay';
 
 interface CarCardProps {
   car: CarDto;
@@ -38,11 +40,12 @@ const CarCard: React.FC<CarCardProps> = ({ car, index, onSelect }) => {
       onClick={() => onSelect(car)}
     >
       <div className="w-full aspect-[16/10] rounded-xl overflow-hidden relative mb-3 border border-slate-100">
-        <img
-          src={car.imageUrl}
+        <ListingThumbnail
+          imageUrl={car.imageUrl}
           alt={car.name}
-          loading="lazy"
-          className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
+          iconClass="fa-car"
+          className="w-full h-full text-3xl"
+          imgClassName="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
         />
       </div>
       <div className="px-1">
@@ -51,8 +54,10 @@ const CarCard: React.FC<CarCardProps> = ({ car, index, onSelect }) => {
         </span>
         <p className="text-[1.25rem] lg:text-[0.83rem] text-slate-400 font-medium truncate">{car.typeLabel}</p>
         <div className="text-[1.3rem] lg:text-[0.9rem] text-slate-700">
-          <span className="font-bold text-slate-900">₩{car.pricePerDay.toLocaleString('ko-KR')}</span>
-          <span className="text-slate-400 font-normal"> / per Day</span>
+          <span className="font-bold text-slate-900">{formatKrwPriceOrDash(car.pricePerDay)}</span>
+          {hasDisplayPrice(car.pricePerDay) && (
+            <span className="text-slate-400 font-normal"> / per Day</span>
+          )}
         </div>
       </div>
     </div>

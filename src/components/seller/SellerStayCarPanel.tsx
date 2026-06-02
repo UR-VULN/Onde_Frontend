@@ -69,12 +69,17 @@ export const SellerStayCarPanel: React.FC = () => {
       if (res.success) {
         setDailyData((prev) => ({ ...prev, [day]: { stock, price, isClosed: stock === 0 } }));
         addToast(`${day}? ??·??? ???????.`, 'success');
+        setOverrideTarget(null);
+        return;
       }
-    } catch {
-      setDailyData((prev) => ({ ...prev, [day]: { stock, price, isClosed: stock === 0 } }));
-      addToast(`${day}? ??·??? ???????.`, 'success');
+      addToast(res.message || `${day}? ??·?? ??? ??????.`, 'warning');
+    } catch (err: unknown) {
+      const msg =
+        (err as { message?: string })?.message ||
+        (err as { error?: { message?: string } })?.error?.message ||
+        `${day}? ??·?? ?? ? ??? ??????.`;
+      addToast(msg, 'warning');
     }
-    setOverrideTarget(null);
   };
 
   const renderCalendarCells = () => {
@@ -114,7 +119,7 @@ export const SellerStayCarPanel: React.FC = () => {
         <div>
           <h2 className="section-title">?? · ??? ?? ? ?? ??</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            ??? ?? ??? ?? ??·??? API? ??·?????.
+            ??? ??·??? ?? ??·??? ??? API? ??·?????.
           </p>
         </div>
       </div>

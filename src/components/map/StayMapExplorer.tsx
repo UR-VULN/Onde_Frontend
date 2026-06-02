@@ -21,6 +21,7 @@ import {
 import { propertyMarkerToMapStay } from '@/utils/mapPropertyMarkers';
 import { StayMapList } from '@/components/map/StayMapList';
 import { StayDetailModal } from '@/components/stay/StayDetailModal';
+import { formatKrwPrice, hasDisplayPrice, hasDisplayRating } from '@/utils/listingDisplay';
 
 function createStayIcon(isSelected: boolean): L.DivIcon {
   return L.divIcon({
@@ -187,7 +188,13 @@ export const StayMapExplorer: React.FC<StayMapExplorerProps> = ({ searchQuery })
             <div className="map-floating-card">
               <strong>{selectedStay.title}</strong>
               <span>
-                ₩{selectedStay.pricePerNight.toLocaleString('ko-KR')} / 박 · ★ {selectedStay.rating}
+                {[
+                  hasDisplayPrice(selectedStay.pricePerNight) &&
+                    `${formatKrwPrice(selectedStay.pricePerNight!)} / 박`,
+                  hasDisplayRating(selectedStay.rating) && `★ ${selectedStay.rating}`,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || '—'}
               </span>
             </div>
           )}

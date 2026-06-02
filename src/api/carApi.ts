@@ -47,10 +47,10 @@ export interface CarDto {
   type: string;
   typeLabel: string;
   description: string;
-  imageUrl: string;
+  imageUrl?: string;
   pricePerDay: number;
-  seats: number;
-  fuel: string;
+  seats?: number;
+  fuel?: string;
   tags: string[];
 }
 
@@ -60,9 +60,6 @@ export interface CarSearchResponse {
   size: number;
   cars: CarDto[];
 }
-
-const DEFAULT_CAR_IMAGE =
-  'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=600';
 
 function toDateTime(dateStr: string, time = '10:00:00'): string {
   return `${dateStr}T${time}`;
@@ -85,10 +82,7 @@ function mapCarListItemToDto(item: CarListItemDto): CarDto {
     type: item.carType,
     typeLabel: item.carType,
     description: item.modelName,
-    imageUrl: DEFAULT_CAR_IMAGE,
     pricePerDay: item.dailyPrice,
-    seats: 5,
-    fuel: '가솔린',
     tags: [item.carType],
   };
 }
