@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
+import { canAccessAdminTab, type AdminTabId } from '@/utils/adminPermissions';
 import { AdminHQPanel } from '@/components/admin/AdminHQPanel';
 import { AdminDashboardPanel } from '@/components/admin/AdminDashboardPanel';
 import { AdminUserPanel } from '@/components/admin/AdminUserPanel';
@@ -8,7 +9,7 @@ import { BackOfficeLayout } from '@/components/layout/BackOfficeLayout';
 
 type AdminTab = 'stat' | 'approve' | 'book' | 'user' | 'lbs';
 
-const SIDEBAR_ITEMS = [
+const ALL_SIDEBAR_ITEMS: { id: AdminTabId; icon: string; label: string }[] = [
   { id: 'stat',    icon: 'fa-solid fa-chart-line',          label: '종합 대시보드'           },
   { id: 'approve', icon: 'fa-solid fa-stamp',               label: '상품 검수 관리'           },
   { id: 'book',    icon: 'fa-solid fa-book-bookmark',       label: '전사 예약 및 직권취소'    },
@@ -17,11 +18,19 @@ const SIDEBAR_ITEMS = [
 ];
 
 export const AdminPage: React.FC = () => {
-  const { username } = useTravelStore();
+  const { username, memberRole } = useTravelStore();
+  const sidebarItems = useMemo(
+    () => ALL_SIDEBAR_ITEMS.filter((item) => canAccessAdminTab(memberRole, item.id)),
+    [memberRole]
+  );
   const [activeTab, setActiveTab] = useState<AdminTab>('stat');
 
+  const effectiveTab = sidebarItems.some((item) => item.id === activeTab)
+    ? activeTab
+    : (sidebarItems[0]?.id ?? 'stat');
+
   const renderPanel = () => {
-    switch (activeTab) {
+    switch (effectiveTab) {
       case 'stat':    return <AdminDashboardPanel />;
       case 'approve': return <AdminHQPanel key="approve" defaultTab="approval" />;
       case 'book':    return <AdminHQPanel key="book" defaultTab="booking" />;
@@ -35,8 +44,8 @@ export const AdminPage: React.FC = () => {
     <BackOfficeLayout
       portalName="관리자 포탈"
       portalType="adm"
-      sidebarItems={SIDEBAR_ITEMS}
-      activeTab={activeTab}
+      sidebarItems={sidebarItems}
+      activeTab={effectiveTab}
       onTabChange={(id) => setActiveTab(id as AdminTab)}
       username={username}
       platformStatus="정상"

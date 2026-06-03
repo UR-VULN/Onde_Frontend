@@ -9,15 +9,33 @@ export type ApiMemberRole =
 
 export { getMemberRole as readStoredMemberRole, getUsername as readStoredUsername } from '@/utils/authCookies';
 
-const SELLER_ROLE = 'SELLER';
+const SELLER_ROLES = new Set(['SELLER', 'ROLE_SELLER']);
+
+const ADMIN_ROLES = new Set([
+  'USER_ADMIN',
+  'ROLE_USER_ADMIN',
+  'SELLER_ADMIN',
+  'ROLE_SELLER_ADMIN',
+  'SUPER_ADMIN',
+  'ROLE_SUPER_ADMIN',
+  'GENERAL_ADMIN',
+  'ROLE_GENERAL_ADMIN',
+  'SALES_ADMIN',
+  'ROLE_SALES_ADMIN',
+]);
+
+function normalizeRole(role: string): string {
+  return role.trim().toUpperCase();
+}
 
 export function isSellerRole(role: string | null | undefined): boolean {
-  return role === SELLER_ROLE;
+  if (!role) return false;
+  return SELLER_ROLES.has(normalizeRole(role));
 }
 
 export function isAdminRole(role: string | null | undefined): boolean {
-  if (!role) return false;
-  return role === 'GENERAL_ADMIN' || role === 'SALES_ADMIN' || role === 'SUPER_ADMIN' || role.includes('ADMIN');
+  if (!role || isSellerRole(role)) return false;
+  return ADMIN_ROLES.has(normalizeRole(role));
 }
 
 export function isUserRole(role: string | null | undefined): boolean {

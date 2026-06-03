@@ -12,6 +12,7 @@ import type {
   PendingApprovalDto,
   AdminBookingDto
 } from '@/api/adminApi';
+import { canApproveProducts, canExportBookingCsv } from '@/utils/adminPermissions';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -43,11 +44,8 @@ interface AdminHQPanelProps {
 
 export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approval' }) => {
   const { addToast, memberRole } = useTravelStore();
-  const isGeneralAdmin =
-    memberRole === 'USER_ADMIN' ||
-    memberRole === 'ROLE_USER_ADMIN' ||
-    memberRole === 'GENERAL_ADMIN' ||
-    memberRole === 'ROLE_GENERAL_ADMIN';
+  const canModerateProducts = canApproveProducts(memberRole);
+  const canExportCsv = canExportBookingCsv(memberRole);
 
   const [activeTab, setActiveTab] = useState<'approval' | 'booking'>(defaultTab);
 
@@ -302,7 +300,7 @@ export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approv
                   </td>
                   <td className="text-[11px] text-slate-400 font-mono max-w-[150px] truncate">{req.details}</td>
                   <td className="text-right">
-                    {!isGeneralAdmin ? (
+                    {canModerateProducts ? (
                       <div className="flex justify-end gap-2">
                         <button
                           type="button"
@@ -366,7 +364,7 @@ export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approv
         </div>
 
         {/* Global CSV button — booking tab only, matches prototype header layout */}
-        {activeTab === 'booking' && (
+        {activeTab === 'booking' && canExportCsv && (
           <button
             type="button"
             className="btn-secondary"

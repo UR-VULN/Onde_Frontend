@@ -3,6 +3,11 @@ import { adminAxios } from '@/api/axiosInstance';
 import { unwrapApi, unwrapPage } from '@/utils/apiResponse';
 
 import { getMemberId, getMemberRole } from '@/utils/authCookies';
+import {
+  canReadDashboardCharts,
+  canReadDashboardOperational,
+  canReadDashboardSummary,
+} from '@/utils/adminPermissions';
 
 
 
@@ -440,25 +445,16 @@ function currentMonthParam(): string {
 
 }
 
-function currentAdminRole(): string {
-
-  return (getMemberRole() ?? '').replace(/^ROLE_/, '').toUpperCase();
-
-}
-
-
-
 export const get_admin_dashboard_api = async (
 
   month = currentMonthParam()
 
 ): Promise<{ success: boolean; data: AdminDashboardDto; message: string }> => {
 
-  const role = currentAdminRole();
-  const canReadSummary = role === 'SUPER_ADMIN' || role === 'SALES_ADMIN';
-  const canReadOperational = role === 'GENERAL_ADMIN';
-  const canReadCharts =
-    role === 'SUPER_ADMIN' || role === 'SALES_ADMIN' || role === 'GENERAL_ADMIN';
+  const role = getMemberRole();
+  const canReadSummary = canReadDashboardSummary(role);
+  const canReadOperational = canReadDashboardOperational(role);
+  const canReadCharts = canReadDashboardCharts(role);
 
   const [summaryRaw, chartsRaw, operationalRaw] = await Promise.all([
 

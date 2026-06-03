@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
 import { ComingSoonBlock } from '@/components/common/ComingSoonBlock';
 import { deploy_property_marker_api } from '@/api/adminApi';
+import { canDeployLbsMarkers } from '@/utils/adminPermissions';
 
 export const AdminLBSPanel: React.FC = () => {
-  const { addToast } = useTravelStore();
+  const { addToast, memberRole } = useTravelStore();
+  const canDeploy = canDeployLbsMarkers(memberRole);
 
   const [markerName, setMarkerName] = useState('서울 한남 더 테라스');
   const [latitude, setLatitude] = useState('37.5344');
@@ -85,15 +87,24 @@ export const AdminLBSPanel: React.FC = () => {
             </div>
           </div>
 
-          <button
-            type="button"
-            className="btn-primary"
-            style={{ width: '100%', padding: '0.8rem', marginBottom: '1.5rem' }}
-            onClick={handle_deploy_marker}
-          >
-            <i className="fa-solid fa-location-dot" style={{ marginRight: '0.4rem' }}></i>
-            관광지 마커 실시간 배포
-          </button>
+          {canDeploy ? (
+            <button
+              type="button"
+              className="btn-primary"
+              style={{ width: '100%', padding: '0.8rem', marginBottom: '1.5rem' }}
+              onClick={handle_deploy_marker}
+            >
+              <i className="fa-solid fa-location-dot" style={{ marginRight: '0.4rem' }}></i>
+              관광지 마커 실시간 배포
+            </button>
+          ) : (
+            <p
+              className="text-[11px] font-bold text-slate-400 text-center py-3 mb-4"
+              style={{ background: 'var(--bg-light)', borderRadius: 'var(--radius-md)' }}
+            >
+              LBS 마커 배포는 최고 관리자(SUPER_ADMIN)만 이용할 수 있습니다.
+            </p>
+          )}
 
           <div style={{ paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
             <p

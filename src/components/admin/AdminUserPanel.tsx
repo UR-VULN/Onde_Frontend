@@ -6,6 +6,7 @@ import {
   type AdminMemberDto,
 } from '@/api/adminApi';
 import { ROLE_BADGE_CLASS } from '@/constants/appConstants';
+import { canManageMembers } from '@/utils/adminPermissions';
 
 function isProtectedAdminRole(role: string): boolean {
   return (
@@ -18,7 +19,7 @@ function isProtectedAdminRole(role: string): boolean {
 
 export const AdminUserPanel: React.FC = () => {
   const { addToast, openConfirmPopup, memberRole } = useTravelStore();
-  const isSuperAdmin = memberRole === 'SUPER_ADMIN' || memberRole === 'ROLE_SUPER_ADMIN';
+  const canEditMembers = canManageMembers(memberRole);
   const [users, setUsers] = useState<AdminMemberDto[]>([]);
   const [searchKeyword, setSearchKeyword] = useState('');
 
@@ -149,7 +150,7 @@ export const AdminUserPanel: React.FC = () => {
                   </span>
                 </td>
                 <td className="text-center">
-                  {!isProtectedAdminRole(user.role) && isSuperAdmin ? (
+                  {!isProtectedAdminRole(user.role) && canEditMembers ? (
                     <button type="button" className="btn-secondary text-[11px] py-1.5 px-4" onClick={() => handle_role_change(user.id)}>
                       {user.role === 'ROLE_USER' ? 'SELLER 전환' : 'USER 전환'}
                     </button>
@@ -158,7 +159,7 @@ export const AdminUserPanel: React.FC = () => {
                   )}
                 </td>
                 <td className="text-right">
-                  {!isProtectedAdminRole(user.role) && isSuperAdmin ? (
+                  {!isProtectedAdminRole(user.role) && canEditMembers ? (
                     <button
                       type="button"
                       className={`text-[11px] py-1.5 px-4 rounded-xl font-black ${user.isBlacklisted ? 'bg-slate-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}

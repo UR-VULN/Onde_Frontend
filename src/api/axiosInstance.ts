@@ -3,7 +3,7 @@ import { refresh_token_api } from '@/api/authApi';
 import { ADMIN_API_BASE, USER_API_BASE } from '@/constants/apiConfig';
 import { clearAuthSession, hasPostLogoutRedirect } from '@/utils/authSession';
 import { getAccessToken, getMemberId, updateAccessToken } from '@/utils/authCookies';
-import { isErrorPagePath, redirectByHttpStatus } from '@/utils/errorNavigation';
+import { isBackofficePath, isErrorPagePath, redirectByHttpStatus } from '@/utils/errorNavigation';
 import { useTravelStore } from '@/store/useTravelStore';
 
 declare module 'axios' {
@@ -87,8 +87,12 @@ const finalizeResponseError = (error: {
     }
     if (status === 403) {
       useTravelStore.getState().addToast('해당 기능을 수행할 권한이 없습니다.', 'warning');
+      if (!isBackofficePath(window.location.pathname)) {
+        redirectByHttpStatus(status);
+      }
+    } else {
+      redirectByHttpStatus(status);
     }
-    redirectByHttpStatus(status);
   }
 
   const errorData = error.response?.data;

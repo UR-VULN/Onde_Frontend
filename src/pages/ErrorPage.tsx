@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import error401 from '@/assets/401.png';
 import error403 from '@/assets/403.png';
@@ -6,6 +6,8 @@ import error404 from '@/assets/404.png';
 import error500 from '@/assets/500.png';
 import error503 from '@/assets/503.png';
 import { useTravelStore } from '@/store/useTravelStore';
+import { restoreSessionFromCookies } from '@/utils/authCookies';
+import { resolveErrorHomePath } from '@/utils/errorNavigation';
 
 export type ErrorType = '401' | '403' | '404' | '500' | '503';
 
@@ -37,20 +39,13 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({ errorCode }) => {
 
   const lockedError = errorCode ?? null;
 
+  useEffect(() => {
+    restoreSessionFromCookies();
+  }, []);
+
   const handleGoHome = () => {
     const role = useTravelStore.getState().memberRole;
-    if (!role) {
-      navigate('/');
-      return;
-    }
-    const r = role.toUpperCase();
-    if (r === 'SELLER') {
-      navigate('/seller');
-    } else if (r === 'GENERAL_ADMIN' || r === 'SALES_ADMIN' || r === 'SUPER_ADMIN' || r.includes('ADMIN')) {
-      navigate('/admin');
-    } else {
-      navigate('/');
-    }
+    navigate(resolveErrorHomePath(role), { replace: true });
   };
 
   const handleLogin = () => {
