@@ -16,9 +16,9 @@ interface VerifiedBusinessSnapshot {
 export const SellerAccountPanel: React.FC = () => {
   const { addToast } = useTravelStore();
 
-  const [businessName, setBusinessName] = useState('온데 글로벌 리조트');
-  const [contactPhone, setContactPhone] = useState('02-1234-5678');
-  const [address, setAddress] = useState('서울 강남구');
+  const [businessName, setBusinessName] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [address, setAddress] = useState('');
 
   // ─── 사업자 진위 확인 ─────────────────────────
   const [businessNumber, setBusinessNumber] = useState('');
@@ -43,9 +43,9 @@ export const SellerAccountPanel: React.FC = () => {
     get_seller_settlement_account_api()
       .then((res) => {
         if (!res.success || !res.data) return;
-        setBusinessName(res.data.businessName ?? '온데 글로벌 리조트');
-        setContactPhone(res.data.contactPhone ?? '02-1234-5678');
-        setAddress(res.data.businessAddress ?? '서울 강남구');
+        setBusinessName(res.data.businessName ?? '');
+        setContactPhone(res.data.contactPhone ?? '');
+        setAddress(res.data.businessAddress ?? '');
         setBankName(res.data.bankName);
         setAccountHolder(res.data.accountHolder);
         setHasSettlementAccount(true);
@@ -58,12 +58,8 @@ export const SellerAccountPanel: React.FC = () => {
         );
         setRepresentativeName(res.data.representativeName);
         setOpenDate(res.data.openedAt);
-        setIsBusinessVerified(true);
-        setVerifiedBusiness({
-          businessNumber: res.data.businessNumber.replace(/\D/g, ''),
-          representativeName: res.data.representativeName.trim(),
-          openDate: res.data.openedAt.replace(/\D/g, ''),
-        });
+        setIsBusinessVerified(false);
+        setVerifiedBusiness(null);
       })
       .catch(() => undefined);
   }, []);
@@ -132,7 +128,7 @@ export const SellerAccountPanel: React.FC = () => {
       } else {
         setIsBusinessVerified(false);
         setVerifiedBusiness(null);
-        addToast(res.message || '사업자 정보가 일치하지 않습니다. 입력 내용을 다시 확인해 주세요.', 'warning');
+        addToast(`사업자 진위 확인 실패: ${res.message || '입력 정보가 국세청 등록정보와 일치하지 않습니다.'}`, 'warning');
       }
     } catch (err: any) {
       setIsBusinessVerified(false);
@@ -145,7 +141,7 @@ export const SellerAccountPanel: React.FC = () => {
 
   const handle_save = async () => {
     if (!isVerifiedBusinessCurrent()) {
-      addToast('사업자 진위 확인을 먼저 완료해 주세요.', 'warning');
+      addToast('현재 입력한 사업자번호, 대표자명, 개업일자로 진위 확인을 먼저 완료해 주세요.', 'warning');
       return;
     }
     if (!hasSettlementAccount && !accountNumber.trim()) {
@@ -205,6 +201,12 @@ export const SellerAccountPanel: React.FC = () => {
     }
   };
 
+  const currentBusinessVerified = isVerifiedBusinessCurrent();
+  const verificationBadgeStyle = currentBusinessVerified
+    ? { background: '#f0fdf4', color: '#15803d', border: '1px solid #dcfce7' }
+    : { background: '#fffbeb', color: '#92400e', border: '1px solid #fde68a' };
+  const verificationBadgeText = currentBusinessVerified ? '인증 상태: 진위 확인 완료' : '인증 상태: 진위 확인 필요';
+
   return (
     <div className="seller-panel">
       {/* Header Area */}
@@ -215,8 +217,8 @@ export const SellerAccountPanel: React.FC = () => {
             플랫폼 노출 정보와 대금 정산을 위한 보안 설정을 관리합니다.
           </p>
         </div>
-        <span className="badge" style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #dcfce7' }}>
-          인증 상태: 정상 파트너
+        <span className="badge" style={verificationBadgeStyle}>
+          {verificationBadgeText}
         </span>
       </div>
 
@@ -323,7 +325,7 @@ export const SellerAccountPanel: React.FC = () => {
             </div>
           </div>
 
-          {isBusinessVerified && (
+          {currentBusinessVerified && (
             <div style={{ background: 'rgba(0, 138, 5, 0.06)', padding: '0.8rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(0, 138, 5, 0.15)', marginBottom: '1rem' }}>
               <p style={{ fontSize: '0.8rem', fontWeight: 700, color: '#008a05' }}>
                 <i className="fa-solid fa-circle-check" style={{ marginRight: '0.4rem' }}></i>
@@ -337,11 +339,11 @@ export const SellerAccountPanel: React.FC = () => {
             style={{
               width: '100%',
               padding: '0.8rem',
-              opacity: (!isBusinessVerified || isSaving) ? 0.5 : 1,
-              cursor: (!isBusinessVerified || isSaving) ? 'not-allowed' : 'pointer',
+              opacity: (!currentBusinessVerified || isSaving) ? 0.7 : 1,
+              cursor: isSaving ? 'not-allowed' : 'pointer',
             }}
             onClick={handle_save}
-            disabled={!isBusinessVerified || isSaving}
+            disabled={isSaving}
           >
             {isSaving ? <><i className="fa-solid fa-spinner fa-spin" style={{ marginRight: '0.4rem' }}></i> 저장 중...</> : <><i className="fa-solid fa-floppy-disk" style={{ marginRight: '0.4rem' }}></i> 파트너 프로필 최종 저장</>}
           </button>
@@ -415,11 +417,11 @@ export const SellerAccountPanel: React.FC = () => {
               marginTop: '0.5rem',
               background: '#008a05',
               border: 'none',
-              opacity: (!isBusinessVerified || isSaving) ? 0.5 : 1,
-              cursor: (!isBusinessVerified || isSaving) ? 'not-allowed' : 'pointer',
+              opacity: (!currentBusinessVerified || isSaving) ? 0.7 : 1,
+              cursor: isSaving ? 'not-allowed' : 'pointer',
             }}
             onClick={handle_save}
-            disabled={!isBusinessVerified || isSaving}
+            disabled={isSaving}
           >
             {isSaving ? '저장 중...' : '정산 계좌 정보 업데이트'}
           </button>

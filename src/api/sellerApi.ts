@@ -247,17 +247,18 @@ export interface BusinessVerifyPayload {
 
 export const verify_business_api = async (
   payload: BusinessVerifyPayload
-): Promise<{ success: boolean; verified: boolean; message: string }> => {
+): Promise<{ success: boolean; verified: boolean; message: string; businessStatusCode?: string }> => {
   const raw = await sellerAxios.post('/api/v1/seller/account/verify-business', {
     businessNumber: payload.businessNumber.replace(/\D/g, ''),
     representativeName: payload.representativeName.trim(),
     openDate: payload.openDate.replace(/\D/g, ''),
   });
-  const res = unwrapApi<{ verified?: boolean }>(raw);
+  const res = unwrapApi<{ verified?: boolean; businessStatusCode?: string }>(raw);
   return {
     success: res.success,
     verified: Boolean(res.data?.verified),
     message: res.message,
+    businessStatusCode: res.data?.businessStatusCode,
   };
 };
 
