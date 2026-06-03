@@ -237,7 +237,48 @@ export function resolveValidFlightDates(
   return { depart: today, return: addDaysStr(today, 3) };
 }
 
-/** Korean month name header, e.g. "2026년 10월" */
+/** Korean month name header, e.g. "2026년 10월" (month is 0-indexed) */
 export function monthLabel(year: number, month: number): string {
   return `${year}년 ${month + 1}월`;
+}
+
+/** YYYY-MM value for seller calendar month selectors (month is 1-indexed) */
+export interface YearMonthOption {
+  value: string;
+  year: number;
+  month: number;
+  label: string;
+}
+
+export function formatYearMonthValue(year: number, month: number): string {
+  return `${year}-${String(month).padStart(2, '0')}`;
+}
+
+export function getDefaultYearMonthValue(anchor = new Date()): string {
+  return formatYearMonthValue(anchor.getFullYear(), anchor.getMonth() + 1);
+}
+
+export function parseYearMonthValue(value: string): { year: number; month: number } {
+  const [y, m] = value.split('-').map(Number);
+  return { year: y, month: m };
+}
+
+/** 오늘 기준 앞뒤 rangeYears년(포함) 월 목록 — 총 (2×rangeYears+1)년 */
+export function buildYearMonthOptions(rangeYears = 1, anchor = new Date()): YearMonthOption[] {
+  const options: YearMonthOption[] = [];
+  const start = new Date(anchor.getFullYear() - rangeYears, anchor.getMonth(), 1);
+  const end = new Date(anchor.getFullYear() + rangeYears, anchor.getMonth(), 1);
+
+  for (let cur = new Date(start); cur <= end; cur.setMonth(cur.getMonth() + 1)) {
+    const year = cur.getFullYear();
+    const month = cur.getMonth() + 1;
+    options.push({
+      value: formatYearMonthValue(year, month),
+      year,
+      month,
+      label: `${year}년 ${month}월`,
+    });
+  }
+
+  return options;
 }

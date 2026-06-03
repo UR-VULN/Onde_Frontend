@@ -6,13 +6,15 @@ import {
   patch_seller_inventory_day_api,
   type SellerPropertyDto,
 } from '@/api/sellerApi';
+import { SellerMonthYearSelect } from '@/components/seller/SellerMonthYearSelect';
+import { getDefaultYearMonthValue, parseYearMonthValue } from '@/utils/calendarUtils';
 
 export const SellerStayPanel: React.FC = () => {
   const { addToast } = useTravelStore();
   const [stays, setStays] = useState<SellerPropertyDto[]>([]);
   const [selectedPropertyKey, setSelectedPropertyKey] = useState('');
-  const [year] = useState(2026);
-  const [month, setMonth] = useState(5);
+  const [yearMonth, setYearMonth] = useState(getDefaultYearMonthValue);
+  const { year, month } = parseYearMonthValue(yearMonth);
   const [dailyData, setDailyData] = useState<Record<number, { stock: number; price: number; isClosed?: boolean }>>({});
   const [overrideTarget, setOverrideTarget] = useState<{ day: number; stock: number; price: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -148,33 +150,35 @@ export const SellerStayPanel: React.FC = () => {
           <h4 style={{ fontWeight: 700, color: 'var(--primary)', marginBottom: '1.2rem' }}>
             <i className="fa-solid fa-hotel"></i> 숙소 보유 현황
           </h4>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>숙소명</th>
-                <th className="text-center">상태</th>
-                <th className="text-right">기본 요금</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stays.map((item) => (
-                <tr key={item.propertyId}>
-                  <td className="font-bold text-slate-700">{item.name}</td>
-                  <td className="text-center">
-                    <span className={`status-badge ${item.status === 'ACTIVE' ? 'status-active' : 'status-pending'}`}>
-                      {item.status === 'ACTIVE' ? '판매중' : '대기중'}
-                    </span>
-                  </td>
-                  <td className="font-black text-slate-900 text-right">₩{item.basePrice.toLocaleString()}</td>
-                </tr>
-              ))}
-              {stays.length === 0 && (
+          <div className="seller-inventory-scroll">
+            <table className="data-table">
+              <thead>
                 <tr>
-                  <td colSpan={3} className="text-center py-4 text-slate-400">등록된 숙소 상품이 없습니다.</td>
+                  <th>숙소명</th>
+                  <th className="text-center">상태</th>
+                  <th className="text-right">기본 요금</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {stays.map((item) => (
+                  <tr key={item.propertyId}>
+                    <td className="font-bold text-slate-700">{item.name}</td>
+                    <td className="text-center">
+                      <span className={`status-badge ${item.status === 'ACTIVE' ? 'status-active' : 'status-pending'}`}>
+                        {item.status === 'ACTIVE' ? '판매중' : '대기중'}
+                      </span>
+                    </td>
+                    <td className="font-black text-slate-900 text-right">₩{item.basePrice.toLocaleString()}</td>
+                  </tr>
+                ))}
+                {stays.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="text-center py-4 text-slate-400">등록된 숙소 상품이 없습니다.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -186,15 +190,11 @@ export const SellerStayPanel: React.FC = () => {
           
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <select
-                value={month}
-                onChange={(e) => setMonth(parseInt(e.target.value))}
-                className="form-input"
+              <SellerMonthYearSelect
+                value={yearMonth}
+                onChange={setYearMonth}
                 style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}
-              >
-                <option value="5">2026년 5월</option>
-                <option value="6">2026년 6월</option>
-              </select>
+              />
             </div>
             
             <select
@@ -285,11 +285,11 @@ const OverrideModal: React.FC<OverrideModalProps> = ({ date, initialStock, initi
           />
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
-          <button type="button" onClick={onClose} className="btn-secondary" style={{ flex: 1 }}>
-            취소
-          </button>
           <button type="button" onClick={() => onSave(stock, price)} className="btn-primary" style={{ flex: 1 }}>
             적용하기
+          </button>
+          <button type="button" onClick={onClose} className="btn-secondary" style={{ flex: 1 }}>
+            취소
           </button>
         </div>
       </div>

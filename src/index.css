@@ -855,6 +855,8 @@
         .trend-up { color: #008a05; } .trend-down { color: var(--secondary); }
 
         .data-table-container { background: white; border-radius: var(--radius-md); border: 1px solid var(--border-color); overflow-x: auto; overflow-y: hidden; box-shadow: var(--shadow-sm); width: 100%; box-sizing: border-box; }
+        .seller-inventory-scroll { max-height: 360px; overflow-y: auto; overflow-x: auto; border-top: 1px solid var(--border-color); }
+        .seller-inventory-scroll .data-table { margin-bottom: 0; }
         .data-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
         .data-table th { background: var(--bg-light); padding: 1rem; font-weight: 700; color: var(--text-dark); border-bottom: 1px solid var(--border-color); }
         .data-table td { padding: 1rem; border-bottom: 1px solid var(--border-color); vertical-align: middle; color: var(--text-main); }

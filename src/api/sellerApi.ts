@@ -262,6 +262,48 @@ export interface SellerCarInventoryDto {
   name: string;
   stock: number;
   basePrice: number;
+  status?: 'ACTIVE' | 'PENDING' | 'REJECTED';
+}
+
+/** 동일 모델명(차종)끼리 묶은 판매자 렌터카 그룹 */
+export interface SellerCarModelGroup {
+  modelName: string;
+  groupKey: string;
+  vehicles: SellerCarInventoryDto[];
+  vehicleCount: number;
+  totalStock: number;
+  basePrice: number;
+  minPrice: number;
+  maxPrice: number;
+}
+
+export function groupSellerCarsByModel(cars: SellerCarInventoryDto[]): SellerCarModelGroup[] {
+  const byModel = new Map<string, SellerCarInventoryDto[]>();
+
+  for (const car of cars) {
+    const key = car.name.trim();
+    const list = byModel.get(key) ?? [];
+    list.push(car);
+    byModel.set(key, list);
+  }
+
+  return Array.from(byModel.entries())
+    .map(([modelName, vehicles]) => {
+      const prices = vehicles.map((v) => v.basePrice);
+      const minPrice = Math.min(...prices);
+      const maxPrice = Math.max(...prices);
+      return {
+        modelName,
+        groupKey: `model:${modelName}`,
+        vehicles,
+        vehicleCount: vehicles.length,
+        totalStock: vehicles.reduce((sum, v) => sum + v.stock, 0),
+        basePrice: vehicles[0].basePrice,
+        minPrice,
+        maxPrice,
+      };
+    })
+    .sort((a, b) => a.modelName.localeCompare(b.modelName, 'ko'));
 }
 
 export const get_seller_accommodations_api = async (): Promise<{
@@ -292,6 +334,7 @@ export const get_seller_cars_inventory_api = async (): Promise<{
     name: c.name,
     stock: 1,
     basePrice: c.basePrice,
+    status: (c.status as SellerCarInventoryDto['status']) ?? 'ACTIVE',
   }));
   return { success: res.success, message: res.message, data: cars };
 };

@@ -191,6 +191,8 @@ export interface SellerCalendarCellDto {
   scheduleId: number;
   flightNumber: string;
   departureTime: string;
+  departureAirport?: string;
+  arrivalAirport?: string;
   classType: string;
   totalSeats: number;
   remainingSeats: number;

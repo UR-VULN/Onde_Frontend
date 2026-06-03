@@ -1,18 +1,31 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
 import {
   get_seller_cars_inventory_api,
-  get_seller_inventory_calendar_api,
+  groupSellerCarsByModel,
   patch_seller_inventory_day_api,
   type SellerCarInventoryDto,
+  type SellerCarModelGroup,
 } from '@/api/sellerApi';
+import { SellerMonthYearSelect } from '@/components/seller/SellerMonthYearSelect';
+import { getDefaultYearMonthValue, parseYearMonthValue } from '@/utils/calendarUtils';
+import {
+  distributeStockAcrossVehicles,
+  fetchMergedCarGroupCalendar,
+} from '@/utils/sellerCarGroups';
 
 export const SellerCarPanel: React.FC = () => {
   const { addToast } = useTravelStore();
   const [cars, setCars] = useState<SellerCarInventoryDto[]>([]);
-  const [selectedPropertyKey, setSelectedPropertyKey] = useState('');
-  const [year] = useState(2026);
-  const [month, setMonth] = useState(5);
+  const [selectedGroupKey, setSelectedGroupKey] = useState('');
+
+  const carGroups = useMemo(() => groupSellerCarsByModel(cars), [cars]);
+  const selectedGroup = useMemo(
+    () => carGroups.find((g) => g.groupKey === selectedGroupKey) ?? null,
+    [carGroups, selectedGroupKey]
+  );
+  const [yearMonth, setYearMonth] = useState(getDefaultYearMonthValue);
+  const { year, month } = parseYearMonthValue(yearMonth);
   const [dailyData, setDailyData] = useState<Record<number, { stock: number; price: number; isClosed?: boolean }>>({});
   const [overrideTarget, setOverrideTarget] = useState<{ day: number; stock: number; price: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -23,8 +36,9 @@ export const SellerCarPanel: React.FC = () => {
       const res = await get_seller_cars_inventory_api();
       if (res.success && res.data) {
         setCars(res.data);
-        if (res.data[0]) {
-          setSelectedPropertyKey(`car-${res.data[0].propertyId}`);
+        const groups = groupSellerCarsByModel(res.data);
+        if (groups[0]) {
+          setSelectedGroupKey(groups[0].groupKey);
         }
       }
     } finally {
@@ -32,20 +46,10 @@ export const SellerCarPanel: React.FC = () => {
     }
   }, []);
 
-  const loadCalendar = useCallback(async (propertyKey: string, y: number, m: number) => {
+  const loadCalendar = useCallback(async (group: SellerCarModelGroup, y: number, m: number) => {
     const monthStr = `${y}-${String(m).padStart(2, '0')}`;
-    const res = await get_seller_inventory_calendar_api({ propertyKey, month: monthStr });
-    if (res.success && res.data) {
-      const mapped: Record<number, { stock: number; price: number; isClosed?: boolean }> = {};
-      Object.entries(res.data).forEach(([day, cell]) => {
-        mapped[Number(day)] = {
-          stock: cell.stock,
-          price: cell.price,
-          isClosed: cell.isClosed,
-        };
-      });
-      setDailyData(mapped);
-    }
+    const mapped = await fetchMergedCarGroupCalendar(group, monthStr);
+    setDailyData(mapped);
   }, []);
 
   useEffect(() => {
@@ -53,28 +57,36 @@ export const SellerCarPanel: React.FC = () => {
   }, [loadInventory]);
 
   useEffect(() => {
-    if (selectedPropertyKey) {
-      loadCalendar(selectedPropertyKey, year, month);
+    if (selectedGroup) {
+      loadCalendar(selectedGroup, year, month);
     }
-  }, [selectedPropertyKey, year, month, loadCalendar]);
+  }, [selectedGroup, year, month, loadCalendar]);
 
   const handle_override_save = async (day: number, stock: number, price: number) => {
+    if (!selectedGroup) return;
+
     try {
       const monthStr = `${year}-${String(month).padStart(2, '0')}`;
-      const res = await patch_seller_inventory_day_api({
-        propertyKey: selectedPropertyKey,
-        day,
-        stock,
-        price,
-        month: monthStr,
-      });
-      if (res.success) {
+      const perVehicleStocks = distributeStockAcrossVehicles(stock, selectedGroup.vehicleCount);
+      const results = await Promise.all(
+        selectedGroup.vehicles.map((vehicle, index) =>
+          patch_seller_inventory_day_api({
+            propertyKey: `car-${vehicle.propertyId}`,
+            day,
+            stock: perVehicleStocks[index] ?? 0,
+            price,
+            month: monthStr,
+          })
+        )
+      );
+
+      if (results.every((r) => r.success)) {
         setDailyData((prev) => ({ ...prev, [day]: { stock, price, isClosed: stock === 0 } }));
-        addToast(`${day}일 설정이 반영되었습니다.`, 'success');
+        addToast(`${selectedGroup.modelName} · ${day}일 설정이 반영되었습니다.`, 'success');
         setOverrideTarget(null);
         return;
       }
-      addToast(res.message || `${day}일 설정 반영에 실패했습니다.`, 'warning');
+      addToast(results.find((r) => !r.success)?.message || `${day}일 설정 반영에 실패했습니다.`, 'warning');
     } catch (err: unknown) {
       const msg =
         (err as { message?: string })?.message ||
@@ -107,7 +119,13 @@ export const SellerCarPanel: React.FC = () => {
         <div
           key={day}
           className="calendar-cell"
-          onClick={() => setOverrideTarget({ day, stock: data?.stock ?? 5, price: data?.price ?? 75000 })}
+          onClick={() =>
+            setOverrideTarget({
+              day,
+              stock: data?.stock ?? selectedGroup?.vehicleCount ?? 1,
+              price: data?.price ?? selectedGroup?.basePrice ?? 75000,
+            })
+          }
         >
           <span className="calendar-cell-date">{day}</span>
           {data ? (
@@ -148,29 +166,44 @@ export const SellerCarPanel: React.FC = () => {
           <h4 style={{ fontWeight: 700, color: '#008a05', marginBottom: '1.2rem' }}>
             <i className="fa-solid fa-car-side"></i> 렌터카 보유 현황
           </h4>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>차량 모델명</th>
-                <th className="text-center">보유 수량</th>
-                <th className="text-right">기본 일일 대여 요금</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cars.map((item) => (
-                <tr key={item.propertyId}>
-                  <td className="font-bold text-slate-700">{item.name}</td>
-                  <td className="text-center font-bold text-slate-500">{item.stock}대</td>
-                  <td className="font-black text-slate-900 text-right">₩{item.basePrice.toLocaleString()}</td>
-                </tr>
-              ))}
-              {cars.length === 0 && (
+          <div className="seller-inventory-scroll">
+            <table className="data-table">
+              <thead>
                 <tr>
-                  <td colSpan={3} className="text-center py-4 text-slate-400">등록된 렌터카 상품이 없습니다.</td>
+                  <th>차량 모델명</th>
+                  <th className="text-center">보유 수량</th>
+                  <th className="text-right">기본 일일 대여 요금</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {carGroups.map((group) => (
+                  <tr key={group.groupKey}>
+                    <td className="font-bold text-slate-700">
+                      {group.modelName}
+                      {group.vehicleCount > 1 && (
+                        <span
+                          className="block text-[0.72rem] font-semibold text-slate-400 mt-0.5"
+                        >
+                          {group.vehicleCount}대 등록
+                        </span>
+                      )}
+                    </td>
+                    <td className="text-center font-bold text-slate-500">{group.vehicleCount}대</td>
+                    <td className="font-black text-slate-900 text-right">
+                      {group.minPrice === group.maxPrice
+                        ? `₩${group.basePrice.toLocaleString()}`
+                        : `₩${group.minPrice.toLocaleString()} ~ ₩${group.maxPrice.toLocaleString()}`}
+                    </td>
+                  </tr>
+                ))}
+                {carGroups.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="text-center py-4 text-slate-400">등록된 렌터카 상품이 없습니다.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -182,30 +215,27 @@ export const SellerCarPanel: React.FC = () => {
           
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <select
-                value={month}
-                onChange={(e) => setMonth(parseInt(e.target.value))}
-                className="form-input"
+              <SellerMonthYearSelect
+                value={yearMonth}
+                onChange={setYearMonth}
                 style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}
-              >
-                <option value="5">2026년 5월</option>
-                <option value="6">2026년 6월</option>
-              </select>
+              />
             </div>
             
             <select
-              value={selectedPropertyKey}
-              onChange={(e) => setSelectedPropertyKey(e.target.value)}
+              value={selectedGroupKey}
+              onChange={(e) => setSelectedGroupKey(e.target.value)}
               className="form-input"
-              style={{ width: '260px', padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}
-              disabled={cars.length === 0}
+              style={{ width: '280px', padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}
+              disabled={carGroups.length === 0}
             >
-              {cars.length === 0 ? (
+              {carGroups.length === 0 ? (
                 <option value="">등록된 렌터카 없음</option>
               ) : (
-                cars.map((c) => (
-                  <option key={`car-${c.propertyId}`} value={`car-${c.propertyId}`}>
-                    {c.name}
+                carGroups.map((group) => (
+                  <option key={group.groupKey} value={group.groupKey}>
+                    {group.modelName}
+                    {group.vehicleCount > 1 ? ` (${group.vehicleCount}대)` : ''}
                   </option>
                 ))
               )}
@@ -261,11 +291,11 @@ const OverrideModal: React.FC<OverrideModalProps> = ({ date, initialStock, initi
         </div>
         <p style={{ marginBottom: '1rem', fontWeight: 700 }}>적용 일자: {date}</p>
         <div className="form-group">
-          <label className="form-label">잔여 보유 수량: {stock}대</label>
+          <label className="form-label">차종 전체 잔여 대수 (합산): {stock}대</label>
           <input
             type="range"
             min={0}
-            max={20}
+            max={30}
             value={stock}
             onChange={(e) => setStock(Number(e.target.value))}
             style={{ width: '100%' }}
@@ -281,11 +311,11 @@ const OverrideModal: React.FC<OverrideModalProps> = ({ date, initialStock, initi
           />
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
-          <button type="button" onClick={onClose} className="btn-secondary" style={{ flex: 1 }}>
-            취소
-          </button>
           <button type="button" onClick={() => onSave(stock, price)} className="btn-primary" style={{ flex: 1 }}>
             적용하기
+          </button>
+          <button type="button" onClick={onClose} className="btn-secondary" style={{ flex: 1 }}>
+            취소
           </button>
         </div>
       </div>

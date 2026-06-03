@@ -9,14 +9,16 @@ import type {
   SellerCalendarCellDto,
   FlightBatchRegisterPayload
 } from '@/api/flightApi';
+import { SellerMonthYearSelect } from '@/components/seller/SellerMonthYearSelect';
+import { formatYearMonthValue, getDefaultYearMonthValue, parseYearMonthValue } from '@/utils/calendarUtils';
 
 export const SellerSchedulePanel: React.FC = () => {
   const { addToast } = useTravelStore();
 
   const [origin, setOrigin] = useState('ICN');
   const [dest, setDest] = useState('NRT');
-  const [year] = useState(2026);
-  const [month, setMonth] = useState(5);
+  const [yearMonth, setYearMonth] = useState(getDefaultYearMonthValue);
+  const { year, month } = parseYearMonthValue(yearMonth);
   const [schedules, setSchedules] = useState<SellerCalendarCellDto[]>([]);
   
   // Modals visibility
@@ -104,22 +106,27 @@ export const SellerSchedulePanel: React.FC = () => {
     }
   };
 
-  // Generate calendar days for 2026-05
-  // May 1st, 2026 is Friday (5)
+  const filteredSchedules = schedules.filter((s) => {
+    const dep = s.departureAirport?.toUpperCase();
+    const arr = s.arrivalAirport?.toUpperCase();
+    if (dep && arr) {
+      return dep === origin.toUpperCase() && arr === dest.toUpperCase();
+    }
+    return true;
+  });
+
   const renderCalendarCells = () => {
-    const daysInMonth = 31;
-    const startDayOffset = 5; // Friday
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const startDayOffset = new Date(year, month - 1, 1).getDay();
     const cells: React.ReactNode[] = [];
 
-    // Empty offset cells
     for (let i = 0; i < startDayOffset; i++) {
       cells.push(<div key={`empty-${i}`} className="calendar-cell" style={{ background: 'var(--bg-light)', cursor: 'default' }}></div>);
     }
 
-    // Days cells
     for (let day = 1; day <= daysInMonth; day++) {
-      const dateStr = `2026-05-${day.toString().padStart(2, '0')}`;
-      const daySchedules = schedules.filter(s => s.departureTime.startsWith(dateStr));
+      const dateStr = `${formatYearMonthValue(year, month)}-${String(day).padStart(2, '0')}`;
+      const daySchedules = filteredSchedules.filter((s) => s.departureTime.startsWith(dateStr));
 
       cells.push(
         <div key={day} className="calendar-cell">
@@ -215,15 +222,11 @@ export const SellerSchedulePanel: React.FC = () => {
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label" style={{ fontSize: '0.75rem' }}>조회 월</label>
-              <select
-                value={month}
-                onChange={(e) => setMonth(parseInt(e.target.value))}
-                className="form-input"
+              <SellerMonthYearSelect
+                value={yearMonth}
+                onChange={setYearMonth}
                 style={{ padding: '0.5rem 0.75rem' }}
-              >
-                <option value="5">2026년 5월</option>
-                <option value="6">2026년 6월</option>
-              </select>
+              />
             </div>
           </div>
         </div>
