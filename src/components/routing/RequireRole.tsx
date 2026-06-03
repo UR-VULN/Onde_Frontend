@@ -30,5 +30,17 @@ export const RequireRole: React.FC<RequireRoleProps> = ({ guard, children }) => 
     return <Navigate to="/403" replace />;
   }
 
+  // GENERAL_ADMIN (일반 관리자) 계정이 정산 페이지(/admin/settlement) 진입 시도 시 차단 및 리다이렉트
+  if (
+    location.pathname.startsWith('/admin/settlement') &&
+    (memberRole === 'USER_ADMIN' ||
+      memberRole === 'ROLE_USER_ADMIN' ||
+      memberRole === 'GENERAL_ADMIN' ||
+      memberRole === 'ROLE_GENERAL_ADMIN')
+  ) {
+    useTravelStore.getState().addToast('해당 기능(정산 승인)에 접근할 권한이 없습니다.', 'warning');
+    return <Navigate to="/admin" replace />;
+  }
+
   return <>{children}</>;
 };

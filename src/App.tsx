@@ -92,7 +92,15 @@ const App: React.FC = () => {
           }
         />
 
-        {/* 관리자 포탈 — URL + 역할 가드 */}
+        {/* 관리자 포탈 — URL + 역할 가드 */}
+        <Route
+          path="/admin/settlement"
+          element={
+            <RequireRole guard="admin">
+              <AdminPage />
+            </RequireRole>
+          }
+        />
         <Route
           path="/admin"
           element={

@@ -10,10 +10,11 @@ import { TRAVEL_DESTINATIONS } from '@/constants/travelDestinations';
 interface StayCardProps {
   stay: StayDto;
   index: number;
+  roomCount: number;
   onSelect: (stay: StayDto) => void;
 }
 
-const StayCard: React.FC<StayCardProps> = ({ stay, index, onSelect }) => {
+const StayCard: React.FC<StayCardProps> = ({ stay, index, roomCount, onSelect }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -109,10 +110,10 @@ const StayCard: React.FC<StayCardProps> = ({ stay, index, onSelect }) => {
         {/* Pricing Layout */}
         <div className="flex items-baseline gap-0.5">
           <span className="font-black text-[1.4rem] lg:text-[1.05rem] text-slate-900">
-            {formatKrwPriceOrDash(stay.pricePerNight)}
+            {formatKrwPriceOrDash(stay.pricePerNight != null ? stay.pricePerNight * roomCount : undefined)}
           </span>
           {stay.pricePerNight != null && stay.pricePerNight > 0 && (
-            <span className="text-slate-400 text-[1.1rem] lg:text-[0.75rem] font-medium">/1박</span>
+            <span className="text-slate-400 text-[1.1rem] lg:text-[0.75rem] font-medium">/1박 ({roomCount}개 객실)</span>
           )}
         </div>
       </div>
@@ -170,7 +171,13 @@ export const StayRecommendationList: React.FC<StayRecommendationListProps> = ({
       ) : (
         <div className="recommendation-section-content grid grid-cols-1 lg:grid-cols-4 gap-6">
           {stays.map((stay, index) => (
-            <StayCard key={stay.accommodationId} stay={stay} index={index} onSelect={setSelectedStay} />
+            <StayCard
+              key={stay.accommodationId}
+              stay={stay}
+              index={index}
+              roomCount={searchParams?.rooms ?? 1}
+              onSelect={setSelectedStay}
+            />
           ))}
         </div>
       )}
@@ -182,6 +189,8 @@ export const StayRecommendationList: React.FC<StayRecommendationListProps> = ({
           roomId={selectedStay.roomId ?? selectedStay.accommodationId}
           defaultCheckIn={rangeCheckIn}
           defaultCheckOut={rangeCheckOut}
+          defaultGuests={searchParams?.guests}
+          defaultRooms={searchParams?.rooms}
           onClose={() => setSelectedStay(null)}
         />
       )}

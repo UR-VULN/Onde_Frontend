@@ -42,7 +42,12 @@ interface AdminHQPanelProps {
 // ── Component ──────────────────────────────────────────────────────────────
 
 export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approval' }) => {
-  const { addToast } = useTravelStore();
+  const { addToast, memberRole } = useTravelStore();
+  const isGeneralAdmin =
+    memberRole === 'USER_ADMIN' ||
+    memberRole === 'ROLE_USER_ADMIN' ||
+    memberRole === 'GENERAL_ADMIN' ||
+    memberRole === 'ROLE_GENERAL_ADMIN';
 
   const [activeTab, setActiveTab] = useState<'approval' | 'booking'>(defaultTab);
 
@@ -297,29 +302,33 @@ export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approv
                   </td>
                   <td className="text-[11px] text-slate-400 font-mono max-w-[150px] truncate">{req.details}</td>
                   <td className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        type="button"
-                        className="px-3.5 py-1.5 rounded-lg text-[11px] font-black shadow-sm transition-all active:scale-95 text-white"
-                        style={{ background: '#008a05' }}
-                        onClick={() => handle_approve(req.requestId, req.category)}
-                      >
-                        승인
-                      </button>
-                      <button
-                        type="button"
-                        className="px-3.5 py-1.5 rounded-lg text-[11px] font-black transition-all active:scale-95 text-white"
-                        style={{ background: 'var(--secondary)' }}
-                        onClick={() => {
-                          setSelectedRequest(req);
-                          setRejectPreset('');
-                          setRejectReason('');
-                          setIsRejectOpen(true);
-                        }}
-                      >
-                        반려
-                      </button>
-                    </div>
+                    {!isGeneralAdmin ? (
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          className="px-3.5 py-1.5 rounded-lg text-[11px] font-black shadow-sm transition-all active:scale-95 text-white"
+                          style={{ background: '#008a05' }}
+                          onClick={() => handle_approve(req.requestId, req.category)}
+                        >
+                          승인
+                        </button>
+                        <button
+                          type="button"
+                          className="px-3.5 py-1.5 rounded-lg text-[11px] font-black transition-all active:scale-95 text-white"
+                          style={{ background: 'var(--secondary)' }}
+                          onClick={() => {
+                            setSelectedRequest(req);
+                            setRejectPreset('');
+                            setRejectReason('');
+                            setIsRejectOpen(true);
+                          }}
+                        >
+                          반려
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-[11px] font-black text-slate-400">조회 전용</span>
+                    )}
                   </td>
                 </tr>
               ))

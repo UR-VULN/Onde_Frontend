@@ -130,8 +130,10 @@ export const BackOfficeLayout: React.FC<BackOfficeLayoutProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    logout();
                     navigate('/', { replace: true });
+                    setTimeout(() => {
+                      logout();
+                    }, 50);
                   }}
                   className="extranet-item"
                 >

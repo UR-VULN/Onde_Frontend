@@ -4,6 +4,7 @@ import { ADMIN_API_BASE, USER_API_BASE } from '@/constants/apiConfig';
 import { clearAuthSession } from '@/utils/authSession';
 import { getAccessToken, getMemberId, updateAccessToken } from '@/utils/authCookies';
 import { isErrorPagePath, redirectByHttpStatus } from '@/utils/errorNavigation';
+import { useTravelStore } from '@/store/useTravelStore';
 
 declare module 'axios' {
   export interface AxiosRequestConfig {
@@ -81,6 +82,9 @@ const finalizeResponseError = (error: {
   if (status && !onErrorPage && !error.config?.skipErrorRedirect) {
     if (status === 401) {
       clearAuthSession();
+    }
+    if (status === 403) {
+      useTravelStore.getState().addToast('해당 기능을 수행할 권한이 없습니다.', 'warning');
     }
     redirectByHttpStatus(status);
   }

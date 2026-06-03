@@ -29,6 +29,8 @@ interface StayDetailModalProps {
   soldOutDays?: number[];
   defaultCheckIn?: string;
   defaultCheckOut?: string;
+  defaultGuests?: number;
+  defaultRooms?: number;
   onClose: () => void;
 }
 
@@ -39,6 +41,8 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
   soldOutDays = [],
   defaultCheckIn,
   defaultCheckOut,
+  defaultGuests,
+  defaultRooms,
   onClose,
 }) => {
   const navigate = useNavigate();
@@ -62,7 +66,8 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
   const [checkIn, setCheckIn] = useState<string>(initCheckIn);
   const [checkOut, setCheckOut] = useState<string>(initCheckOut);
   const [selecting, setSelecting] = useState<'in' | 'out' | null>(null);
-  const [adultCount, setAdultCount] = useState(2);
+  const [adultCount, setAdultCount] = useState(defaultGuests ?? 2);
+  const [roomCount, setRoomCount] = useState(defaultRooms ?? 1);
 
   // Calendar month navigation
   const [calYear, setCalYear] = useState(today.getFullYear());
@@ -149,12 +154,13 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
     return total;
   }, [isRangeSelected, checkIn, checkOut, knownPrices, nightlyRate]);
 
-  const finalTotal = rawTotal;
+  const finalTotal = rawTotal * roomCount;
 
   function buildBillingDesc(): string {
     if (!isRangeSelected) return '일정을 완료해 주세요';
     if (!hasDisplayPrice(nightlyRate)) return '—';
-    return `₩${(rawTotal / nights).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}/박 평균 요금 (총 ${nights}박)`;
+    const average = rawTotal / nights;
+    return `₩${average.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}/박 평균 × ${nights}박 × 객실 ${roomCount}개`;
   }
 
 
@@ -284,9 +290,9 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
           dateSummary: `${checkIn} ~ ${checkOut} (${nights}박)`,
           detailLines: [
             ...(hasDisplayPrice(nightlyRate)
-              ? [`₩${(finalTotal / nights).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}/박 평균 × ${nights}박`]
+              ? [`₩${(rawTotal / nights).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}/박 평균 × ${nights}박 × 객실 ${roomCount}개`]
               : []),
-            `성인 ${adultCount}명`,
+            `객실 ${roomCount}개 / 성인 ${adultCount}명`,
           ],
           returnPath: '/',
         }),
@@ -502,9 +508,9 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
             </div>
           </div>
 
-          {/* Guest Picker */}
+          {/* Guest & Room Picker */}
           <div style={{
-            display: 'flex', flexDirection: 'column', gap: '8px',
+            display: 'flex', flexDirection: 'column', gap: '12px',
             background: '#f0f2f5', borderRadius: '12px',
             padding: '0.85rem 1rem',
             marginBottom: '0.8rem',
@@ -517,6 +523,7 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <button
+                  type="button"
                   onClick={() => setAdultCount(c => Math.max(1, c - 1))}
                   disabled={adultCount <= 1}
                   style={{
@@ -530,6 +537,7 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
                 >−</button>
                 <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1a1a', minWidth: '14px', textAlign: 'center' }}>{adultCount}</span>
                 <button
+                  type="button"
                   onClick={() => setAdultCount(c => Math.min(10, c + 1))}
                   style={{
                     width: '26px', height: '26px', borderRadius: '50%',
@@ -541,11 +549,44 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
                 >+</button>
               </div>
             </div>
-            {adultCount > 1 && (
-              <p style={{ fontSize: '0.7rem', color: '#717171', marginTop: '2px' }}>
-                총 {adultCount}명 · 객실 1개 기준
-              </p>
-            )}
+
+            {/* Rooms */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '8px' }}>
+              <div>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1a1a1a' }}>객실 수</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => setRoomCount(c => Math.max(1, c - 1))}
+                  disabled={roomCount <= 1}
+                  style={{
+                    width: '26px', height: '26px', borderRadius: '50%',
+                    border: roomCount <= 1 ? '1.5px solid #ddd' : `1.5px solid ${PRIMARY}`,
+                    color: roomCount <= 1 ? '#ddd' : PRIMARY,
+                    background: '#fff', cursor: roomCount <= 1 ? 'not-allowed' : 'pointer',
+                    fontSize: '0.85rem', fontWeight: 800,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >−</button>
+                <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1a1a', minWidth: '14px', textAlign: 'center' }}>{roomCount}</span>
+                <button
+                  type="button"
+                  onClick={() => setRoomCount(c => Math.min(10, c + 1))}
+                  style={{
+                    width: '26px', height: '26px', borderRadius: '50%',
+                    border: `1.5px solid ${PRIMARY}`, color: PRIMARY,
+                    background: '#fff', cursor: 'pointer',
+                    fontSize: '0.85rem', fontWeight: 800,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >+</button>
+              </div>
+            </div>
+
+            <p style={{ fontSize: '0.7rem', color: '#717171', marginTop: '2px' }}>
+              총 객실 {roomCount}개 · 성인 {adultCount}명 기준
+            </p>
           </div>
 
         </div>
@@ -559,8 +600,8 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
             border: '1px solid #ddd',
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#4a4a4a', marginBottom: '0.35rem' }}>
-              <span>객실 이용료 ({isRangeSelected ? `${nights}박` : '선택 대기'})</span>
-              <span style={{ fontWeight: 700, color: '#1a1a1a' }}>{isRangeSelected ? `₩${rawTotal.toLocaleString('ko-KR')}` : '₩ -'}</span>
+              <span>객실 이용료 ({isRangeSelected ? `${nights}박 × 객실 ${roomCount}개` : '선택 대기'})</span>
+              <span style={{ fontWeight: 700, color: '#1a1a1a' }}>{isRangeSelected ? `₩${finalTotal.toLocaleString('ko-KR')}` : '₩ -'}</span>
             </div>
             <div style={{ fontSize: '0.75rem', color: '#717171', marginBottom: '0.35rem', paddingLeft: '0.4rem' }}>
               {buildBillingDesc()}

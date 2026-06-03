@@ -37,7 +37,21 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({ errorCode }) => {
 
   const lockedError = errorCode ?? null;
 
-  const handleGoHome = () => navigate('/');
+  const handleGoHome = () => {
+    const role = useTravelStore.getState().memberRole;
+    if (!role) {
+      navigate('/');
+      return;
+    }
+    const r = role.toUpperCase();
+    if (r === 'SELLER') {
+      navigate('/seller');
+    } else if (r === 'GENERAL_ADMIN' || r === 'SALES_ADMIN' || r === 'SUPER_ADMIN' || r.includes('ADMIN')) {
+      navigate('/admin');
+    } else {
+      navigate('/');
+    }
+  };
 
   const handleLogin = () => {
     navigate('/');
