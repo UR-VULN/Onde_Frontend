@@ -55,7 +55,7 @@ export const save_seller_profile_api = async (payload: {
   bankName: string;
   accountNumber: string;
   accountHolder: string;
-}): Promise<{ success: boolean; message: string }> => {
+}): Promise<{ success: boolean; data: SellerSettlementAccountDto | null; message: string }> => {
   const res = await put_seller_settlement_account_api({
     bankName: payload.bankName,
     accountNumber: payload.accountNumber,
@@ -64,7 +64,7 @@ export const save_seller_profile_api = async (payload: {
     representativeName: payload.representativeName,
     openedAt: payload.openDate.replace(/-/g, ''),
   });
-  return { success: res.success, message: res.message };
+  return { success: res.success, data: res.data, message: res.message };
 };
 
 export interface SellerSettlementDto {

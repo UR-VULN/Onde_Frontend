@@ -7,6 +7,12 @@ import {
 } from '@/api/sellerApi';
 import { KOREAN_BANKS } from '@/constants/appConstants';
 
+interface VerifiedBusinessSnapshot {
+  businessNumber: string;
+  representativeName: string;
+  openDate: string;
+}
+
 export const SellerAccountPanel: React.FC = () => {
   const { addToast } = useTravelStore();
 
@@ -20,12 +26,15 @@ export const SellerAccountPanel: React.FC = () => {
   const [openDate, setOpenDate] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isBusinessVerified, setIsBusinessVerified] = useState(false);
+  const [verifiedBusiness, setVerifiedBusiness] = useState<VerifiedBusinessSnapshot | null>(null);
 
   // ─── 정산 계좌 관리 ───────────────────────────
   const [bankName, setBankName] = useState('신한은행');
   const [accountNumber, setAccountNumber] = useState('');
   const [accountHolder, setAccountHolder] = useState('');
   const [showAccount, setShowAccount] = useState(false);
+  const [hasSettlementAccount, setHasSettlementAccount] = useState(false);
+  const [savedAccountNumberLabel, setSavedAccountNumberLabel] = useState('');
 
   // ─── 저장 상태 ────────────────────────────────
   const [isSaving, setIsSaving] = useState(false);
@@ -36,6 +45,9 @@ export const SellerAccountPanel: React.FC = () => {
         if (!res.success || !res.data) return;
         setBankName(res.data.bankName);
         setAccountHolder(res.data.accountHolder);
+        setHasSettlementAccount(true);
+        setSavedAccountNumberLabel(res.data.accountNumber);
+        setAccountNumber('');
         setBusinessNumber(
           res.data.businessNumber.length === 10
             ? `${res.data.businessNumber.slice(0, 3)}-${res.data.businessNumber.slice(3, 5)}-${res.data.businessNumber.slice(5)}`
@@ -44,6 +56,11 @@ export const SellerAccountPanel: React.FC = () => {
         setRepresentativeName(res.data.representativeName);
         setOpenDate(res.data.openedAt);
         setIsBusinessVerified(true);
+        setVerifiedBusiness({
+          businessNumber: res.data.businessNumber.replace(/\D/g, ''),
+          representativeName: res.data.representativeName.trim(),
+          openDate: res.data.openedAt.replace(/\D/g, ''),
+        });
       })
       .catch(() => undefined);
   }, []);
@@ -57,17 +74,40 @@ export const SellerAccountPanel: React.FC = () => {
     return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
   };
 
+  const currentBusinessSnapshot = (): VerifiedBusinessSnapshot => ({
+    businessNumber: businessNumber.replace(/\D/g, ''),
+    representativeName: representativeName.trim(),
+    openDate: openDate.replace(/\D/g, ''),
+  });
+
+  const isVerifiedBusinessCurrent = () => {
+    const current = currentBusinessSnapshot();
+    return Boolean(
+      isBusinessVerified &&
+      verifiedBusiness &&
+      verifiedBusiness.businessNumber === current.businessNumber &&
+      verifiedBusiness.representativeName === current.representativeName &&
+      verifiedBusiness.openDate === current.openDate
+    );
+  };
+
+  const resetBusinessVerification = () => {
+    setIsBusinessVerified(false);
+    setVerifiedBusiness(null);
+  };
+
   const handle_business_verify = async () => {
-    const rawNum = businessNumber.replace(/\D/g, '');
+    const current = currentBusinessSnapshot();
+    const rawNum = current.businessNumber;
     if (rawNum.length !== 10) {
       addToast('사업자등록번호는 10자리 숫자를 입력해 주세요. (예: 123-45-67890)', 'warning');
       return;
     }
-    if (!representativeName.trim()) {
+    if (!current.representativeName) {
       addToast('대표자 성명을 입력해 주세요.', 'warning');
       return;
     }
-    if (openDate.length !== 8 || !/^\d{8}$/.test(openDate)) {
+    if (current.openDate.length !== 8 || !/^\d{8}$/.test(current.openDate)) {
       addToast('개업일자는 8자리 숫자로 입력해 주세요. (예: 20200101)', 'warning');
       return;
     }
@@ -78,19 +118,22 @@ export const SellerAccountPanel: React.FC = () => {
     try {
       const res = await verify_business_api({
         businessNumber: rawNum,
-        representativeName: representativeName.trim(),
-        openDate,
+        representativeName: current.representativeName,
+        openDate: current.openDate,
       });
 
       if (res.success && res.verified) {
         setIsBusinessVerified(true);
+        setVerifiedBusiness(current);
         addToast('✅ 정상 사업자로 확인되었습니다. 이제 저장하기 버튼이 활성화됩니다.', 'success');
       } else {
         setIsBusinessVerified(false);
+        setVerifiedBusiness(null);
         addToast(res.message || '사업자 정보가 일치하지 않습니다. 입력 내용을 다시 확인해 주세요.', 'warning');
       }
     } catch (err: any) {
       setIsBusinessVerified(false);
+      setVerifiedBusiness(null);
       addToast(err?.error?.message || '사업자 진위 확인 중 오류가 발생했습니다.', 'warning');
     } finally {
       setIsVerifying(false);
@@ -98,11 +141,15 @@ export const SellerAccountPanel: React.FC = () => {
   };
 
   const handle_save = async () => {
-    if (!isBusinessVerified) {
+    if (!isVerifiedBusinessCurrent()) {
       addToast('사업자 진위 확인을 먼저 완료해 주세요.', 'warning');
       return;
     }
-    if (!accountNumber.trim() || !accountHolder.trim()) {
+    if (!hasSettlementAccount && !accountNumber.trim()) {
+      addToast('신규 등록 시 정산 계좌번호를 입력해 주세요.', 'warning');
+      return;
+    }
+    if (!accountHolder.trim()) {
       addToast('정산 계좌번호와 예금주 성명을 입력해 주세요.', 'warning');
       return;
     }
@@ -124,7 +171,27 @@ export const SellerAccountPanel: React.FC = () => {
       });
 
       if (res.success) {
-        addToast('업체 프로필 정보와 정산 계좌가 안전하게 갱신 완료되었습니다.', 'success');
+        if (res.data) {
+          setBankName(res.data.bankName);
+          setAccountHolder(res.data.accountHolder);
+          setBusinessNumber(
+            res.data.businessNumber.length === 10
+              ? `${res.data.businessNumber.slice(0, 3)}-${res.data.businessNumber.slice(3, 5)}-${res.data.businessNumber.slice(5)}`
+              : res.data.businessNumber
+          );
+          setRepresentativeName(res.data.representativeName);
+          setOpenDate(res.data.openedAt);
+          setSavedAccountNumberLabel(res.data.accountNumber);
+          setAccountNumber('');
+          setHasSettlementAccount(true);
+          setIsBusinessVerified(true);
+          setVerifiedBusiness({
+            businessNumber: res.data.businessNumber.replace(/\D/g, ''),
+            representativeName: res.data.representativeName.trim(),
+            openDate: res.data.openedAt.replace(/\D/g, ''),
+          });
+        }
+        addToast(res.message || '업체 프로필 정보와 정산 계좌가 안전하게 갱신 완료되었습니다.', 'success');
       } else {
         addToast(res.message || '업체 프로필 정보 저장에 실패했습니다.', 'warning');
       }
@@ -203,7 +270,10 @@ export const SellerAccountPanel: React.FC = () => {
               <input
                 type="text"
                 value={businessNumber}
-                onChange={(e) => setBusinessNumber(formatBusinessNumber(e.target.value))}
+                onChange={(e) => {
+                  setBusinessNumber(formatBusinessNumber(e.target.value));
+                  resetBusinessVerification();
+                }}
                 className="form-input"
                 style={{ flex: 1 }}
                 placeholder="123-45-67890"
@@ -226,7 +296,10 @@ export const SellerAccountPanel: React.FC = () => {
               <input
                 type="text"
                 value={representativeName}
-                onChange={(e) => setRepresentativeName(e.target.value)}
+                onChange={(e) => {
+                  setRepresentativeName(e.target.value);
+                  resetBusinessVerification();
+                }}
                 className="form-input"
                 placeholder="홍길동"
               />
@@ -236,7 +309,10 @@ export const SellerAccountPanel: React.FC = () => {
               <input
                 type="text"
                 value={openDate}
-                onChange={(e) => setOpenDate(e.target.value.replace(/\D/g, '').slice(0, 8))}
+                onChange={(e) => {
+                  setOpenDate(e.target.value.replace(/\D/g, '').slice(0, 8));
+                  resetBusinessVerification();
+                }}
                 className="form-input"
                 placeholder="20200101"
                 maxLength={8}
@@ -301,7 +377,7 @@ export const SellerAccountPanel: React.FC = () => {
                 onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ''))}
                 className="form-input"
                 style={{ width: '100%', paddingRight: '2.5rem' }}
-                placeholder="000-000-000000"
+                placeholder={hasSettlementAccount ? '변경할 때만 새 계좌번호 입력' : '000-000-000000'}
               />
               <button
                 style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', background: 'none', border: 'none' }}
@@ -310,6 +386,11 @@ export const SellerAccountPanel: React.FC = () => {
                 <i className={`fa-solid ${showAccount ? 'fa-eye-slash' : 'fa-eye'}`}></i>
               </button>
             </div>
+            {savedAccountNumberLabel && (
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.45rem' }}>
+                현재 등록 계좌: {savedAccountNumberLabel}
+              </p>
+            )}
           </div>
 
           <div className="form-group">
