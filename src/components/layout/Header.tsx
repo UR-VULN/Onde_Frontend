@@ -115,16 +115,14 @@ export const Header: React.FC = () => {
             <>
               <button
                 type="button"
-                className="btn-primary cursor-pointer active:scale-95 transition-all"
-                style={{ padding: '0.6rem 1.3rem', fontSize: '0.82rem', fontWeight: 800 }}
+                className="btn-primary cursor-pointer active:scale-95 transition-all px-[21px] py-[10px] text-[0.82rem] font-extrabold"
                 onClick={() => openAuthModal('login')}
               >
                 로그인
               </button>
               <button
                 type="button"
-                className="btn-secondary cursor-pointer active:scale-95 transition-all"
-                style={{ padding: '0.6rem 1.3rem', fontSize: '0.82rem', fontWeight: 800 }}
+                className="btn-secondary cursor-pointer active:scale-95 transition-all px-[21px] py-[10px] text-[0.82rem] font-extrabold"
                 onClick={() => openAuthModal('signup')}
               >
                 회원가입

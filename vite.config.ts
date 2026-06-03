@@ -19,4 +19,10 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src')
     }
   },
+  server: {
+    watch: {
+      usePolling: true,
+      interval: 100
+    }
+  }
 })

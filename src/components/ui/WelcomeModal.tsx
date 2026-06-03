@@ -22,109 +22,63 @@ export const WelcomeModal: React.FC = () => {
 
   return (
     <div 
-      className="premium-popup-backdrop flex items-center justify-center p-4"
-      style={{ 
-        display: 'flex', 
-        position: 'fixed', 
-        top: 0, 
-        left: 0, 
-        width: '100vw', 
-        height: '100vh', 
-        zIndex: 99999,
-        background: 'rgba(0,0,0,0.6)',
-        backdropFilter: 'blur(8px)'
-      }}
-    >      <div 
-        className="animate-[scaleUp_0.4s_cubic-bezier(0.34,1.56,0.64,1)]"
+      className="premium-popup-backdrop flex items-center justify-center p-4 fixed top-0 left-0 w-screen h-screen z-[99999] bg-black/60 backdrop-blur-md"
+    >
+      <div 
+        className="animate-[scaleUp_0.4s_cubic-bezier(0.34,1.56,0.64,1)] relative w-full max-w-[540px] rounded-[24px] bg-white shadow-[0_30px_80px_rgba(0,0,0,0.25)] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
-        style={{ 
-          position: 'relative', 
-          width: '100%',
-          maxWidth: '540px', 
-          borderRadius: '24px', 
-          background: 'white', 
-          boxShadow: '0 30px 80px rgba(0,0,0,0.25)',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column'
-        }}
       >
         {/* Top Image Section - Compact & High Speed Animation */}
-        <div style={{ background: '#f8faff', padding: '40px 0 15px 0', textAlign: 'center', position: 'relative' }}>
-          <div className="animate-[tilt_0.2s_ease-in-out_infinite_alternate]" style={{ display: 'inline-block' }}>
+        <div className="bg-[#f8faff] pt-10 pb-[15px] text-center relative">
+          <div className="animate-[tilt_0.2s_ease-in-out_infinite_alternate] inline-block">
             <img 
               src={welcomeImg} 
               alt="Welcome" 
-              style={{ width: '320px', height: '320px', objectFit: 'contain' }}
+              className="w-[320px] h-[320px] object-contain"
             />
           </div>
           
           <button 
             onClick={closeWelcomePopup} 
-            style={{ 
-              position: 'absolute', 
-              top: '16px', 
-              right: '16px', 
-              width: '36px', 
-              height: '36px', 
-              borderRadius: '50%', 
-              background: 'white', 
-              border: '1px solid #f0f0f0',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-              cursor: 'pointer',
-              color: '#bbb',
-              fontSize: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 10
-            }}
+            className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white border border-[#f0f0f0] shadow-[0_2px_8px_rgba(0,0,0,0.05)] cursor-pointer text-[#bbb] text-base flex items-center justify-center z-10"
           >
             <i className="fa-solid fa-xmark"></i>
           </button>
         </div>
 
         {/* Content Section - Compact Padding */}
-        <div style={{ padding: '30px 50px 40px 50px', textAlign: 'center' }}>
-          <div style={{ marginBottom: '25px' }}>
-            <h2 className="font-logo" style={{ fontSize: '2.4rem', fontWeight: 900, lineHeight: 1.25, color: '#1a1a1a', letterSpacing: '-1.5px' }}>
+        <div className="px-[50px] pt-[30px] pb-10 text-center">
+          <div className="mb-[25px]">
+            <h2 className="font-logo text-[2.4rem] font-black leading-snug text-[#1a1a1a] tracking-[-1.5px]">
               반가워요!<br/>
               <span className="highlight-text">온데 ONDE</span>와 시작해요
             </h2>
-            <div style={{ width: '50px', height: '3px', background: '#005ce615', margin: '20px auto', borderRadius: '10px' }}></div>
-            <p style={{ fontSize: '1.2rem', color: '#94a3b8', fontWeight: 700 }}>
+            <div className="w-[50px] h-[3px] bg-[#005ce6]/10 mx-auto my-5 rounded-[10px]"></div>
+            <p className="text-[1.2rem] text-[#94a3b8] font-bold">
               가입을 진심으로 축하드립니다! 🎉
             </p>
           </div>
 
-          <div style={{ marginBottom: '30px' }}>
-            <p style={{ fontSize: '1.4rem', color: '#334155', fontWeight: 800, lineHeight: 1.5 }}>
+          <div className="mb-[30px]">
+            <p className="text-[1.4rem] text-[#334155] font-extrabold leading-normal">
               "당신이 머문 모든 곳이<br/>아름다운 추억이 되도록"
             </p>
           </div>
           
-          <div style={{ padding: '0 10px' }}>
+          <div className="px-2.5">
             <button 
               type="button"
-              className="btn-primary" 
-              style={{ 
-                width: '100%', 
-                padding: '18px', 
-                fontSize: '1.25rem', 
-                fontWeight: 900, 
-                borderRadius: '16px',
-                boxShadow: '0 10px 20px rgba(0, 92, 230, 0.2)'
-              }}
+              className="btn-primary w-full p-[18px] text-[1.25rem] font-black rounded-2xl shadow-[0_10px_20px_rgba(0,92,230,0.2)]"
               onClick={closeWelcomePopup}
             >
               여정 시작하기
             </button>
           </div>
           
-          <div style={{ marginTop: '35px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', opacity: 0.15 }}>
-            <div style={{ height: '1px', flex: 1, background: '#444' }}></div>
-            <span style={{ fontSize: '0.7rem', fontWeight: 900, letterSpacing: '5px', color: '#111' }}>PREMIUM JOURNEY</span>
-            <div style={{ height: '1px', flex: 1, background: '#444' }}></div>
+          <div className="mt-[35px] flex items-center justify-center gap-[15px] opacity-15">
+            <div className="h-[1px] flex-1 bg-[#444]"></div>
+            <span className="text-[0.7rem] font-black tracking-[5px] text-[#111]">PREMIUM JOURNEY</span>
+            <div className="h-[1px] flex-1 bg-[#444]"></div>
           </div>
         </div>
       </div>

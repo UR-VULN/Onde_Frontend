@@ -5,7 +5,7 @@ export const MapPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('서울');
 
   return (
-    <div className="map-page page-hero-gap w-full !px-5 lg:!px-0">
+    <div className="map-page page-hero-gap w-full px-5 lg:px-0">
       <div className="map-page-header">
         <div>
           <h2 className="map-page-title">지도로 찾아가는 나만의 감성 쉼터</h2>

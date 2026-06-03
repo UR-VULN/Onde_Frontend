@@ -66,7 +66,7 @@ export const StayPage: React.FC = () => {
   return (
     <div className="w-full !-mt-[40px] relative z-20 transition-all duration-300 animate-[fadeIn_0.35s_ease]">
       <StaySearchForm onSearch={handleSearch} loading={loading} />
-      <div style={{ height: '4rem' }} />
+      <div className="h-16" />
       <StayRecommendationList
         stays={stays}
         searchParams={searchParams}

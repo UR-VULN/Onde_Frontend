@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import type { CarDto } from '@/api/carApi';
 import type { CarSearchParams } from './CarSearchForm';
 import { CarDetailModal } from './CarDetailModal';
@@ -8,10 +8,11 @@ import { formatKrwPriceOrDash, hasDisplayPrice } from '@/utils/listingDisplay';
 interface CarCardProps {
   car: CarDto;
   index: number;
+  count: number;
   onSelect: (car: CarDto) => void;
 }
 
-const CarCard: React.FC<CarCardProps> = ({ car, index, onSelect }) => {
+const CarCard: React.FC<CarCardProps> = ({ car, index, count, onSelect }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -47,6 +48,9 @@ const CarCard: React.FC<CarCardProps> = ({ car, index, onSelect }) => {
           className="w-full h-full text-3xl"
           imgClassName="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
         />
+        <div className="absolute top-2.5 left-2.5 bg-blue-600 text-white text-[1.1rem] lg:text-[0.7rem] font-bold px-2 py-0.5 rounded-md shadow-md z-10">
+          예약 가능 차량: {count}대
+        </div>
       </div>
       <div className="px-1">
         <span className="font-bold text-[1.45rem] lg:text-[0.95rem] text-slate-800 leading-snug block truncate">
@@ -77,9 +81,25 @@ export const CarRecommendationList: React.FC<CarRecommendationListProps> = ({
   loading = false,
   hasSearched = false,
 }) => {
-  const [selectedCar, setSelectedCar] = useState<CarDto | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<CarDto[] | null>(null);
+
+  // Group cars by name (model name)
+  const groupedCars = useMemo(() => {
+    const groups: Record<string, CarDto[]> = {};
+    cars.forEach((car) => {
+      if (!groups[car.name]) {
+        groups[car.name] = [];
+      }
+      groups[car.name].push(car);
+    });
+    return Object.values(groups);
+  }, [cars]);
+
+  // Adjust total count display
+  const totalDisplayCount = groupedCars.length;
+
   return (
-    <div className="!px-5 lg:!px-0" style={{ paddingBottom: '4rem' }}>
+    <div className="px-5 lg:px-0 pb-16">
       <div className="recommendation-section-head">
         {hasSearched && searchParams?.pickupSpot ? (
           <>
@@ -89,14 +109,14 @@ export const CarRecommendationList: React.FC<CarRecommendationListProps> = ({
             <p className="text-sm text-slate-400 font-bold uppercase tracking-widest">
               {loading
                 ? '조회 중...'
-                : `${cars.length}대 · ${searchParams.pickupDate} ~ ${searchParams.returnDate}`}
+                : `${totalDisplayCount}개 모델 · ${searchParams.pickupDate} ~ ${searchParams.returnDate}`}
             </p>
           </>
         ) : (
           <>
             <h4 className="font-logo font-black text-3xl text-slate-800 tracking-tight">운전석이 비어 있어요</h4>
             <p className="text-sm text-slate-400 font-bold uppercase tracking-widest">
-              {loading ? '불러오는 중...' : `총 ${cars.length}대`}
+              {loading ? '불러오는 중...' : `총 ${totalDisplayCount}개 모델`}
             </p>
           </>
         )}
@@ -108,19 +128,26 @@ export const CarRecommendationList: React.FC<CarRecommendationListProps> = ({
         <p className="recommendation-section-status">표시할 차량이 없습니다.</p>
       ) : (
         <div className="recommendation-section-content grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {cars.map((car, index) => (
-            <CarCard key={car.carId} car={car} index={index} onSelect={setSelectedCar} />
+          {groupedCars.map((group: CarDto[], index: number) => (
+            <CarCard
+              key={group[0].carId}
+              car={group[0]}
+              count={group.length}
+              index={index}
+              onSelect={() => setSelectedGroup(group)}
+            />
           ))}
         </div>
       )}
 
-      {selectedCar && (
+      {selectedGroup && selectedGroup.length > 0 && (
         <CarDetailModal
-          car={selectedCar}
+          car={selectedGroup[0]}
+          vehicles={selectedGroup}
           soldOutDays={[]}
           defaultPickup={searchParams?.pickupDate}
           defaultReturn={searchParams?.returnDate}
-          onClose={() => setSelectedCar(null)}
+          onClose={() => setSelectedGroup(null)}
         />
       )}
     </div>

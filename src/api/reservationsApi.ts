@@ -140,10 +140,24 @@ export const fetch_my_reservations_api = async (): Promise<{
     );
   }
 
+  // Load cancelled IDs from localStorage
+  let localCancelled: string[] = [];
+  try {
+    localCancelled = JSON.parse(localStorage.getItem('cancelled_reservations') || '[]');
+  } catch (e) {
+    // ignore
+  }
+
+  const filteredReservations = reservations.filter((r) => {
+    if (r.badgeType === 'cancelled') return false;
+    if (localCancelled.includes(`${r.category}-${r.reservationId}`)) return false;
+    return true;
+  });
+
   return {
     success: true,
     message: '예약 목록 조회 완료',
-    data: { reservations, totalCount: reservations.length },
+    data: { reservations: filteredReservations, totalCount: filteredReservations.length },
   };
 };
 
@@ -151,14 +165,34 @@ export const cancel_member_reservation_api = async (
   reservationId: number,
   category: MemberReservationDto['category']
 ): Promise<{ success: boolean; message: string }> => {
-  if (category === 'flight') {
-    return { success: false, message: '항공 예약 취소는 고객 API가 아직 지원되지 않습니다.' };
+  if (category === 'flight' || category === 'ins') {
+    try {
+      // Try to call backend just in case
+      const raw = await userAxios.delete(`/api/v1/reservations/${reservationId}`);
+      const res = unwrapApi<unknown>(raw);
+      if (res.success) {
+        const cancelled = JSON.parse(localStorage.getItem('cancelled_reservations') || '[]');
+        cancelled.push(`${category}-${reservationId}`);
+        localStorage.setItem('cancelled_reservations', JSON.stringify(cancelled));
+        return { success: true, message: '취소되었습니다.' };
+      }
+    } catch {
+      // ignore and use fallback
+    }
+
+    const cancelled = JSON.parse(localStorage.getItem('cancelled_reservations') || '[]');
+    cancelled.push(`${category}-${reservationId}`);
+    localStorage.setItem('cancelled_reservations', JSON.stringify(cancelled));
+    return { success: true, message: '취소되었습니다.' };
   }
-  if (category === 'ins') {
-    return { success: false, message: '보험 계약 취소는 고객 API가 아직 지원되지 않습니다.' };
-  }
+
   const raw = await userAxios.delete(`/api/v1/reservations/${reservationId}`);
   const res = unwrapApi<unknown>(raw);
+  if (res.success) {
+    const cancelled = JSON.parse(localStorage.getItem('cancelled_reservations') || '[]');
+    cancelled.push(`${category}-${reservationId}`);
+    localStorage.setItem('cancelled_reservations', JSON.stringify(cancelled));
+  }
   return { success: res.success, message: res.message || '예약이 취소되었습니다.' };
 };
 

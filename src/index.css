@@ -36,13 +36,18 @@
             --transition: all 0.2s ease-in-out;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: var(--font-main);
-            -webkit-font-smoothing: antialiased;
-        }
+@layer base {
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: var(--font-main);
+        -webkit-font-smoothing: antialiased;
+    }
+    a { text-decoration: none; color: inherit; }
+    button { cursor: pointer; border: none; background: none; outline: none; }
+    input, select, textarea { outline: none; font-family: var(--font-main); }
+}
 
         html {
             scrollbar-gutter: stable;
@@ -57,10 +62,6 @@
             display: flex;
             flex-direction: column;
         }
-
-        a { text-decoration: none; color: inherit; }
-        button { cursor: pointer; border: none; background: none; outline: none; }
-        input, select, textarea { outline: none; font-family: var(--font-main); }
 
         /* ---------------------------------------------------- */
         /* GLOBAL NAVIGATION & PORTAL SWITCHER                  */
@@ -170,12 +171,12 @@
             font-family: var(--font-main);
         }
 
-        .nav-links { display: flex; gap: 0.6rem; align-items: center; }
+        .nav-links { display: flex; gap: 0.4rem; align-items: center; }
         .nav-item {
             color: var(--text-main);
             font-weight: 600;
             font-size: 0.92rem;
-            padding: 0.55rem 1.1rem;
+            padding: 0.55rem 0.8rem;
             border-radius: var(--radius-full);
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
@@ -1170,7 +1171,7 @@
             display: flex;
             padding: 1.3rem;
             gap: 1.1rem;
-            align-items: flex-start;
+            align-items: center;
             animation: toastSlideIn 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards;
             transition: all 0.3s ease;
         }
@@ -1218,6 +1219,9 @@
             font-weight: 800;
             font-size: 0.92rem;
             color: var(--text-dark);
+            margin-bottom: 0;
+        }
+        .toast-title:not(:last-child) {
             margin-bottom: 0.3rem;
         }
 
@@ -1925,7 +1929,7 @@
         /* Hero → page body gap (Feed pt-32 / mb-20; unlayered)   */
         /* ---------------------------------------------------- */
         .page-hero-gap {
-            padding-top: 4rem;
+            padding-top: 30px;
             margin-bottom: 2.5rem;
         }
 
@@ -2228,6 +2232,8 @@
             gap: 0.8rem;
             max-height: 480px;
             overflow-y: auto;
+            padding-top: 4px;
+            padding-bottom: 4px;
             padding-right: 0.5rem;
         }
 

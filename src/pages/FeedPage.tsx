@@ -96,15 +96,14 @@ export const FeedPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full space-y-16 pt-32 mb-20 px-4 md:px-0 transition-all duration-300 animate-[fadeIn_0.35s_ease]">
+    <div className="w-full space-y-8 page-hero-gap mb-20 px-4 md:px-0 transition-all duration-300 animate-[fadeIn_0.35s_ease]">
       
       {/* 1. Centered Header Section (Visual balance identical to Insurance page) */}
       <FeedHeader />
 
       {/* 2. Control Panel Row: Filters centered on mobile/tablet, Write Button aligned left underneath */}
       <div 
-        className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 w-full border-b border-slate-200/80 select-none"
-        style={{ paddingTop: '2.5rem', paddingBottom: '2rem', marginBottom: '3rem' }}
+        className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 w-full border-b border-slate-200/80 pb-4 select-none"
       >
         <FeedFilterBar selectedTag={selectedTag} onSelectTag={setSelectedTag} />
         

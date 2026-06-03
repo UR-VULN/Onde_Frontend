@@ -21,7 +21,7 @@ const defaultSearch = (): FlightSearchParams => ({
 
 export const FlightPage: React.FC = () => {
   const { addToast } = useTravelStore();
-  const { set_search_query, set_search_results, flight_search_results } = useFlightStore();
+  const { search_query, set_search_query, set_search_results } = useFlightStore();
   const [searchParams, setSearchParams] = useState<FlightSearchParams | null>(null);
   const [results, setResults] = useState<FlightSearchResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -30,7 +30,7 @@ export const FlightPage: React.FC = () => {
   const [selectedSeat, setSelectedSeat] = useState<AvailableSeat | null>(null);
   const [showPassengerInput, setShowPassengerInput] = useState(false);
 
-  const passengerCount = flight_search_results?.passengerCount || 1;
+  const passengerCount = searchParams?.passengerCount ?? search_query.passengerCount;
 
   const loadFlights = useCallback(
     async (params: FlightSearchParams, showToast = false) => {
@@ -81,14 +81,13 @@ export const FlightPage: React.FC = () => {
   };
 
   const handleGoToPassengerInput = () => {
-    setSelectedFlight(null); // 기존 모달 닫기
     setShowPassengerInput(true); // 탑승객 정보 입력 모달 열기
   };
 
   return (
     <div className="w-full !-mt-[40px] relative z-20 transition-all duration-300 animate-[fadeIn_0.35s_ease]">
       <FlightSearchForm onSearch={handleSearch} loading={loading} />
-      <div style={{ height: '4rem' }} />
+      <div className="h-16" />
       <FlightRecommendationList
         results={results}
         searchParams={searchParams}
@@ -101,7 +100,7 @@ export const FlightPage: React.FC = () => {
       />
       
       {/* 1단계: 상세 여정 요약 모달 */}
-      {selectedFlight && selectedSeat && (
+      {selectedFlight && selectedSeat && !showPassengerInput && (
         <FlightReservationModal
           flight={selectedFlight}
           seat={selectedSeat}
@@ -120,7 +119,9 @@ export const FlightPage: React.FC = () => {
             scheduleId: selectedFlight.scheduleId,
             flightNumber: selectedFlight.flightNumber,
             departureAirport: selectedFlight.departureAirport,
+            departureTime: selectedFlight.departureTime,
             arrivalAirport: selectedFlight.arrivalAirport,
+            arrivalTime: selectedFlight.arrivalTime,
             classType: selectedSeat.classType,
             seatClass: selectedSeat.classType,
             basePrice: selectedSeat.basePrice,
@@ -128,6 +129,7 @@ export const FlightPage: React.FC = () => {
           }}
           onClose={() => {
             setShowPassengerInput(false);
+            setSelectedFlight(null);
             setSelectedSeat(null);
           }}
         />

@@ -35,6 +35,7 @@ export interface InsuranceReservationPayload {
 }
 
 export interface InsurancePolicyResponse {
+  policyId?: number;
   policyCode: string;
   insuredName: string;
   startDate?: string;

@@ -69,10 +69,9 @@ export const StaySearchForm: React.FC<StaySearchFormProps> = ({ onSearch, loadin
     <div className="w-full bg-white border border-slate-200/80 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] flex flex-col select-none overflow-visible">
       {/* Gradient accent bar — mobile/tablet only */}
       <div
-        className="lg:hidden h-1 w-full"
-        style={{ background: 'linear-gradient(135deg, #005ce6 0%, #ff5a5f 100%)' }}
+        className="lg:hidden h-1 w-full bg-[linear-gradient(135deg,#005ce6_0%,#ff5a5f_100%)]"
       />
-      <div className="p-4 md:p-5 flex flex-col">
+      <div className="flex flex-col">
       <form onSubmit={handleSearchSubmit} className="w-full">
         
         {/* Main search layout: Inputs grid and the standalone action button side-by-side */}
@@ -90,11 +89,11 @@ export const StaySearchForm: React.FC<StaySearchFormProps> = ({ onSearch, loadin
                 setDestinationCity(city);
               }}
             />
-
+ 
             {/* Divider — horizontal on mobile, vertical on desktop */}
-            <div className="lg:hidden" style={{ height: '1px', background: '#e2e8f0', margin: '0 0.75rem' }}></div>
-            <div className="hidden lg:block" style={{ width: '1px', background: '#e2e8f0', margin: '0.625rem 0' }}></div>
-
+            <div className="lg:hidden h-[1px] bg-[#e2e8f0] mx-3"></div>
+            <div className="hidden lg:block w-[1px] bg-[#e2e8f0] my-2.5"></div>
+ 
             {/* 2. Check-in Date */}
             <SearchDateField
               className="flex-1 min-w-0"
@@ -103,11 +102,11 @@ export const StaySearchForm: React.FC<StaySearchFormProps> = ({ onSearch, loadin
               onChange={handleCheckInChange}
               min={todayStr()}
             />
-
+ 
             {/* Divider */}
-            <div className="lg:hidden" style={{ height: '1px', background: '#e2e8f0', margin: '0 0.75rem' }}></div>
-            <div className="hidden lg:block" style={{ width: '1px', background: '#e2e8f0', margin: '0.625rem 0' }}></div>
-
+            <div className="lg:hidden h-[1px] bg-[#e2e8f0] mx-3"></div>
+            <div className="hidden lg:block w-[1px] bg-[#e2e8f0] my-2.5"></div>
+ 
             {/* 3. Check-out Date */}
             <SearchDateField
               className="flex-1 min-w-0"
@@ -116,11 +115,11 @@ export const StaySearchForm: React.FC<StaySearchFormProps> = ({ onSearch, loadin
               onChange={setCheckOutDate}
               min={checkInDate}
             />
-
+ 
             {/* Divider */}
-            <div className="lg:hidden" style={{ height: '1px', background: '#e2e8f0', margin: '0 0.75rem' }}></div>
-            <div className="hidden lg:block" style={{ width: '1px', background: '#e2e8f0', margin: '0.625rem 0' }}></div>
-
+            <div className="lg:hidden h-[1px] bg-[#e2e8f0] mx-3"></div>
+            <div className="hidden lg:block w-[1px] bg-[#e2e8f0] my-2.5"></div>
+ 
             {/* 4. Guests */}
             <div className="flex-1 min-w-0 flex flex-col justify-center items-center text-center py-2 px-3 relative">
               <span className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">투숙 인원</span>
@@ -136,7 +135,7 @@ export const StaySearchForm: React.FC<StaySearchFormProps> = ({ onSearch, loadin
                 <div className="flex items-center justify-center min-w-[50px]">
                   <span className="text-base font-extrabold text-slate-800 whitespace-nowrap">성인 {guestCount}명</span>
                 </div>
-
+ 
                 <button
                   type="button"
                   onClick={() => handleGuestChange(1)}
@@ -146,11 +145,11 @@ export const StaySearchForm: React.FC<StaySearchFormProps> = ({ onSearch, loadin
                 </button>
               </div>
             </div>
-
+ 
             {/* Divider */}
-            <div className="lg:hidden" style={{ height: '1px', background: '#e2e8f0', margin: '0 0.75rem' }}></div>
-            <div className="hidden lg:block" style={{ width: '1px', background: '#e2e8f0', margin: '0.625rem 0' }}></div>
-
+            <div className="lg:hidden h-[1px] bg-[#e2e8f0] mx-3"></div>
+            <div className="hidden lg:block w-[1px] bg-[#e2e8f0] my-2.5"></div>
+ 
             {/* 5. Rooms */}
             <div className="flex-1 min-w-0 flex flex-col justify-center items-center text-center py-2 px-3 relative">
               <span className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">객실 수</span>
@@ -166,7 +165,7 @@ export const StaySearchForm: React.FC<StaySearchFormProps> = ({ onSearch, loadin
                 <div className="flex items-center justify-center min-w-[50px]">
                   <span className="text-base font-extrabold text-slate-800 whitespace-nowrap">객실 {roomCount}개</span>
                 </div>
-
+ 
                 <button
                   type="button"
                   onClick={() => handleRoomChange(1)}
@@ -176,15 +175,15 @@ export const StaySearchForm: React.FC<StaySearchFormProps> = ({ onSearch, loadin
                 </button>
               </div>
             </div>
-
+ 
           </div>
-
+ 
           {/* Coral Gradient Signature Search Button */}
           <button
             type="submit"
             disabled={loading}
-            className="h-[48px] lg:h-[68px] w-full lg:w-[68px] rounded-xl flex items-center justify-center cursor-pointer flex-shrink-0 shadow-[0_4px_12px_rgba(255,90,95,0.2)] hover:shadow-[0_6px_20px_rgba(255,90,95,0.3)] transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
-            style={{ background: 'linear-gradient(135deg, #005ce6 0%, #ff5a5f 100%)', color: '#ffffff', opacity: loading ? 0.6 : 1 }}
+            className="h-[48px] lg:h-[68px] w-full lg:w-[68px] rounded-xl flex items-center justify-center cursor-pointer flex-shrink-0 shadow-[0_4px_12px_rgba(255,90,95,0.2)] hover:shadow-[0_6px_20px_rgba(255,90,95,0.3)] transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] bg-[linear-gradient(135deg,#005ce6_0%,#ff5a5f_100%)] text-white"
+            style={{ opacity: loading ? 0.6 : 1 }}
             title="숙소 검색"
           >
             <i className="fa-solid fa-magnifying-glass text-lg text-white"></i>

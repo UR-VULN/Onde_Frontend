@@ -65,7 +65,7 @@ export const CarPage: React.FC = () => {
   return (
     <div className="w-full !-mt-[40px] relative z-20 transition-all duration-300 animate-[fadeIn_0.35s_ease]">
       <CarSearchForm onSearch={handleSearch} loading={loading} />
-      <div style={{ height: '4rem' }} />
+      <div className="h-16" />
       <CarRecommendationList
         cars={cars}
         searchParams={searchParams}

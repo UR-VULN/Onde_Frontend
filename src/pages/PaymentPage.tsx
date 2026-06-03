@@ -206,11 +206,84 @@ export const PaymentPage: React.FC = () => {
               <p className="payment-order-sub">{checkout.productSubtitle}</p>
             </div>
 
-            {checkout.productImageUrl && (
+            {checkout.productImageUrl ? (
               <div className="payment-order-image-wrap">
                 <img src={checkout.productImageUrl} alt={checkout.productTitle} className="payment-order-image" />
               </div>
-            )}
+            ) : checkout.reservationType === 'INSURANCE' ? (
+              <div 
+                style={{
+                  background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+                  borderRadius: '16px',
+                  padding: '1.5rem',
+                  color: 'white',
+                  aspectRatio: '16 / 7',
+                  marginBottom: '1.25rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  boxShadow: '0 8px 24px rgba(15, 23, 42, 0.15)',
+                }}
+              >
+                {/* Decorative glowing gradient */}
+                <div style={{
+                  position: 'absolute',
+                  top: '-50%',
+                  right: '-30%',
+                  width: '180px',
+                  height: '180px',
+                  background: 'radial-gradient(circle, rgba(0, 92, 230, 0.3) 0%, rgba(0,0,0,0) 70%)',
+                  filter: 'blur(20px)',
+                  pointerEvents: 'none',
+                }} />
+                <div style={{
+                  position: 'absolute',
+                  bottom: '-50%',
+                  left: '-30%',
+                  width: '180px',
+                  height: '180px',
+                  background: 'radial-gradient(circle, rgba(255, 90, 95, 0.2) 0%, rgba(0,0,0,0) 70%)',
+                  filter: 'blur(20px)',
+                  pointerEvents: 'none',
+                }} />
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 1 }}>
+                  <div>
+                    <span style={{
+                      fontSize: '0.62rem',
+                      fontWeight: 800,
+                      color: 'rgba(255,255,255,0.6)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '1px',
+                      display: 'block',
+                      marginBottom: '4px'
+                    }}>
+                      Traveler Insurance Certificate
+                    </span>
+                    <strong style={{ fontSize: '1.25rem', fontWeight: 900, fontFamily: 'GmarketSansBold, sans-serif' }}>
+                      ONDE 안심 안심케어
+                    </strong>
+                  </div>
+                  <i className="fa-solid fa-shield-halved" style={{ fontSize: '2rem', color: '#2ecc71', opacity: 0.9 }} />
+                </div>
+
+                <div style={{ zIndex: 1 }}>
+                  <div style={{ display: 'flex', gap: '1rem', fontSize: '0.78rem', color: 'rgba(255,255,255,0.8)' }}>
+                    <div>
+                      <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', display: 'block' }}>COVERAGE LEVEL</span>
+                      <strong style={{ color: '#fff', fontSize: '0.85rem' }}>{checkout.productTitle.split('(')[1]?.replace(')', '') || 'STANDARD'} Plan</strong>
+                    </div>
+                    <div style={{ borderLeft: '1px solid rgba(255,255,255,0.15)', paddingLeft: '1rem' }}>
+                      <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', display: 'block' }}>PERIOD OF INSURANCE</span>
+                      <strong style={{ color: '#fff', fontSize: '0.82rem' }}>{checkout.dateSummary}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
             <div className="payment-order-meta">
               <div className="payment-order-meta-row">

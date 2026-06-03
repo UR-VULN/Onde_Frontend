@@ -37,28 +37,28 @@ export const InsuranceCalculatorForm: React.FC<InsuranceCalculatorFormProps> = (
   return (
     <div className="flex flex-col">
       <div 
-        style={{ padding: '20px 40px', borderRadius: '12px' }}
+        style={{ padding: '16px 24px', borderRadius: '12px' }}
         className="bg-white border border-slate-200 shadow-2xl relative overflow-hidden flex-1 flex flex-col justify-between"
       >
         <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#005ce6] to-[#ff5a5f] opacity-80"></div>
 
-        <div className="space-y-8 w-full mt-4">
-          <div className="flex items-center gap-5 pb-8 border-b border-slate-100">
-            <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-primary shadow-sm border border-slate-100 text-2xl">
+        <div className="space-y-4 w-full mt-2">
+          <div className="flex items-center gap-4 pb-4 border-b border-slate-100">
+            <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-primary shadow-sm border border-slate-100 text-xl">
               <i className="fa-solid fa-file-signature"></i>
             </div>
             <div>
-              <h4 className="font-logo font-black text-2xl text-slate-800 tracking-tight">보험료 계산기</h4>
-              <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-1">Premium Calculator</p>
+              <h4 className="font-logo font-black text-xl text-slate-800 tracking-tight">보험료 계산기</h4>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Premium Calculator</p>
             </div>
           </div>
 
           <div 
-            className="space-y-8"
-            style={{ marginTop: '40px' }}
+            className="space-y-4"
+            style={{ marginTop: '20px' }}
           >
             <div className="form-group">
-              <label className="text-[13px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-3 block">피보험자 성명</label>
+              <label className="text-[13px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">피보험자 성명</label>
               <div className="flex items-center gap-3">
                 <div 
                   className="w-12 h-12 bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 shrink-0"
@@ -77,9 +77,9 @@ export const InsuranceCalculatorForm: React.FC<InsuranceCalculatorFormProps> = (
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="form-group">
-                <label className="text-[13px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-3 block">성별 선택</label>
+                <label className="text-[13px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">성별 선택</label>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-slate-50 rounded-md flex items-center justify-center text-slate-400 border border-slate-100 shrink-0">
                     <i className="fa-solid fa-venus-mars text-lg"></i>
@@ -112,7 +112,7 @@ export const InsuranceCalculatorForm: React.FC<InsuranceCalculatorFormProps> = (
               </div>
 
               <div className="form-group">
-                <label className="text-[13px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-3 block">피보험자 생년월일</label>
+                <label className="text-[13px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">피보험자 생년월일</label>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-slate-50 rounded-md flex items-center justify-center text-slate-400 border border-slate-100 shrink-0">
                     <i className="fa-solid fa-cake-candles text-lg"></i>
@@ -128,9 +128,9 @@ export const InsuranceCalculatorForm: React.FC<InsuranceCalculatorFormProps> = (
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="form-group">
-                <label className="text-[13px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-3 block">보장 출발</label>
+                <label className="text-[13px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">보장 출발</label>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-slate-50 rounded-md flex items-center justify-center text-slate-400 border border-slate-100 shrink-0">
                     <i className="fa-solid fa-plane-departure text-lg"></i>
@@ -145,7 +145,7 @@ export const InsuranceCalculatorForm: React.FC<InsuranceCalculatorFormProps> = (
                 </div>
               </div>
               <div className="form-group">
-                <label className="text-[13px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-3 block">보장 종료</label>
+                <label className="text-[13px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">보장 종료</label>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-slate-50 rounded-md flex items-center justify-center text-slate-400 border border-slate-100 shrink-0">
                     <i className="fa-solid fa-plane-arrival text-lg"></i>
@@ -162,8 +162,8 @@ export const InsuranceCalculatorForm: React.FC<InsuranceCalculatorFormProps> = (
             </div>
 
             <div className="form-group">
-              <label className="text-[13px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-3 block">보장 등급 선택</label>
-              <div className="grid grid-cols-3 gap-2 bg-slate-50 p-1 rounded-xl border border-slate-100">
+              <label className="text-[13px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">보장 등급 선택</label>
+              <div className="grid grid-cols-3 gap-1.5 bg-slate-50 p-1 rounded-lg border border-slate-100">
                 {['STANDARD', 'DELUXE', 'PREMIUM'].map((level) => (
                   <button
                     key={level}
@@ -171,7 +171,7 @@ export const InsuranceCalculatorForm: React.FC<InsuranceCalculatorFormProps> = (
                     onClick={() => {
                       set_insured_details({ coverageLevel: level });
                     }}
-                    className={`py-3.5 rounded-lg text-sm font-black transition-all tracking-widest ${
+                    className={`py-2 rounded-md text-sm font-black transition-all tracking-widest ${
                       insured_details.coverageLevel === level
                         ? 'bg-white text-slate-900 shadow-sm border border-slate-100'
                         : 'text-slate-400 hover:text-slate-500'
@@ -186,7 +186,7 @@ export const InsuranceCalculatorForm: React.FC<InsuranceCalculatorFormProps> = (
 
           {/* Dynamic Result Panel */}
           <div 
-            style={{ padding: '24px 28px', borderRadius: '12px', height: '200px' }}
+            style={{ padding: '16px 20px', borderRadius: '12px', minHeight: '140px' }}
             className="bg-slate-900 text-white relative overflow-hidden shadow-2xl animate-[fadeIn_0.3s_ease] flex flex-col justify-center"
           >
             {loading || quoteStatus === 'loading' ? (
@@ -195,8 +195,8 @@ export const InsuranceCalculatorForm: React.FC<InsuranceCalculatorFormProps> = (
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">보험료 계산 중...</p>
               </div>
             ) : quoteStatus === 'ready' && premium_estimate ? (
-              <div className="space-y-6">
-                <div className="flex justify-between items-center text-xs font-bold text-slate-500 border-b border-white/10 pb-5 uppercase">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center text-xs font-bold text-slate-500 border-b border-white/10 pb-3 uppercase">
                   <span>{premium_estimate.tripDurationDays}일 보장</span>
                   <span>{premium_estimate.age}세 기준</span>
                 </div>
@@ -240,14 +240,14 @@ export const InsuranceCalculatorForm: React.FC<InsuranceCalculatorFormProps> = (
         </div>
 
         <div 
-          className="space-y-8 w-full"
-          style={{ paddingTop: '10px', paddingBottom: '40px' }}
+          className="space-y-4 w-full"
+          style={{ paddingTop: '5px', paddingBottom: '10px' }}
         >
           <label 
-            className="flex items-start gap-5 cursor-pointer group px-2"
-            style={{ padding: '16px 0' }}
+            className="flex items-center gap-3 cursor-pointer group px-2"
+            style={{ padding: '6px 0' }}
           >
-            <div className="relative flex items-center mt-1 shrink-0">
+            <div className="relative flex items-center shrink-0">
               <input
                 type="checkbox"
                 checked={isAgreed}
@@ -256,7 +256,7 @@ export const InsuranceCalculatorForm: React.FC<InsuranceCalculatorFormProps> = (
               />
               <i className="fa-solid fa-check absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-sm opacity-0 peer-checked:opacity-100 transition-opacity"></i>
             </div>
-            <span className="text-xs font-bold text-slate-500 leading-relaxed group-hover:text-slate-700 transition-colors pt-0.5">
+            <span className="text-xs font-bold text-slate-500 leading-relaxed group-hover:text-slate-700 transition-colors">
               ONDE Protect 안심 케어 보장 약관 및 중요 고지 사항을 충분히 검토하였으며 이에 서명 동의합니다.
             </span>
           </label>
@@ -264,7 +264,7 @@ export const InsuranceCalculatorForm: React.FC<InsuranceCalculatorFormProps> = (
           <button
             type="button"
             onClick={handleApplyPolicy}
-            className="search-submit-btn w-full py-6 rounded-[22px] text-white font-black text-xl shadow-2xl active:scale-[0.98] transition-all tracking-tight"
+            className="search-submit-btn w-full py-3.5 rounded-2xl text-white font-black text-lg shadow-2xl active:scale-[0.98] transition-all tracking-tight"
           >
             지금 바로 보장받기
           </button>

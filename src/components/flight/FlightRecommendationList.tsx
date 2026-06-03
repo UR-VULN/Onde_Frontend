@@ -36,13 +36,14 @@ export const FlightRecommendationList: React.FC<FlightRecommendationListProps> =
 }) => {
   const flightCount = count_flights_in_results(results);
   const isSearchMode = hasSearched && !!searchParams;
+  const passengerCount = searchParams?.passengerCount || 1;
 
   const dates = searchParams?.dates.split(',') ?? [];
   const depDate = dates[0] ?? '';
   const retDate = dates[1];
 
   return (
-    <div className="!px-5 lg:!px-0" style={{ paddingBottom: '4rem' }}>
+    <div className="px-5 lg:px-0 pb-16">
       <div className="recommendation-section-head">
         {isSearchMode && searchParams ? (
           <>
@@ -89,27 +90,27 @@ export const FlightRecommendationList: React.FC<FlightRecommendationListProps> =
                   {journey.flights.map((flight) => (
                     <div
                       key={flight.scheduleId}
-                      className="bg-white p-6 rounded-[28px] border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6 hover:shadow-md transition-all border-l-4 border-l-primary"
+                      className="bg-white py-4 px-6 rounded-[28px] border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6 hover:shadow-md transition-all border-l-4 border-l-primary"
                     >
                       <div className="flex items-center gap-6 flex-1 min-w-[280px]">
-                        <div className="flex flex-col items-center justify-center bg-slate-50 px-4 py-3 rounded-2xl border border-slate-100 flex-shrink-0">
-                          <i className="fa-solid fa-plane text-primary text-xl mb-1" />
-                          <span className="text-xs font-black text-slate-800">{flight.flightNumber}</span>
+                        <div className="flex flex-col items-center justify-center bg-slate-50 px-4 py-1.5 rounded-xl border border-slate-100 flex-shrink-0">
+                          <i className="fa-solid fa-plane text-primary text-base mb-0.5" />
+                          <span className="text-sm font-black text-slate-800">{flight.flightNumber}</span>
                         </div>
 
                         <div className="flex items-center gap-4 flex-1">
                           <div className="text-right">
-                            <span className="text-xs font-bold text-slate-400 block">{flight.departureAirport}</span>
+                            <span className="text-[1.4rem] font-black text-slate-800 block tracking-normal leading-tight">{flight.departureAirport}</span>
                             <strong className="text-lg font-black text-slate-800 block">
                               {format_time(flight.departureTime)}
                             </strong>
-                            <span className="text-[10px] font-bold text-slate-500">
+                            <span className="text-xs font-extrabold text-slate-500">
                               {format_date(flight.departureTime)}
                             </span>
                           </div>
 
                           <div className="flex-1 flex flex-col items-center justify-center relative px-2">
-                            <span className="text-[10px] font-bold text-slate-400 mb-1">
+                            <span className="text-sm font-extrabold text-slate-500 mb-1">
                               {flight.durationMinutes}분 소요
                             </span>
                             <div className="w-full h-[1.5px] bg-slate-200 relative flex items-center justify-center">
@@ -118,11 +119,11 @@ export const FlightRecommendationList: React.FC<FlightRecommendationListProps> =
                           </div>
 
                           <div className="text-left">
-                            <span className="text-xs font-bold text-slate-400 block">{flight.arrivalAirport}</span>
+                            <span className="text-[1.4rem] font-black text-slate-800 block tracking-normal leading-tight">{flight.arrivalAirport}</span>
                             <strong className="text-lg font-black text-slate-800 block">
                               {format_time(flight.arrivalTime)}
                             </strong>
-                            <span className="text-[10px] font-bold text-slate-500">
+                            <span className="text-xs font-extrabold text-slate-500">
                               {format_date(flight.arrivalTime)}
                             </span>
                           </div>
@@ -135,7 +136,7 @@ export const FlightRecommendationList: React.FC<FlightRecommendationListProps> =
                           return (
                             <div
                               key={seat.classType}
-                              className="flex-1 bg-slate-50/50 hover:bg-slate-50 p-3.5 rounded-2xl border border-slate-100 flex flex-col gap-2 relative transition-all"
+                              className="flex-1 bg-slate-50/50 hover:bg-slate-50 py-2 px-3.5 rounded-2xl border border-slate-100 flex flex-col gap-1.5 relative transition-all"
                             >
                               <div className="flex justify-between items-center">
                                 <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full uppercase tracking-wider">
@@ -152,9 +153,11 @@ export const FlightRecommendationList: React.FC<FlightRecommendationListProps> =
                                 )}
                               </div>
                               <div className="mt-1 flex flex-col">
-                                <span className="text-xs font-bold text-slate-400">1인 요금</span>
+                                <span className="text-xs font-bold text-slate-400">
+                                  {passengerCount > 1 ? `총 요금 (${passengerCount}명)` : '1인 요금'}
+                                </span>
                                 <strong className="text-sm font-black text-slate-800">
-                                  ₩{seat.basePrice.toLocaleString()}
+                                  ₩{(seat.basePrice * passengerCount).toLocaleString()}
                                 </strong>
                               </div>
                               <button

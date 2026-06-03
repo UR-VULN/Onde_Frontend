@@ -17,6 +17,7 @@ interface BackendCarItem {
   carType: string;
   price?: number;
   dailyPrice?: number;
+  licensePlate?: string;
 }
 
 export interface CarListItemDto {
@@ -24,6 +25,7 @@ export interface CarListItemDto {
   modelName: string;
   carType: string;
   dailyPrice: number;
+  licensePlate?: string;
 }
 
 export interface CarListResponse {
@@ -52,6 +54,7 @@ export interface CarDto {
   seats?: number;
   fuel?: string;
   tags: string[];
+  licensePlate?: string;
 }
 
 export interface CarSearchResponse {
@@ -71,6 +74,7 @@ function mapBackendCar(item: BackendCarItem): CarListItemDto {
     modelName: item.modelName,
     carType: item.carType,
     dailyPrice: Number(item.dailyPrice ?? item.price ?? 0),
+    licensePlate: item.licensePlate,
   };
 }
 
@@ -144,6 +148,7 @@ function mapCarListItemToDto(item: CarListItemDto): CarDto {
     pricePerDay: item.dailyPrice,
     tags: [item.carType],
     imageUrl,
+    licensePlate: item.licensePlate,
   };
 }
 

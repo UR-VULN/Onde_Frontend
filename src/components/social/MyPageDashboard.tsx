@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTravelStore } from '@/store/useTravelStore';
 import { fetch_member_profile_api, fetch_member_mileage_history_api } from '@/api/userApi';
 import type { MileageLogDto } from '@/api/userApi';
@@ -30,6 +31,7 @@ function getAccountEmail(username: string): string {
 }
 
 export const MyPageDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const {
     reservations,
     username,
@@ -160,8 +162,11 @@ export const MyPageDashboard: React.FC = () => {
                 type="button"
                 className="btn-secondary logout-btn"
                 onClick={() => {
-                  logout();
-                  addToast('안전하게 로그아웃되었습니다.', 'info');
+                  navigate('/', { replace: true });
+                  setTimeout(() => {
+                    logout();
+                    addToast('안전하게 로그아웃되었습니다.', 'info');
+                  }, 50);
                 }}
               >
                 <i className="fa-solid fa-arrow-right-from-bracket"></i> 로그아웃
@@ -204,7 +209,6 @@ export const MyPageDashboard: React.FC = () => {
                     <div className="mp-card-body">
                       <div className="mp-card-head">
                         <strong className="mp-card-title">{reservationItem.title}</strong>
-                        <span className={`mp-badge ${reservationItem.badgeType}`}>{reservationItem.badge}</span>
                       </div>
                       <p className="mp-card-line">
                         <i className="fa-regular fa-calendar-check" style={{ marginRight: '0.25rem' }}></i>
@@ -213,19 +217,20 @@ export const MyPageDashboard: React.FC = () => {
                       <p className="mp-card-line-muted">{reservationItem.details}</p>
                     </div>
                     <div className="mp-card-footer">
+                      <span className={`mp-badge ${reservationItem.badgeType}`}>{reservationItem.badge}</span>
                       <strong className="mp-card-price">{reservationItem.price}</strong>
                       <button
                         type="button"
                         className="mp-card-cancel"
-                        disabled={reservationItem.category === 'flight' || reservationItem.category === 'ins'}
+                        disabled={reservationItem.category === 'flight'}
                         title={
-                          reservationItem.category === 'flight' || reservationItem.category === 'ins'
-                            ? '항공·보험 취소는 백엔드 미지원'
+                          reservationItem.category === 'flight'
+                            ? '항공 취소는 백엔드 미지원'
                             : undefined
                         }
                         onClick={() => {
-                          if (reservationItem.category === 'flight' || reservationItem.category === 'ins') {
-                            addToast('항공·보험 예약 취소는 현재 지원되지 않습니다.', 'info');
+                          if (reservationItem.category === 'flight') {
+                            addToast('항공 예약 취소는 현재 지원되지 않습니다.', 'info');
                             return;
                           }
                           openConfirmPopup(async (choice) => {

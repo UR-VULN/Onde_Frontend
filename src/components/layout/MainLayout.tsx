@@ -40,6 +40,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const getHeroSubtitle = () =>
     '가장 나다운 일상에서 출발하여, 온전한 나로 되돌아오는 따뜻한 여정';
 
+  const heroPaddingBottom = '5.5rem';
+
   return (
     <div className="min-h-screen flex flex-col bg-[#f7f9fa] text-slate-700 font-main">
       {/* 1. Global Header GNB */}
@@ -52,7 +54,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           className="hero select-none"
           style={{
             backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.55)), url("${getBgImage()}")`,
-            paddingBottom: '8rem',
+            paddingBottom: heroPaddingBottom,
             transition: 'background-image 0.6s ease-in-out'
           }}
         >
