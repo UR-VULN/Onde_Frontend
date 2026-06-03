@@ -6,11 +6,14 @@ import {
   process_property_approval_action_api,
   process_approval_action_api,
   get_all_bookings_api,
-  export_passenger_csv_stream_api
+  export_passenger_csv_stream_api,
+  update_admin_reservation_status_api,
+  cancel_admin_reservation_api,
 } from '@/api/adminApi';
 import type {
   PendingApprovalDto,
-  AdminBookingDto
+  AdminBookingDto,
+  AdminReservationStatus,
 } from '@/api/adminApi';
 import { canApproveProducts, canExportBookingCsv } from '@/utils/adminPermissions';
 
@@ -34,6 +37,20 @@ const DOMAIN_BADGE: Record<string, { label: string; bg: string; color: string }>
 const isPropertyApprovalCategory = (category?: string) =>
   category === 'STAYS' || category === 'CARS';
 
+const RESERVATION_STATUS_OPTIONS: AdminReservationStatus[] = [
+  'RESERVED',
+  'CONFIRMED',
+  'COMPLETED',
+  'CANCELLED',
+];
+
+const toReservationStatus = (status: string): AdminReservationStatus => {
+  const normalized = status.toUpperCase();
+  return RESERVATION_STATUS_OPTIONS.includes(normalized as AdminReservationStatus)
+    ? (normalized as AdminReservationStatus)
+    : 'RESERVED';
+};
+
 // ── Types ──────────────────────────────────────────────────────────────────
 
 interface AdminHQPanelProps {
@@ -43,7 +60,7 @@ interface AdminHQPanelProps {
 // ── Component ──────────────────────────────────────────────────────────────
 
 export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approval' }) => {
-  const { addToast, memberRole } = useTravelStore();
+  const { addToast, memberRole, openConfirmPopup } = useTravelStore();
   const canModerateProducts = canApproveProducts(memberRole);
   const canExportCsv = canExportBookingCsv(memberRole);
 
@@ -238,6 +255,64 @@ export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approv
       addToast('CSV 다운로드 중 연결 끊김 오류가 발생했습니다.', 'warning');
       setDownloadingScheduleId(null);
     }
+  };
+
+  const handle_update_reservation_status = async (
+    booking: AdminBookingDto,
+    status: AdminReservationStatus
+  ) => {
+    if (status === toReservationStatus(booking.status)) return;
+    try {
+      const res = await update_admin_reservation_status_api(booking.reservationId, status);
+      if (res.success) {
+        setBookings((prev) =>
+          prev.map((item) =>
+            item.reservationId === booking.reservationId ? { ...item, status } : item
+          )
+        );
+        addToast(res.message || '예약 상태가 변경되었습니다.', 'success');
+      } else {
+        addToast(res.message || '예약 상태 변경에 실패했습니다.', 'warning');
+      }
+    } catch (err: unknown) {
+      const msg =
+        (err as { message?: string })?.message ||
+        (err as { error?: { message?: string } })?.error?.message ||
+        '예약 상태 변경 중 오류가 발생했습니다.';
+      addToast(msg, 'warning');
+    }
+  };
+
+  const handle_cancel_reservation = (booking: AdminBookingDto) => {
+    openConfirmPopup(async (confirmed) => {
+      if (!confirmed) return;
+      try {
+        const res = await cancel_admin_reservation_api(booking.reservationId);
+        if (res.success) {
+          setBookings((prev) =>
+            prev.map((item) =>
+              item.reservationId === booking.reservationId
+                ? { ...item, status: 'CANCELLED' }
+                : item
+            )
+          );
+          addToast(res.message || '예약이 취소되었습니다.', 'success');
+        } else {
+          addToast(res.message || '예약 취소에 실패했습니다.', 'warning');
+        }
+      } catch (err: unknown) {
+        const msg =
+          (err as { message?: string })?.message ||
+          (err as { error?: { message?: string } })?.error?.message ||
+          '예약 취소 중 오류가 발생했습니다.';
+        addToast(msg, 'warning');
+      }
+    }, {
+      title: '예약 직권 취소',
+      description: `#${booking.reservationId} 예약을 관리자 권한으로 취소합니다.`,
+      yesLabel: '취소 처리',
+      noLabel: '닫기',
+    });
   };
 
   // ── Helpers ─────────────────────────────────────────────────────────────
@@ -492,6 +567,7 @@ export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approv
                 <th>체크인</th>
                 <th>체크아웃</th>
                 <th className="text-center">상태</th>
+                <th className="text-right">권한 작업</th>
               </tr>
             </thead>
             <tbody>
@@ -513,11 +589,45 @@ export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approv
                         {booking.status}
                       </span>
                     </td>
+                    <td className="text-right">
+                      {canModerateProducts ? (
+                        <div className="flex justify-end gap-2 flex-wrap">
+                          <select
+                            aria-label={`예약 ${booking.reservationId} 상태 변경`}
+                            value={toReservationStatus(booking.status)}
+                            onChange={(e) =>
+                              handle_update_reservation_status(
+                                booking,
+                                e.target.value as AdminReservationStatus
+                              )
+                            }
+                            className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-[11px] font-black text-slate-700"
+                          >
+                            {RESERVATION_STATUS_OPTIONS.map((status) => (
+                              <option key={status} value={status}>
+                                {status}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            className="px-3.5 py-1.5 rounded-lg text-[11px] font-black transition-all active:scale-95 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                            style={{ background: 'var(--secondary)' }}
+                            disabled={booking.status.toUpperCase().includes('CANCEL')}
+                            onClick={() => handle_cancel_reservation(booking)}
+                          >
+                            직권 취소
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-[11px] font-black text-slate-400">조회 전용</span>
+                      )}
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="text-center py-24 text-slate-400 font-bold">
+                  <td colSpan={8} className="text-center py-24 text-slate-400 font-bold">
                     관제 필터 조건에 부합하는 예약 정보가 없습니다.
                   </td>
                 </tr>

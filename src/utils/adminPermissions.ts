@@ -68,7 +68,11 @@ export function canAccessSettlement(role: string | null | undefined): boolean {
 }
 
 export function canDeployLbsMarkers(role: string | null | undefined): boolean {
-  return isSuperAdmin(role);
+  return isSuperAdmin(role) || isUserAdmin(role);
+}
+
+export function canAccessLbsCommunity(role: string | null | undefined): boolean {
+  return isSuperAdmin(role) || isUserAdmin(role);
 }
 
 export function canExportBookingCsv(role: string | null | undefined): boolean {
@@ -84,12 +88,12 @@ export function canReadDashboardOperational(role: string | null | undefined): bo
 }
 
 export function canReadDashboardCharts(role: string | null | undefined): boolean {
-  return isSuperAdmin(role) || isSellerAdmin(role) || isUserAdmin(role);
+  return isSuperAdmin(role) || isSellerAdmin(role);
 }
 
-/** LBS·정산 등 고권한 메뉴 — 일반 관리자에게는 사이드바에서 숨김 */
+/** 관리자 포탈 탭 접근 — LBS/커뮤니티는 SUPER_ADMIN, USER_ADMIN 전용 */
 export function canAccessAdminTab(role: string | null | undefined, tab: AdminTabId): boolean {
   if (!role || !isAdminRole(role)) return false;
-  if (tab === 'lbs' && isViewOnlyAdmin(role)) return false;
+  if (tab === 'lbs') return canAccessLbsCommunity(role);
   return true;
 }

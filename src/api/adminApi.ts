@@ -401,6 +401,42 @@ export const cancel_reservation_api = async (
 
 export const admin_cancel_booking_api = cancel_reservation_api;
 
+export type AdminReservationStatus = 'RESERVED' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+
+export const update_admin_reservation_status_api = async (
+
+  reservationId: number,
+
+  status: AdminReservationStatus
+
+): Promise<{ success: boolean; message: string }> => {
+
+  const raw = await adminAxios.patch(`/api/v1/admin/reservations/${reservationId}/status`, {
+
+    status,
+
+  });
+
+  const res = unwrapApi<unknown>(raw);
+
+  return { success: res.success, message: res.message };
+
+};
+
+export const cancel_admin_reservation_api = async (
+
+  reservationId: number
+
+): Promise<{ success: boolean; message: string }> => {
+
+  const raw = await adminAxios.post(`/api/v1/admin/reservations/${reservationId}/cancel`);
+
+  const res = unwrapApi<unknown>(raw);
+
+  return { success: res.success, message: res.message };
+
+};
+
 
 
 export interface AdminDashboardDto {
@@ -413,7 +449,13 @@ export interface AdminDashboardDto {
 
   newMembersToday: number;
 
+  activePostCount: number;
+
   blindedPosts: number;
+
+  pendingCSTickets: number;
+
+  unverifiedProperties: number;
 
   domainShare: Array<{ label: string; pct: number; color: string }>;
 
@@ -536,7 +578,13 @@ export const get_admin_dashboard_api = async (
 
       newMembersToday: Number(op.newMembersToday ?? 0),
 
+      activePostCount: Number(op.activePostCount ?? 0),
+
       blindedPosts: Number(op.blindedPosts ?? 0),
+
+      pendingCSTickets: Number(op.pendingCSTickets ?? 0),
+
+      unverifiedProperties: Number(op.unverifiedProperties ?? 0),
 
       domainShare,
 
