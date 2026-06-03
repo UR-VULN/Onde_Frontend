@@ -254,3 +254,30 @@ export const book_stay_api = async (
     data: { ...res.data, totalPrice: payload.totalPrice },
   };
 };
+
+export interface CalendarDayInfo {
+  stock: number;
+  price: number;
+  isClosed: boolean;
+}
+
+export interface InventoryCalendarResponse {
+  [day: string]: CalendarDayInfo;
+}
+
+export const get_inventory_calendar_api = async (
+  targetType: 'ROOM' | 'CAR',
+  targetId: number,
+  month: string // "YYYY-MM"
+): Promise<{ success: boolean; data: InventoryCalendarResponse; message: string }> => {
+  const raw = await userAxios.get('/api/v1/inventory/calendar', {
+    params: { targetType, targetId, month },
+  });
+  const res = unwrapApi<InventoryCalendarResponse>(raw);
+  return {
+    success: res.success,
+    message: res.message,
+    data: res.data ?? {},
+  };
+};
+

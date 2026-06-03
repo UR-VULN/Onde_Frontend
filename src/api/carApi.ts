@@ -249,3 +249,6 @@ export const book_car_api = async (
     },
   };
 };
+
+export { get_inventory_calendar_api, type CalendarDayInfo, type InventoryCalendarResponse } from './stayApi';
+

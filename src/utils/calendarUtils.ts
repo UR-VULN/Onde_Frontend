@@ -7,6 +7,7 @@ export interface CalendarCell {
   disabled: boolean;
   isWeekend: boolean;
   isEmpty: boolean; // padding cell before month starts
+  stock?: number;
 }
 
 /**

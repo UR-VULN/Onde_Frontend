@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import type { StayDto } from '@/api/stayApi';
-import { book_stay_api } from '@/api/stayApi';
+import type { StayDto, CalendarDayInfo } from '@/api/stayApi';
+import { book_stay_api, get_inventory_calendar_api } from '@/api/stayApi';
 import { buildPaymentCheckout } from '@/utils/paymentCheckout';
 import {
   buildCalendarMonth,
@@ -14,7 +14,7 @@ import {
   resolveValidStayRange,
 } from '@/utils/calendarUtils';
 import { useTravelStore } from '@/store/useTravelStore';
-import { MileageUsagePanel, clampMileageUsage } from '@/components/common/MileageUsagePanel';
+
 import { ListingThumbnail } from '@/components/common/ListingThumbnail';
 import { hasDisplayImage, hasDisplayPrice } from '@/utils/listingDisplay';
 
@@ -42,7 +42,7 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
   onClose,
 }) => {
   const navigate = useNavigate();
-  const { addToast, isLoggedIn, openAuthModal, mileage: userMileage } = useTravelStore();
+  const { addToast, isLoggedIn, openAuthModal } = useTravelStore();
 
   // stay.soldOutDays를 Set으로 변환 (백엔드 연동 시 API 응답값으로 대체)
   const [booking, setBooking] = useState(false);
@@ -63,61 +63,100 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
   const [checkOut, setCheckOut] = useState<string>(initCheckOut);
   const [selecting, setSelecting] = useState<'in' | 'out' | null>(null);
   const [adultCount, setAdultCount] = useState(2);
-  const [mileageUsed, setMileageUsed] = useState(0);
 
   // Calendar month navigation
   const [calYear, setCalYear] = useState(today.getFullYear());
   const [calMonth, setCalMonth] = useState(today.getMonth());
 
-  const nightlyRate = stay.pricePerNight ?? 0;
-
-  const cells = useMemo(
-    () => buildCalendarMonth(calYear, calMonth, nightlyRate, {
-      weekendSurchargeRate: 0.2,
-      disabledDays: soldOutDaysSet,
-      disableBeforeToday: true,
-    }),
-    [calYear, calMonth, nightlyRate, soldOutDaysSet]
-  );
-
-  // Billing
-  const nights = countNights(checkIn, checkOut);
-  const rawTotal = nights * nightlyRate;
-  const mileageDiscount = mileageUsed;
-  const finalTotal = Math.max(0, rawTotal - mileageDiscount);
+  const [calendarData, setCalendarData] = useState<Record<string, CalendarDayInfo>>({});
+  const [knownPrices, setKnownPrices] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    setMileageUsed((prev) =>
-      clampMileageUsage(prev, userMileage, rawTotal),
-    );
-  }, [userMileage, rawTotal]);
+    let active = true;
+    const fetchCalendar = async () => {
+      const monthStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}`;
+      try {
+        const res = await get_inventory_calendar_api('ROOM', roomId, monthStr);
+        if (res.success && active) {
+          setCalendarData(res.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch calendar:', err);
+      }
+    };
+    fetchCalendar();
+    return () => { active = false; };
+  }, [calYear, calMonth, roomId]);
 
-  // Week day breakdown for billing description
-  const weekdayCount = useMemo(() => {
-    let wd = 0;
-    const s = new Date(checkIn);
-    const e = new Date(checkOut);
-    const cur = new Date(s);
-    while (cur < e) {
-      const day = cur.getDay();
-      if (day !== 0 && day !== 6) wd++;
+  useEffect(() => {
+    if (Object.keys(calendarData).length > 0) {
+      setKnownPrices(prev => {
+        const next = { ...prev };
+        Object.entries(calendarData).forEach(([day, info]) => {
+          const mm = String(calMonth + 1).padStart(2, '0');
+          const dd = String(day).padStart(2, '0');
+          const dateStr = `${calYear}-${mm}-${dd}`;
+          next[dateStr] = info.price;
+        });
+        return next;
+      });
+    }
+  }, [calendarData, calYear, calMonth]);
+
+  const nightlyRate = stay.pricePerNight ?? 0;
+
+  const cells = useMemo(() => {
+    const rawCells = buildCalendarMonth(calYear, calMonth, nightlyRate, {
+      weekendSurchargeRate: 0,
+      disabledDays: soldOutDaysSet,
+      disableBeforeToday: true,
+    });
+    return rawCells.map(cell => {
+      if (cell.isEmpty) return cell;
+      const dayKey = String(cell.day);
+      const dbInfo = calendarData[dayKey];
+      if (dbInfo) {
+        return {
+          ...cell,
+          price: dbInfo.price > 0 ? dbInfo.price : cell.price,
+          disabled: cell.disabled || dbInfo.isClosed || dbInfo.stock <= 0,
+          stock: dbInfo.stock,
+        };
+      }
+      return cell;
+    });
+  }, [calYear, calMonth, nightlyRate, soldOutDaysSet, calendarData]);
+
+  // Billing
+  const isRangeSelected = !!(checkIn && checkOut);
+  const nights = isRangeSelected ? countNights(checkIn, checkOut) : 0;
+
+  const rawTotal = useMemo(() => {
+    if (!isRangeSelected) return 0;
+    let total = 0;
+    const start = new Date(checkIn);
+    const end = new Date(checkOut);
+    const cur = new Date(start);
+    while (cur < end) {
+      const y = cur.getFullYear();
+      const m = String(cur.getMonth() + 1).padStart(2, '0');
+      const d = String(cur.getDate()).padStart(2, '0');
+      const dateStr = `${y}-${m}-${d}`;
+      const price = knownPrices[dateStr] ?? nightlyRate;
+      total += price;
       cur.setDate(cur.getDate() + 1);
     }
-    return wd;
-  }, [checkIn, checkOut]);
-  const weekendCount = nights - weekdayCount;
+    return total;
+  }, [isRangeSelected, checkIn, checkOut, knownPrices, nightlyRate]);
 
-  const weekdayPrice = nightlyRate;
-  const weekendPrice = Math.round((nightlyRate * 1.2) / 1000) * 1000;
+  const finalTotal = rawTotal;
 
   function buildBillingDesc(): string {
-    if (nights === 0) return '일정을 선택해 주세요';
+    if (!isRangeSelected) return '일정을 완료해 주세요';
     if (!hasDisplayPrice(nightlyRate)) return '—';
-    const parts: string[] = [];
-    if (weekdayCount > 0) parts.push(`평일 ${weekdayCount}박 × ₩${weekdayPrice.toLocaleString()}`);
-    if (weekendCount > 0) parts.push(`주말 ${weekendCount}박 × ₩${weekendPrice.toLocaleString()}`);
-    return parts.join(' + ') || '-';
+    return `₩${(rawTotal / nights).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}/박 평균 요금 (총 ${nights}박)`;
   }
+
 
   // Check if any sold-out day falls within the occupied stay nights
   function hasSoldOutInRange(start: string, end: string): boolean {
@@ -196,10 +235,7 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
     };
   }
 
-  // Banner dates
-  const bannerStart = checkIn || todayStr();
-  const bannerEnd = checkOut || addDaysStr(bannerStart, 1);
-  const bannerNights = countNights(bannerStart, bannerEnd);
+
 
 
   useEffect(() => {
@@ -215,8 +251,8 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
       openAuthModal('login');
       return;
     }
-    if (nights === 0) {
-      addToast('체크인/체크아웃 일정을 선택해 주세요.', 'warning');
+    if (!isRangeSelected) {
+      addToast('일정을 완료해 주세요.', 'warning');
       return;
     }
 
@@ -227,7 +263,7 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
         checkIn,
         checkOut,
         guests: adultCount,
-        totalPrice: finalTotal + mileageUsed,
+        totalPrice: finalTotal,
       });
       if (!res.success || !res.data?.reservationId) {
         addToast(res.message || '숙소 예약에 실패했습니다.', 'warning');
@@ -243,12 +279,12 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
           productImageUrl: hasDisplayImage(stay.imageUrl) ? stay.imageUrl : undefined,
           categoryLabel: '숙소',
           categoryIcon: 'fa-hotel',
-          totalAmount: res.data.totalPrice ?? finalTotal + mileageUsed,
-          usedMileage: mileageUsed,
+          totalAmount: res.data.totalPrice ?? finalTotal,
+          usedMileage: 0,
           dateSummary: `${checkIn} ~ ${checkOut} (${nights}박)`,
           detailLines: [
             ...(hasDisplayPrice(nightlyRate)
-              ? [`₩${nightlyRate.toLocaleString('ko-KR')} × ${nights}박`]
+              ? [`₩${(finalTotal / nights).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}/박 평균 × ${nights}박`]
               : []),
             `성인 ${adultCount}명`,
           ],
@@ -360,15 +396,15 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
                 선택한 예약 일정
               </span>
               <strong style={{ fontSize: '0.9rem', color: '#1a1a1a' }}>
-                {bannerStart} ➔ {bannerEnd || '—'}
+                {isRangeSelected ? `${checkIn} ➔ ${checkOut}` : `${checkIn || '—'} ➔ 선택 대기 중`}
               </strong>
             </div>
             <span style={{
-              background: PRIMARY, color: '#fff',
+              background: isRangeSelected ? PRIMARY : SECONDARY, color: '#fff',
               fontSize: '0.72rem', fontWeight: 800,
               padding: '0.22rem 0.65rem', borderRadius: '999px',
             }}>
-              {bannerNights}박 {bannerNights + 1}일
+              {isRangeSelected ? `${nights}박 ${nights + 1}일` : '체크아웃 선택 대기'}
             </span>
           </div>
 
@@ -446,12 +482,19 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
                       {cell.day}
                     </span>
                     {!cell.disabled && (
-                      <span style={{ fontSize: '0.52rem', fontWeight: 700, color: isSelected ? 'rgba(255,255,255,0.85)' : '#717171', marginTop: '1px', letterSpacing: '-0.3px' }}>
-                        {(cell.price / 1000).toFixed(0)}만
-                      </span>
+                      <>
+                        <span style={{ fontSize: '0.62rem', fontWeight: 700, color: isSelected ? 'rgba(255,255,255,0.85)' : '#717171', marginTop: '1px', letterSpacing: '-0.3px' }}>
+                          {cell.price / 10000}만
+                        </span>
+                        {cell.stock !== undefined && (
+                          <span style={{ fontSize: '0.58rem', fontWeight: 800, color: isSelected ? 'rgba(255,255,255,0.75)' : '#005ce6', marginTop: '1px' }}>
+                            {cell.stock}개 남음
+                          </span>
+                        )}
+                      </>
                     )}
                     {cell.disabled && (
-                      <span style={{ fontSize: '0.48rem', fontWeight: 800, color: SECONDARY, marginTop: '1px' }}>품절</span>
+                      <span style={{ fontSize: '0.48rem', fontWeight: 800, color: SECONDARY, marginTop: '1px' }}>예약마감</span>
                     )}
                   </div>
                 );
@@ -505,13 +548,6 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
             )}
           </div>
 
-          <MileageUsagePanel
-            availableBalance={userMileage}
-            orderTotal={rawTotal}
-            value={mileageUsed}
-            onChange={setMileageUsed}
-          />
-
         </div>
 
         {/* ── Fixed Footer ── */}
@@ -523,22 +559,16 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
             border: '1px solid #ddd',
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#4a4a4a', marginBottom: '0.35rem' }}>
-              <span>객실 이용료 ({nights}박)</span>
-              <span style={{ fontWeight: 700, color: '#1a1a1a' }}>₩{rawTotal.toLocaleString('ko-KR')}</span>
+              <span>객실 이용료 ({isRangeSelected ? `${nights}박` : '선택 대기'})</span>
+              <span style={{ fontWeight: 700, color: '#1a1a1a' }}>{isRangeSelected ? `₩${rawTotal.toLocaleString('ko-KR')}` : '₩ -'}</span>
             </div>
             <div style={{ fontSize: '0.75rem', color: '#717171', marginBottom: '0.35rem', paddingLeft: '0.4rem' }}>
               {buildBillingDesc()}
             </div>
-            {mileageUsed > 0 && rawTotal > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#008a05', marginBottom: '0.35rem', borderTop: '1px solid rgba(0,0,0,0.04)', paddingTop: '0.35rem' }}>
-                <span>마일리지 차감 적용</span>
-                <span>− ₩{mileageUsed.toLocaleString('ko-KR')}</span>
-              </div>
-            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '0.55rem', fontWeight: 800, fontSize: '1.05rem', color: '#1a1a1a' }}>
               <span>최종 결제 합계</span>
               <span style={{ color: SECONDARY, fontSize: '1.22rem', fontFamily: 'GmarketSansBold, Pretendard, sans-serif' }}>
-                ₩{finalTotal.toLocaleString('ko-KR')}
+                {isRangeSelected ? `₩${finalTotal.toLocaleString('ko-KR')}` : '₩ -'}
               </span>
             </div>
           </div>
