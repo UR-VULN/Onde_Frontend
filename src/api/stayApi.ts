@@ -72,18 +72,22 @@ interface BackendAccommodationItem {
 }
 
 function mapBackendItem(item: BackendAccommodationItem): AccommodationDto {
+  const rawUrl = item.thumbnailUrl ?? '';
+  const thumbnailUrl = rawUrl ? (rawUrl.startsWith('http') ? rawUrl : `http://localhost:9000/onde-local/${rawUrl}`) : '';
   return {
     accommodationId: Number(item.accommodationId ?? item.id ?? 0),
     name: item.name,
     category: item.category,
     location: item.location,
-    thumbnailUrl: item.thumbnailUrl ?? '',
+    thumbnailUrl,
     minPrice: item.minPrice ?? 0,
     availableRooms: item.availableRooms,
   };
 }
 
 export function mapStayToStayDto(stay: MapStayItem): StayDto {
+  const rawUrl = stay.imageUrl?.trim();
+  const imageUrl = rawUrl ? (rawUrl.startsWith('http') ? rawUrl : `http://localhost:9000/onde-local/${rawUrl}`) : undefined;
   return {
     id: stay.accommodationId,
     accommodationId: stay.accommodationId,
@@ -93,7 +97,7 @@ export function mapStayToStayDto(stay: MapStayItem): StayDto {
     city: stay.city,
     country: stay.country,
     description: stay.description,
-    ...(stay.imageUrl?.trim() ? { imageUrl: stay.imageUrl } : {}),
+    ...(imageUrl ? { imageUrl } : {}),
     ...(stay.pricePerNight != null && stay.pricePerNight > 0 ? { pricePerNight: stay.pricePerNight } : {}),
     ...(stay.rating != null && stay.rating > 0 ? { rating: stay.rating } : {}),
     ...(stay.reviewCount != null && stay.reviewCount > 0 ? { reviewCount: stay.reviewCount } : {}),
@@ -103,6 +107,8 @@ export function mapStayToStayDto(stay: MapStayItem): StayDto {
 
 function mapAccommodationToStayDto(item: AccommodationDto): StayDto {
   const [city = '', country = ''] = item.location.split(',').map((s) => s.trim());
+  const rawUrl = item.thumbnailUrl?.trim();
+  const imageUrl = rawUrl ? (rawUrl.startsWith('http') ? rawUrl : `http://localhost:9000/onde-local/${rawUrl}`) : undefined;
   return {
     id: item.accommodationId,
     accommodationId: item.accommodationId,
@@ -113,7 +119,7 @@ function mapAccommodationToStayDto(item: AccommodationDto): StayDto {
     city,
     country,
     description: item.name,
-    ...(item.thumbnailUrl?.trim() ? { imageUrl: item.thumbnailUrl } : {}),
+    ...(imageUrl ? { imageUrl } : {}),
     ...(item.minPrice > 0 ? { pricePerNight: item.minPrice } : {}),
     tags: [item.category],
   };
