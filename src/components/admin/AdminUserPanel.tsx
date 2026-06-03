@@ -3,6 +3,7 @@ import { useTravelStore } from '@/store/useTravelStore';
 import {
   get_admin_members_api,
   patch_admin_member_api,
+  patch_admin_member_status_api,
   type AdminMemberDto,
 } from '@/api/adminApi';
 import { ROLE_BADGE_CLASS } from '@/constants/appConstants';
@@ -15,6 +16,20 @@ function isProtectedAdminRole(role: string): boolean {
     role === 'ROLE_ADMIN' ||
     role.includes('ADMIN')
   );
+}
+
+function isPendingSeller(user: AdminMemberDto): boolean {
+  return user.role === 'ROLE_SELLER' && user.status === 'PENDING';
+}
+
+function getMemberStatusBadgeClass(user: AdminMemberDto): string {
+  if (user.isBlacklisted || user.status === 'BANNED' || user.status === 'BLACKLIST') {
+    return 'status-rejected';
+  }
+  if (user.status === 'PENDING') {
+    return 'status-pending';
+  }
+  return 'status-active';
 }
 
 export const AdminUserPanel: React.FC = () => {
@@ -92,6 +107,29 @@ export const AdminUserPanel: React.FC = () => {
     });
   };
 
+  const handle_seller_approve = (userId: number) => {
+    const user = users.find((u) => u.id === userId);
+    if (!user || !isPendingSeller(user)) return;
+
+    openConfirmPopup(async (confirmed) => {
+      if (!confirmed) return;
+      const res = await patch_admin_member_status_api(userId, 'ACTIVE');
+      if (res.success) {
+        setUsers((prev) =>
+          prev.map((u) => (u.id === userId ? { ...u, status: 'ACTIVE' } : u))
+        );
+        addToast(res.message || '판매자 계정이 승인되었습니다.', 'success');
+      } else {
+        addToast(res.message || '판매자 승인에 실패했습니다.', 'warning');
+      }
+    }, {
+      title: '판매자 승인',
+      description: `${user.email} 판매자 계정을 승인합니다.`,
+      yesLabel: '승인',
+      noLabel: '취소',
+    });
+  };
+
   return (
     <div className="admin-panel">
       <div className="section-header">
@@ -145,12 +183,16 @@ export const AdminUserPanel: React.FC = () => {
                   </span>
                 </td>
                 <td className="text-center">
-                  <span className={`status-badge ${user.isBlacklisted ? 'status-rejected' : 'status-active'}`}>
+                  <span className={`status-badge ${getMemberStatusBadgeClass(user)}`}>
                     {user.status}
                   </span>
                 </td>
                 <td className="text-center">
-                  {!isProtectedAdminRole(user.role) && canEditMembers ? (
+                  {!isProtectedAdminRole(user.role) && canEditMembers && isPendingSeller(user) ? (
+                    <button type="button" className="btn-secondary text-[11px] py-1.5 px-4" onClick={() => handle_seller_approve(user.id)}>
+                      판매자 승인
+                    </button>
+                  ) : !isProtectedAdminRole(user.role) && canEditMembers ? (
                     <button type="button" className="btn-secondary text-[11px] py-1.5 px-4" onClick={() => handle_role_change(user.id)}>
                       {user.role === 'ROLE_USER' ? 'SELLER 전환' : 'USER 전환'}
                     </button>

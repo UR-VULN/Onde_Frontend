@@ -578,6 +578,8 @@ export interface AdminMemberDto {
 
 }
 
+export type AdminMemberStatus = 'ACTIVE' | 'PENDING' | 'DORMANT' | 'WITHDRAWN' | 'BANNED';
+
 
 
 export interface AdminMembersResponse {
@@ -729,6 +731,44 @@ export const blacklist_admin_member_api = async (
     const msg =
 
       (err as { error?: { message?: string } })?.error?.message ?? '블랙리스트 처리에 실패했습니다.';
+
+    return { success: false, message: msg };
+
+  }
+
+};
+
+export const patch_admin_member_status_api = async (
+
+  memberId: number,
+
+  status: AdminMemberStatus
+
+): Promise<{ success: boolean; message: string; data?: { memberId: number; status: AdminMemberStatus } }> => {
+
+  try {
+
+    const raw = await adminAxios.patch(`/api/v1/admin/members/${memberId}/status`, { status });
+    const res = unwrapApi<{ memberId: number; status: AdminMemberStatus }>(raw);
+
+    return {
+
+      success: res.success,
+
+      message: res.message || '회원 상태가 변경되었습니다.',
+
+      data: res.data,
+
+    };
+
+  } catch (err: unknown) {
+
+    const msg =
+
+      (err as { message?: string; error?: { message?: string; systemMessage?: string } })?.message ??
+      (err as { error?: { message?: string; systemMessage?: string } })?.error?.message ??
+      (err as { error?: { systemMessage?: string } })?.error?.systemMessage ??
+      '회원 상태 변경에 실패했습니다.';
 
     return { success: false, message: msg };
 
