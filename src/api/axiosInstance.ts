@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { refresh_token_api } from '@/api/authApi';
 import { ADMIN_API_BASE, USER_API_BASE } from '@/constants/apiConfig';
-import { clearAuthSession } from '@/utils/authSession';
+import { clearAuthSession, hasPostLogoutRedirect } from '@/utils/authSession';
 import { getAccessToken, getMemberId, updateAccessToken } from '@/utils/authCookies';
 import { isErrorPagePath, redirectByHttpStatus } from '@/utils/errorNavigation';
 import { useTravelStore } from '@/store/useTravelStore';
@@ -79,7 +79,9 @@ const finalizeResponseError = (error: {
   const status = error.response?.status;
   const onErrorPage = isErrorPagePath(window.location.pathname);
 
-  if (status && !onErrorPage && !error.config?.skipErrorRedirect) {
+  const suppressErrorRedirect = hasPostLogoutRedirect();
+
+  if (status && !onErrorPage && !error.config?.skipErrorRedirect && !suppressErrorRedirect) {
     if (status === 401) {
       clearAuthSession();
     }

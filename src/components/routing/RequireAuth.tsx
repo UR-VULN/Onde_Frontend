@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useTravelStore } from '@/store/useTravelStore';
 import { hasAuthSession, restoreSessionFromCookies } from '@/utils/authCookies';
+import { consumePostLogoutRedirect } from '@/utils/authSession';
 
 interface RequireAuthProps {
   children: React.ReactNode;
@@ -19,6 +20,10 @@ export const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
   const authed = useTravelStore((s) => s.isLoggedIn);
 
   if (!authed && !hasAuthSession()) {
+    const redirectTo = consumePostLogoutRedirect();
+    if (redirectTo) {
+      return <Navigate to={redirectTo} replace />;
+    }
     return <Navigate to="/401" replace state={{ from: location.pathname }} />;
   }
 

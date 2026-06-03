@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useTravelStore } from '@/store/useTravelStore';
 import { isAdminRole, isSellerRole } from '@/utils/memberRole';
+import { consumePostLogoutRedirect } from '@/utils/authSession';
 
 export type RoleGuard = 'seller' | 'admin';
 
@@ -21,6 +22,10 @@ export const RequireRole: React.FC<RequireRoleProps> = ({ guard, children }) => 
   const location = useLocation();
 
   if (!isLoggedIn) {
+    const redirectTo = consumePostLogoutRedirect();
+    if (redirectTo) {
+      return <Navigate to={redirectTo} replace />;
+    }
     return <Navigate to="/401" replace state={{ from: location.pathname }} />;
   }
 

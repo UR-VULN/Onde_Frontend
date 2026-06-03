@@ -1,7 +1,9 @@
-import React from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Outlet, useLocation, Navigate } from 'react-router-dom';
 import { Header } from './Header';
 import { Footer } from './Footer';
+import { useTravelStore } from '@/store/useTravelStore';
+import { isSellerRole, isAdminRole } from '@/utils/memberRole';
 
 // Import local assets for Hero section background images
 import stayBg from '@/assets/stay.avif';
@@ -18,6 +20,27 @@ interface MainLayoutProps {
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const location = useLocation();
+  const { isLoggedIn, memberRole, addToast } = useTravelStore();
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      if (isSellerRole(memberRole)) {
+        addToast('잘못된 접근입니다. 판매자 페이지로 이동합니다.', 'warning');
+      } else if (isAdminRole(memberRole)) {
+        addToast('잘못된 접근입니다. 관리자 페이지로 이동합니다.', 'warning');
+      }
+    }
+  }, [isLoggedIn, memberRole, addToast]);
+
+  if (isLoggedIn) {
+    if (isSellerRole(memberRole)) {
+      return <Navigate to="/seller" replace />;
+    }
+    if (isAdminRole(memberRole)) {
+      return <Navigate to="/admin" replace />;
+    }
+  }
+
 
   const heroImages: Record<string, string> = {
     '/':           stayBg,

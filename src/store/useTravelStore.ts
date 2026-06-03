@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { MemberProfileDto } from '@/api/userApi';
 import { clearAllAuthCookies } from '@/utils/authCookies';
+import { setPostLogoutRedirect } from '@/utils/authSession';
 
 export interface MyPageReservation {
   id: string;
@@ -49,7 +50,7 @@ interface TravelState {
     memberId?: number | null
   ) => void;
   setMemberProfile: (profile: MemberProfileDto) => void;
-  logout: () => void;
+  logout: (options?: { redirectTo?: string }) => void;
 
   addToast: (message: string, type?: 'success' | 'info' | 'warning') => void;
   removeToast: (id: string) => void;
@@ -109,7 +110,11 @@ export const useTravelStore = create<TravelState>((set) => ({
       membershipGrade: profile.membershipGrade,
     }),
 
-  logout: () => {
+  logout: (options) => {
+    const redirectTo = options?.redirectTo;
+    if (redirectTo) {
+      setPostLogoutRedirect(redirectTo);
+    }
     clearAllAuthCookies();
     set({
       isLoggedIn: false,
@@ -120,6 +125,9 @@ export const useTravelStore = create<TravelState>((set) => ({
       membershipGrade: '',
       reservations: [],
     });
+    if (redirectTo) {
+      window.location.replace(redirectTo);
+    }
   },
 
   addToast: (message, type = 'success') =>

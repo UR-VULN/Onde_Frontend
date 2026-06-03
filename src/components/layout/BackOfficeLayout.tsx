@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { logoutToHome } from '@/utils/authSession';
 
 interface SidebarItem {
   id: string;
@@ -15,7 +16,6 @@ interface BackOfficeLayoutProps {
   onTabChange: (id: any) => void;
   children: React.ReactNode;
   username?: string;
-  logout: () => void;
   platformStatus?: string;
 }
 
@@ -27,7 +27,6 @@ export const BackOfficeLayout: React.FC<BackOfficeLayoutProps> = ({
   onTabChange,
   children,
   username,
-  logout,
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
@@ -48,13 +47,14 @@ export const BackOfficeLayout: React.FC<BackOfficeLayoutProps> = ({
 
             <div
               className="logo select-none cursor-pointer"
-              onClick={() => navigate('/', { replace: true })}
+              onClick={() => navigate(portalType === 'sell' ? '/seller' : '/admin', { replace: true })}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') navigate('/', { replace: true });
+                if (e.key === 'Enter' || e.key === ' ') navigate(portalType === 'sell' ? '/seller' : '/admin', { replace: true });
               }}
             >
+
               <div className="logo-box">
                 <span className="logo-box-line">ON</span>
                 <span className="logo-box-line">DE</span>
@@ -129,12 +129,7 @@ export const BackOfficeLayout: React.FC<BackOfficeLayoutProps> = ({
                 </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    navigate('/', { replace: true });
-                    setTimeout(() => {
-                      logout();
-                    }, 50);
-                  }}
+                  onClick={logoutToHome}
                   className="extranet-item"
                 >
                   <i className="fa-solid fa-arrow-right-from-bracket text-rose-500 text-center w-5"></i>

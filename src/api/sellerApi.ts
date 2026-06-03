@@ -26,6 +26,8 @@ export const get_seller_settlement_account_api = async (): Promise<{
   return unwrapApi<SellerSettlementAccountDto>(raw);
 };
 
+
+
 export const put_seller_settlement_account_api = async (
   payload: SellerSettlementAccountPayload
 ): Promise<{ success: boolean; data: SellerSettlementAccountDto | null; message: string }> => {

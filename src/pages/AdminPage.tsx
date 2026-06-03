@@ -17,7 +17,7 @@ const SIDEBAR_ITEMS = [
 ];
 
 export const AdminPage: React.FC = () => {
-  const { username, logout } = useTravelStore();
+  const { username } = useTravelStore();
   const [activeTab, setActiveTab] = useState<AdminTab>('stat');
 
   const renderPanel = () => {
@@ -39,7 +39,6 @@ export const AdminPage: React.FC = () => {
       activeTab={activeTab}
       onTabChange={(id) => setActiveTab(id as AdminTab)}
       username={username}
-      logout={logout}
       platformStatus="정상"
     >
       {renderPanel()}
