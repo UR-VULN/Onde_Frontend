@@ -144,7 +144,7 @@ export const fetch_my_reservations_api = async (): Promise<{
   let localCancelled: string[] = [];
   try {
     localCancelled = JSON.parse(localStorage.getItem('cancelled_reservations') || '[]');
-  } catch (e) {
+  } catch {
     // ignore
   }
 
