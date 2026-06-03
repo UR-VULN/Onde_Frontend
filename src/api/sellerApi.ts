@@ -19,11 +19,16 @@ export interface SellerSettlementAccountDto extends SellerSettlementAccountPaylo
 
 export const get_seller_settlement_account_api = async (): Promise<{
   success: boolean;
-  data: SellerSettlementAccountDto;
+  data: SellerSettlementAccountDto | null;
   message: string;
 }> => {
-  const raw = await sellerAxios.get('/api/v1/seller/settlements/accounts');
-  return unwrapApi<SellerSettlementAccountDto>(raw);
+  const raw = await sellerAxios.get('/api/v1/seller/settlements/accounts', { skipErrorRedirect: true });
+  const res = unwrapApi<SellerSettlementAccountDto | null>(raw);
+  return {
+    success: res.success,
+    data: res.data ?? null,
+    message: res.message,
+  };
 };
 
 
