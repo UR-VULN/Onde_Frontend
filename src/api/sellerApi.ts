@@ -5,6 +5,9 @@ const PLATFORM_COMMISSION_RATE = 0.03;
 
 export interface SellerSettlementAccountPayload {
   bankName: string;
+  businessName?: string;
+  contactPhone?: string;
+  businessAddress?: string;
   accountNumber: string;
   accountHolder: string;
   businessNumber: string;
@@ -58,6 +61,9 @@ export const save_seller_profile_api = async (payload: {
 }): Promise<{ success: boolean; data: SellerSettlementAccountDto | null; message: string }> => {
   const res = await put_seller_settlement_account_api({
     bankName: payload.bankName,
+    businessName: payload.businessName,
+    contactPhone: payload.contactPhone,
+    businessAddress: payload.address,
     accountNumber: payload.accountNumber,
     accountHolder: payload.accountHolder,
     businessNumber: payload.businessNumber,

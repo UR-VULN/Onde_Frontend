@@ -18,7 +18,7 @@ export const SellerAccountPanel: React.FC = () => {
 
   const [businessName, setBusinessName] = useState('온데 글로벌 리조트');
   const [contactPhone, setContactPhone] = useState('02-1234-5678');
-  const [address] = useState('서울 강남구');
+  const [address, setAddress] = useState('서울 강남구');
 
   // ─── 사업자 진위 확인 ─────────────────────────
   const [businessNumber, setBusinessNumber] = useState('');
@@ -43,6 +43,9 @@ export const SellerAccountPanel: React.FC = () => {
     get_seller_settlement_account_api()
       .then((res) => {
         if (!res.success || !res.data) return;
+        setBusinessName(res.data.businessName ?? '온데 글로벌 리조트');
+        setContactPhone(res.data.contactPhone ?? '02-1234-5678');
+        setAddress(res.data.businessAddress ?? '서울 강남구');
         setBankName(res.data.bankName);
         setAccountHolder(res.data.accountHolder);
         setHasSettlementAccount(true);
@@ -250,7 +253,7 @@ export const SellerAccountPanel: React.FC = () => {
               <input
                 type="text"
                 value={address}
-                readOnly
+                onChange={(e) => setAddress(e.target.value)}
                 className="form-input"
                 style={{ flex: 1 }}
               />
