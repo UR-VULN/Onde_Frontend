@@ -109,6 +109,8 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
   }, [calendarData, calYear, calMonth]);
 
   const nightlyRate = stay.pricePerNight ?? 0;
+  const BASE_CAPACITY = 2;
+  const SURCHARGE_PER_PERSON = 20000;
 
   const cells = useMemo(() => {
     const rawCells = buildCalendarMonth(calYear, calMonth, nightlyRate, {
@@ -136,6 +138,10 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
   const isRangeSelected = !!(checkIn && checkOut);
   const nights = isRangeSelected ? countNights(checkIn, checkOut) : 0;
 
+  const surchargePerNight = useMemo(() => {
+    return adultCount > BASE_CAPACITY ? (adultCount - BASE_CAPACITY) * SURCHARGE_PER_PERSON : 0;
+  }, [adultCount]);
+
   const rawTotal = useMemo(() => {
     if (!isRangeSelected) return 0;
     let total = 0;
@@ -148,11 +154,11 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
       const d = String(cur.getDate()).padStart(2, '0');
       const dateStr = `${y}-${m}-${d}`;
       const price = knownPrices[dateStr] ?? nightlyRate;
-      total += price;
+      total += (price + surchargePerNight);
       cur.setDate(cur.getDate() + 1);
     }
     return total;
-  }, [isRangeSelected, checkIn, checkOut, knownPrices, nightlyRate]);
+  }, [isRangeSelected, checkIn, checkOut, knownPrices, nightlyRate, surchargePerNight]);
 
   const finalTotal = rawTotal * roomCount;
 
@@ -160,7 +166,13 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
     if (!isRangeSelected) return '일정을 완료해 주세요';
     if (!hasDisplayPrice(nightlyRate)) return '—';
     const average = rawTotal / nights;
-    return `₩${average.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}/박 평균 × ${nights}박 × 객실 ${roomCount}개`;
+    const baseAverage = average - surchargePerNight;
+    
+    return (
+      `₩${baseAverage.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}` +
+      (surchargePerNight > 0 ? ` (+인원추가 ₩${surchargePerNight.toLocaleString()})` : '') +
+      `/박 평균 × ${nights}박 × 객실 ${roomCount}개`
+    );
   }
 
 
