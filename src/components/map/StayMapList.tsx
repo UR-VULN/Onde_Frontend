@@ -25,10 +25,13 @@ const StayMapListItem = memo(function StayMapListItem({
 
   React.useEffect(() => {
     if (isSelected && cardRef.current) {
-      cardRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-      });
+      const timer = setTimeout(() => {
+        cardRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+        });
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [isSelected]);
 
