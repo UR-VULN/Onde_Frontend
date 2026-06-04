@@ -20,8 +20,8 @@ export const WalletPanel: React.FC = () => {
   };
 
   return (
-    <div 
-      style={{ 
+    <div
+      style={{
         marginBottom: '2rem',
         background: 'linear-gradient(135deg, #64748b 0%, #334155 100%)',
         borderRadius: '1.25rem',
@@ -73,7 +73,7 @@ export const WalletPanel: React.FC = () => {
 
       <div style={{ marginTop: '2.5rem', display: 'flex', gap: '1rem', alignItems: 'center', position: 'relative', zIndex: 1 }}>
         <div style={{ position: 'relative', width: '220px' }}>
-          <select 
+          <select
             value={chargeAmount}
             onChange={(e) => setChargeAmount(Number(e.target.value))}
             disabled={isCharging}
@@ -102,7 +102,7 @@ export const WalletPanel: React.FC = () => {
           </select>
           <i className="fa-solid fa-chevron-down" style={{ position: 'absolute', right: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255, 255, 255, 0.7)', pointerEvents: 'none' }}></i>
         </div>
-        <button 
+        <button
           onClick={handleCharge}
           disabled={isCharging}
           style={{
@@ -134,7 +134,7 @@ export const WalletPanel: React.FC = () => {
             }
           }}
         >
-          {isCharging ? <i className="fa-solid fa-spinner fa-spin" /> : <i className="fa-solid fa-bolt" />} 
+          {isCharging ? <i className="fa-solid fa-spinner fa-spin" /> : <i className="fa-solid fa-bolt" />}
           {isCharging ? '충전 중...' : '충전하기'}
         </button>
       </div>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { get_admin_dashboard_api, type AdminDashboardDto } from '@/api/adminApi';
+import { get_admin_dashboard_api, trigger_settlement_batch_api, type AdminDashboardDto } from '@/api/adminApi';
 import { useTravelStore } from '@/store/useTravelStore';
 import { isSellerAdmin, isUserAdmin } from '@/utils/adminPermissions';
 
@@ -11,8 +11,9 @@ const DOMAIN_LABELS: Record<string, string> = {
 };
 
 export const AdminDashboardPanel: React.FC = () => {
-  const { memberRole } = useTravelStore();
+  const { memberRole, addToast } = useTravelStore();
   const [dashboard, setDashboard] = useState<AdminDashboardDto | null>(null);
+  const [isTriggeringBatch, setIsTriggeringBatch] = useState(false);
 
   useEffect(() => {
     get_admin_dashboard_api()
@@ -21,6 +22,20 @@ export const AdminDashboardPanel: React.FC = () => {
       })
       .catch(() => undefined);
   }, []);
+
+  const handleTriggerBatch = async () => {
+    setIsTriggeringBatch(true);
+    addToast('정산 배치를 실행 중입니다...', 'info');
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0];
+    const res = await trigger_settlement_batch_api(dateStr);
+    if (res.success) {
+      addToast(`✅ ${dateStr} 정산 배치가 성공적으로 실행되었습니다!`, 'success');
+    } else {
+      addToast(res.message || '정산 배치 실행에 실패했습니다.', 'warning');
+    }
+    setIsTriggeringBatch(false);
+  };
 
   const domainShare = dashboard?.domainShare ?? [];
   const byDomain = dashboard?.byDomain ?? {};
@@ -58,6 +73,32 @@ export const AdminDashboardPanel: React.FC = () => {
         <span className="badge" style={{ background: '#e6f0ff', color: 'var(--primary)' }}>
           마지막 업데이트: 실시간
         </span>
+        {!isUserOpsDashboard && (
+          <button
+            type="button"
+            onClick={handleTriggerBatch}
+            disabled={isTriggeringBatch}
+            style={{
+              padding: '0.55rem 1.2rem',
+              borderRadius: '0.65rem',
+              background: isTriggeringBatch ? '#94a3b8' : 'linear-gradient(135deg, #059669, #10b981)',
+              color: '#fff',
+              border: 'none',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              cursor: isTriggeringBatch ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
+              transition: 'all 0.2s',
+            }}
+          >
+            {isTriggeringBatch
+              ? <><i className="fa-solid fa-spinner fa-spin" /> 실행 중...</>
+              : <><i className="fa-solid fa-play" /> 정산 배치 즉시 실행</>}
+          </button>
+        )}
       </div>
 
       {isUserOpsDashboard ? (
