@@ -213,10 +213,17 @@ export const StayMapExplorer: React.FC<StayMapExplorerProps> = ({ searchQuery, c
               zoom={DEFAULT_MAP_ZOOM}
               className="map-canvas"
               scrollWheelZoom
+              minZoom={3}
+              maxBounds={[
+                [-90, -180],
+                [90, 180],
+              ]}
+              maxBoundsViscosity={1.0}
             >
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                 url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
+                noWrap={true}
               />
               <MapBoundsTracker onBoundsChange={handleBoundsChange} />
               <MapFlyToTarget target={flyTarget} />
