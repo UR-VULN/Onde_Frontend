@@ -21,8 +21,20 @@ const StayMapListItem = memo(function StayMapListItem({
   onSelect: (stay: MapStayItem) => void;
   onDetail: (stay: MapStayItem) => void;
 }) {
+  const cardRef = React.useRef<HTMLElement>(null);
+
+  React.useEffect(() => {
+    if (isSelected && cardRef.current) {
+      cardRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+      });
+    }
+  }, [isSelected]);
+
   return (
     <article
+      ref={cardRef}
       className={`map-stay-item${isSelected ? ' is-selected' : ''}`}
       onClick={() => onSelect(stay)}
       onKeyDown={(e) => e.key === 'Enter' && onSelect(stay)}
