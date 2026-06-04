@@ -131,7 +131,16 @@ export const request_monthly_settlement_api = async (): Promise<{
   const list = await get_seller_settlements_api(0, 20);
   if (!list.success) return { success: false, message: list.message };
   const pending = list.data?.settlements?.find((s) => s.status === 'PENDING');
-  if (!pending) return { success: false, message: '정산 대상이 없습니다.' };
+  if (!pending) {
+    // PENDING 상태인 정산 건이 없는 경우, 실시간 집계 및 신청 API를 호출합니다.
+    try {
+      const raw = await sellerAxios.post('/api/v1/seller/settlements/request-realtime');
+      const res = unwrapApi<{ settlementId: number; status: string }>(raw);
+      return { success: res.success, message: res.message };
+    } catch (err: any) {
+      return { success: false, message: err?.error?.message || '실시간 정산 신청 중 오류가 발생했습니다.' };
+    }
+  }
   const res = await request_settlement_api(pending.settlementId);
   return { success: res.success, message: res.message };
 };
