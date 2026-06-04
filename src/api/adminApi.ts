@@ -960,15 +960,7 @@ export const deploy_mail_template_api = async (_payload: {
 
 };
 
-/** [테스트 전용] 정산 배치를 즉시 강제 실행합니다. date 미입력 시 어제 날짜로 실행 */
-export const trigger_settlement_batch_api = async (
-  date?: string
-): Promise<{ success: boolean; message: string }> => {
-  const params = date ? { date } : {};
-  const raw = await adminAxios.post('/api/v1/admin/settlements/trigger', null, { params });
-  const res = unwrapApi<unknown>(raw);
-  return { success: res.success, message: res.message };
-};
+
 
 export interface AdminSettlementDto {
   settlementId: number;
