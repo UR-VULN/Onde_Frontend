@@ -102,7 +102,7 @@ export const AdminLBSPanel: React.FC = () => {
               className="text-[11px] font-bold text-slate-400 text-center py-3 mb-4"
               style={{ background: 'var(--bg-light)', borderRadius: 'var(--radius-md)' }}
             >
-              LBS 마커 배포는 최고 관리자와 일반 관리자만 이용할 수 있습니다.
+              LBS 마커 배포는 최고 관리자(SUPER_ADMIN)만 이용할 수 있습니다.
             </p>
           )}
 

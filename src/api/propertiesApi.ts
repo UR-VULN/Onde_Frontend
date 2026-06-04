@@ -25,20 +25,29 @@ export interface PropertiesBoundsParams {
 
 interface BackendPropertyMarker {
   propertyId: number;
+  accommodationId?: number;
   addressName: string;
   name?: string;
   latitude: number;
   longitude: number;
   memberId?: number;
+  thumbnailUrl?: string;
+  minPrice?: number;
 }
 
 function mapMarker(item: BackendPropertyMarker): PropertyMarkerDto {
+  let thumbnailUrl = item.thumbnailUrl ?? '';
+  if (thumbnailUrl && !thumbnailUrl.startsWith('http://') && !thumbnailUrl.startsWith('https://')) {
+    thumbnailUrl = `http://localhost:9000/onde-local/${thumbnailUrl}`;
+  }
   return {
     propertyId: item.propertyId,
-    accommodationId: item.propertyId,
+    accommodationId: item.accommodationId,
     name: item.addressName ?? item.name ?? '',
     latitude: item.latitude,
     longitude: item.longitude,
+    thumbnailUrl,
+    minPrice: item.minPrice,
   };
 }
 

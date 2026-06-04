@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { get_admin_dashboard_api, type AdminDashboardDto } from '@/api/adminApi';
-import { useTravelStore } from '@/store/useTravelStore';
-import { isSellerAdmin, isUserAdmin } from '@/utils/adminPermissions';
 
 const DOMAIN_LABELS: Record<string, string> = {
   flight: '항공',
@@ -11,7 +9,6 @@ const DOMAIN_LABELS: Record<string, string> = {
 };
 
 export const AdminDashboardPanel: React.FC = () => {
-  const { memberRole } = useTravelStore();
   const [dashboard, setDashboard] = useState<AdminDashboardDto | null>(null);
 
   useEffect(() => {
@@ -28,31 +25,17 @@ export const AdminDashboardPanel: React.FC = () => {
   const maxDomainVal = Math.max(...domainEntries.map(([, v]) => v), 1);
 
   const formatKrw = (n: number) => `₩${n.toLocaleString('ko-KR')}`;
-  const isUserOpsDashboard = isUserAdmin(memberRole);
-  const roleLabel = isUserOpsDashboard
-    ? 'USER_ADMIN'
-    : isSellerAdmin(memberRole)
-      ? 'SELLER_ADMIN'
-      : 'SUPER_ADMIN';
-  const title = isUserOpsDashboard
-    ? '운영/CS 지표 대시보드'
-    : isSellerAdmin(memberRole)
-      ? '매출/입점 지표 대시보드'
-      : '전사 매출/운영 지표 대시보드';
-  const description = isUserOpsDashboard
-    ? '신규 가입, 커뮤니티 피드, 마커 검증, CS 대기 지표를 표시합니다.'
-    : 'summary API와 도메인별 매출 차트를 조합해 전사 매출과 입점 지표를 표시합니다.';
 
   return (
     <div className="admin-panel">
       <div className="section-header">
         <div>
           <h2 className="section-title">
-            {title}{' '}
-            <span style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '1rem' }}>({roleLabel})</span>
+            전사 거래 모니터링 종합 대시보드{' '}
+            <span style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '1rem' }}>(SUPER_ADMIN)</span>
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            {description}
+            summary · charts · operational API를 조합해 전사 매출과 운영 지표를 표시합니다.
           </p>
         </div>
         <span className="badge" style={{ background: '#e6f0ff', color: 'var(--primary)' }}>
@@ -60,75 +43,39 @@ export const AdminDashboardPanel: React.FC = () => {
         </span>
       </div>
 
-      {isUserOpsDashboard ? (
-        <div className="dashboard-grid">
-          <div className="stat-card">
-            <i className="fa-solid fa-user-plus"></i>
-            <span className="stat-label uppercase tracking-wider">오늘 신규 가입</span>
-            <span className="stat-number" style={{ color: 'var(--primary)' }}>
-              {dashboard ? `${dashboard.newMembersToday.toLocaleString()}명` : '—'}
-            </span>
-          </div>
-          <div className="stat-card">
-            <i className="fa-solid fa-comments"></i>
-            <span className="stat-label uppercase tracking-wider">커뮤니티 피드 현황</span>
-            <span className="stat-number" style={{ color: '#059669' }}>
-              {dashboard
-                ? `${dashboard.activePostCount.toLocaleString()}건 / ${dashboard.blindedPosts}건`
-                : '—'}
-            </span>
-          </div>
-          <div className="stat-card">
-            <i className="fa-solid fa-location-dot"></i>
-            <span className="stat-label uppercase tracking-wider">미검증 마커/매물</span>
-            <span className="stat-number">
-              {dashboard ? `${dashboard.unverifiedProperties.toLocaleString()}건` : '—'}
-            </span>
-          </div>
-          <div className="stat-card">
-            <i className="fa-solid fa-headset"></i>
-            <span className="stat-label uppercase tracking-wider">미해결 CS 티켓</span>
-            <span className="stat-number">
-              {dashboard ? `${dashboard.pendingCSTickets.toLocaleString()}건` : '—'}
-            </span>
-          </div>
+      <div className="dashboard-grid">
+        <div className="stat-card">
+          <i className="fa-solid fa-chart-line"></i>
+          <span className="stat-label uppercase tracking-wider">월간 총매출 (GMV)</span>
+          <span className="stat-number" style={{ color: 'var(--primary)' }}>
+            {dashboard ? formatKrw(dashboard.gmv) : '—'}
+          </span>
         </div>
-      ) : (
-        <div className="dashboard-grid">
-          <div className="stat-card">
-            <i className="fa-solid fa-chart-line"></i>
-            <span className="stat-label uppercase tracking-wider">월간 총매출 (GMV)</span>
-            <span className="stat-number" style={{ color: 'var(--primary)' }}>
-              {dashboard ? formatKrw(dashboard.gmv) : '—'}
-            </span>
-          </div>
-          <div className="stat-card">
-            <i className="fa-solid fa-receipt"></i>
-            <span className="stat-label uppercase tracking-wider">월간 총 예약 건수</span>
-            <span className="stat-number" style={{ color: '#059669' }}>
-              {dashboard ? `${dashboard.totalBookings.toLocaleString()}건` : '—'}
-            </span>
-          </div>
-          <div className="stat-card">
-            <i className="fa-solid fa-store"></i>
-            <span className="stat-label uppercase tracking-wider">입점/커뮤니티 현황</span>
-            <span className="stat-number">
-              {dashboard
-                ? `${dashboard.newMembersToday.toLocaleString()}명 / ${dashboard.blindedPosts}건`
-                : '—'}
-            </span>
-          </div>
-          <div className="stat-card">
-            <i className="fa-solid fa-clock"></i>
-            <span className="stat-label uppercase tracking-wider">정산 대기 건수</span>
-            <span className="stat-number">
-              {dashboard ? `${dashboard.pendingSettlements.toLocaleString()}건` : '—'}
-            </span>
-          </div>
+        <div className="stat-card">
+          <i className="fa-solid fa-receipt"></i>
+          <span className="stat-label uppercase tracking-wider">월간 총 예약 건수</span>
+          <span className="stat-number" style={{ color: '#059669' }}>
+            {dashboard ? `${dashboard.totalBookings.toLocaleString()}건` : '—'}
+          </span>
         </div>
-      )}
+        <div className="stat-card">
+          <i className="fa-solid fa-users"></i>
+          <span className="stat-label uppercase tracking-wider">오늘 신규 가입 / 블라인드 게시글</span>
+          <span className="stat-number">
+            {dashboard
+              ? `${dashboard.newMembersToday.toLocaleString()}명 / ${dashboard.blindedPosts}건`
+              : '—'}
+          </span>
+        </div>
+        <div className="stat-card">
+          <i className="fa-solid fa-clock"></i>
+          <span className="stat-label uppercase tracking-wider">정산 대기 건수</span>
+          <span className="stat-number">
+            {dashboard ? `${dashboard.pendingSettlements.toLocaleString()}건` : '—'}
+          </span>
+        </div>
+      </div>
 
-      {!isUserOpsDashboard && (
       <div className="grid-2" style={{ gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
         <div className="data-table-container" style={{ padding: '2rem' }}>
           <h4 style={{ fontWeight: 700, marginBottom: '1.5rem' }}>
@@ -190,7 +137,6 @@ export const AdminDashboardPanel: React.FC = () => {
           </div>
         </div>
       </div>
-      )}
     </div>
   );
 };

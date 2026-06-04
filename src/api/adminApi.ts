@@ -401,42 +401,6 @@ export const cancel_reservation_api = async (
 
 export const admin_cancel_booking_api = cancel_reservation_api;
 
-export type AdminReservationStatus = 'RESERVED' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
-
-export const update_admin_reservation_status_api = async (
-
-  reservationId: number,
-
-  status: AdminReservationStatus
-
-): Promise<{ success: boolean; message: string }> => {
-
-  const raw = await adminAxios.patch(`/api/v1/admin/reservations/${reservationId}/status`, {
-
-    status,
-
-  });
-
-  const res = unwrapApi<unknown>(raw);
-
-  return { success: res.success, message: res.message };
-
-};
-
-export const cancel_admin_reservation_api = async (
-
-  reservationId: number
-
-): Promise<{ success: boolean; message: string }> => {
-
-  const raw = await adminAxios.post(`/api/v1/admin/reservations/${reservationId}/cancel`);
-
-  const res = unwrapApi<unknown>(raw);
-
-  return { success: res.success, message: res.message };
-
-};
-
 
 
 export interface AdminDashboardDto {
@@ -449,13 +413,7 @@ export interface AdminDashboardDto {
 
   newMembersToday: number;
 
-  activePostCount: number;
-
   blindedPosts: number;
-
-  pendingCSTickets: number;
-
-  unverifiedProperties: number;
 
   domainShare: Array<{ label: string; pct: number; color: string }>;
 
@@ -578,13 +536,7 @@ export const get_admin_dashboard_api = async (
 
       newMembersToday: Number(op.newMembersToday ?? 0),
 
-      activePostCount: Number(op.activePostCount ?? 0),
-
       blindedPosts: Number(op.blindedPosts ?? 0),
-
-      pendingCSTickets: Number(op.pendingCSTickets ?? 0),
-
-      unverifiedProperties: Number(op.unverifiedProperties ?? 0),
 
       domainShare,
 
@@ -625,8 +577,6 @@ export interface AdminMemberDto {
   isBlacklisted: boolean;
 
 }
-
-export type AdminMemberStatus = 'ACTIVE' | 'PENDING' | 'DORMANT' | 'WITHDRAWN' | 'BANNED';
 
 
 
@@ -779,44 +729,6 @@ export const blacklist_admin_member_api = async (
     const msg =
 
       (err as { error?: { message?: string } })?.error?.message ?? '블랙리스트 처리에 실패했습니다.';
-
-    return { success: false, message: msg };
-
-  }
-
-};
-
-export const patch_admin_member_status_api = async (
-
-  memberId: number,
-
-  status: AdminMemberStatus
-
-): Promise<{ success: boolean; message: string; data?: { memberId: number; status: AdminMemberStatus } }> => {
-
-  try {
-
-    const raw = await adminAxios.patch(`/api/v1/admin/members/${memberId}/status`, { status });
-    const res = unwrapApi<{ memberId: number; status: AdminMemberStatus }>(raw);
-
-    return {
-
-      success: res.success,
-
-      message: res.message || '회원 상태가 변경되었습니다.',
-
-      data: res.data,
-
-    };
-
-  } catch (err: unknown) {
-
-    const msg =
-
-      (err as { message?: string; error?: { message?: string; systemMessage?: string } })?.message ??
-      (err as { error?: { message?: string; systemMessage?: string } })?.error?.message ??
-      (err as { error?: { systemMessage?: string } })?.error?.systemMessage ??
-      '회원 상태 변경에 실패했습니다.';
 
     return { success: false, message: msg };
 
