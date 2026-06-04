@@ -15,15 +15,15 @@ const AdminHub: React.FC = () => {
     { id: 'RES-102', category: '렌터카', title: '제네시스 G80', user: 'user_lee', status: '이용 완료 대기', date: '2026-05-25 ~ 2026-05-26' },
   ];
 
-  const handleApprove = (id: number) => {
+  const handleApprove = (_id: number) => {
     addToast('상품이 승인되었습니다. 즉시 노출이 시작됩니다.', 'success');
   };
 
-  const handleReject = (id: number) => {
+  const handleReject = (_id: number) => {
     addToast('상품이 반려되었습니다. 판매자에게 사유가 발송됩니다.', 'warning');
   };
 
-  const handleComplete = (id: string) => {
+  const handleComplete = (_id: string) => {
     addToast('예약 상태가 이용 완료로 강제 업데이트되었습니다.', 'info');
   };
 

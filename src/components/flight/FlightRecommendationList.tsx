@@ -2,6 +2,7 @@ import React from 'react';
 import type { FlightSearchParams } from '@/components/flight/FlightSearchForm';
 import type { FlightDto, AvailableSeat, FlightSearchResponse } from '@/store/useFlightStore';
 import { count_flights_in_results } from '@/utils/flightSearchPayload';
+import { FLIGHT_AIRLINES, getAirlineColor } from '@/constants/flightAirlines';
 
 interface FlightRecommendationListProps {
   results: FlightSearchResponse | null;
@@ -87,18 +88,35 @@ export const FlightRecommendationList: React.FC<FlightRecommendationListProps> =
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {journey.flights.map((flight) => (
-                    <div
-                      key={flight.scheduleId}
-                      className="bg-white py-4 px-6 rounded-[28px] border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6 hover:shadow-md transition-all border-l-4 border-l-primary"
-                    >
-                      <div className="flex items-center gap-6 flex-1 min-w-[280px]">
-                        <div className="flex flex-col items-center justify-center bg-slate-50 px-4 py-1.5 rounded-xl border border-slate-100 flex-shrink-0">
-                          <i className="fa-solid fa-plane text-primary text-base mb-0.5" />
-                          <span className="text-sm font-black text-slate-800">{flight.flightNumber}</span>
-                        </div>
+                  {journey.flights.map((flight) => {
+                    const airlineCode = flight.flightNumber.slice(0, 2).toUpperCase();
+                    const airline = FLIGHT_AIRLINES.find((a) => a.code === airlineCode);
+                    const airlineName = airline ? airline.name : '기타 항공사';
+                    const airlineColor = getAirlineColor(airlineCode);
 
-                        <div className="flex items-center gap-4 flex-1">
+                    return (
+                      <div
+                        key={flight.scheduleId}
+                        className="bg-white py-4 px-6 rounded-[28px] border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6 hover:shadow-md transition-all border-l-4"
+                        style={{ borderLeftColor: airlineColor }}
+                      >
+                        <div className="flex items-center gap-6 flex-1 min-w-[280px]">
+                          <div className="flex flex-col items-center justify-center bg-slate-50 px-4 py-1.5 rounded-xl border border-slate-100 flex-shrink-0 min-w-[90px]">
+                            <span
+                              className="text-[10px] font-black px-2 py-0.5 rounded-full mb-1 tracking-tight"
+                              style={{
+                                backgroundColor: `${airlineColor}15`,
+                                color: airlineColor,
+                                border: `1px solid ${airlineColor}35`,
+                              }}
+                            >
+                              {airlineName}
+                            </span>
+                            <i className="fa-solid fa-plane text-lg mb-1.5" style={{ color: airlineColor }} />
+                            <span className="text-xs font-black text-slate-700">{flight.flightNumber}</span>
+                          </div>
+
+                          <div className="flex items-center gap-4 flex-1">
                           <div className="text-right">
                             <span className="text-[1.4rem] font-black text-slate-800 block tracking-normal leading-tight">{flight.departureAirport}</span>
                             <strong className="text-lg font-black text-slate-800 block">
@@ -172,7 +190,8 @@ export const FlightRecommendationList: React.FC<FlightRecommendationListProps> =
                         })}
                       </div>
                     </div>
-                  ))}
+                  );
+                })}
                 </div>
               )}
             </div>
