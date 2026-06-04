@@ -92,25 +92,35 @@ export const PaymentPage: React.FC = () => {
 
       const { merchantUid, pgAmount: serverPgAmount } = prepareRes.data;
 
-      const portOneRes = await requestPortOnePay({
-        pg: PORTONE_PG,
-        pay_method: 'card',
-        merchant_uid: merchantUid,
-        name: PAYMENT_PRODUCT_NAME,
-        amount: serverPgAmount,
-        buyer_email: buyerEmail,
-        buyer_name: buyerName,
-        m_redirect_url: `${window.location.origin}/payment/callback`,
-      });
+      // --- 포트원 결제창 호출 우회 (가상계좌 모의 입금 정보) ---
+      // const portOneRes = await requestPortOnePay({
+      //   pg: PORTONE_PG,
+      //   pay_method: 'card',
+      //   merchant_uid: merchantUid,
+      //   name: PAYMENT_PRODUCT_NAME,
+      //   amount: serverPgAmount,
+      //   buyer_email: buyerEmail,
+      //   buyer_name: buyerName,
+      //   m_redirect_url: `${window.location.origin}/payment/callback`,
+      // });
 
-      if (!portOneRes.success || !portOneRes.imp_uid || !portOneRes.merchant_uid) {
-        throw new Error(portOneRes.error_msg || '결제가 취소되었거나 실패했습니다.');
-      }
+      // if (!portOneRes.success || !portOneRes.imp_uid || !portOneRes.merchant_uid) {
+      //   throw new Error(portOneRes.error_msg || '결제가 취소되었거나 실패했습니다.');
+      // }
+
+      // 포트원 외부 결제를 거치지 않고, 가상 계좌 결제가 완료된 것처럼 모의 거래 번호를 직접 생성
+      const mockImpUid = `vbank_mock_${Date.now()}`;
+      const portOneRes = {
+        success: true,
+        imp_uid: mockImpUid,
+        merchant_uid: merchantUid,
+        paid_amount: serverPgAmount,
+      };
 
       const validateRes = await validate_payment_api({
         impUid: portOneRes.imp_uid,
         merchantUid: portOneRes.merchant_uid,
-        pgAmount: portOneRes.paid_amount ?? serverPgAmount,
+        pgAmount: portOneRes.paid_amount,
       });
 
       if (!validateRes.success || !validateRes.data) {
