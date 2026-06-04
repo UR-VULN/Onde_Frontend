@@ -121,14 +121,12 @@ export const StayMapExplorer: React.FC<StayMapExplorerProps> = ({ searchQuery, c
     (async () => {
       setLoadingMap(true);
       try {
-        console.log("StayMapExplorer: API Bounds Request params =>", apiBounds);
         const res = await fetch_properties_in_bounds_api({
           swLat: apiBounds.south,
           swLng: apiBounds.west,
           neLat: apiBounds.north,
           neLng: apiBounds.east,
         });
-        console.log("StayMapExplorer: API Response Raw =>", res);
         if (cancelled || !res.success || !res.data) {
           console.warn("StayMapExplorer: API Fetch failed or cancelled =>", res);
           return;
@@ -164,12 +162,7 @@ export const StayMapExplorer: React.FC<StayMapExplorerProps> = ({ searchQuery, c
     setFlyTarget({ latitude: stay.latitude, longitude: stay.longitude, zoom: 14 });
   }, []);
 
-  useEffect(() => {
-    if (!debouncedQuery.trim()) return;
-    if (queryFiltered.length === 0) return;
-    const first = queryFiltered[0];
-    setFlyTarget({ latitude: first.latitude, longitude: first.longitude, zoom: 12 });
-  }, [debouncedQuery, queryFiltered]);
+
 
   useEffect(() => {
     if (!cityTarget) return;

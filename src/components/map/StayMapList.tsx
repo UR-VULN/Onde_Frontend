@@ -37,9 +37,6 @@ const StayMapListItem = memo(function StayMapListItem({
         imgClassName="map-stay-item__thumb"
       />
       <div className="map-stay-item__body">
-        <span className="map-stay-item__meta">
-          {stay.city} · {stay.tags[0] ?? '숙소'}
-        </span>
         <strong className="map-stay-item__title">{stay.title}</strong>
         <span className="map-stay-item__price">{formatKrwPriceOrDash(stay.pricePerNight)}</span>
         <button
