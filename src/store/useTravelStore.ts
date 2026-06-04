@@ -26,6 +26,7 @@ interface TravelState {
   memberId: number | null;
   memberRole: string | null;
   mileage: number;
+  walletBalance: number;
   membershipGrade: string;
 
   reservations: MyPageReservation[];
@@ -49,7 +50,7 @@ interface TravelState {
     profile?: MemberProfileDto,
     memberId?: number | null
   ) => void;
-  setMemberProfile: (profile: MemberProfileDto) => void;
+  setMemberProfile: (profile: MemberProfileDto, walletBalance?: number) => void;
   logout: (options?: { redirectTo?: string }) => void;
 
   addToast: (message: string, type?: 'success' | 'info' | 'warning') => void;
@@ -82,6 +83,7 @@ export const useTravelStore = create<TravelState>((set) => ({
   memberId: null,
   memberRole: null,
   mileage: 0,
+  walletBalance: 0,
   membershipGrade: '',
 
   reservations: [],
@@ -104,9 +106,10 @@ export const useTravelStore = create<TravelState>((set) => ({
       isAuthModalOpen: false,
     }),
 
-  setMemberProfile: (profile) =>
+  setMemberProfile: (profile, walletBalance) =>
     set({
       mileage: profile.mileage,
+      walletBalance: walletBalance ?? profile.walletBalance ?? 0,
       membershipGrade: profile.membershipGrade,
     }),
 
@@ -122,6 +125,7 @@ export const useTravelStore = create<TravelState>((set) => ({
       memberId: null,
       memberRole: null,
       mileage: 0,
+      walletBalance: 0,
       membershipGrade: '',
       reservations: [],
     });

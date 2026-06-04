@@ -36,8 +36,29 @@ export interface MileageHistoryResponse {
 /** UI 마이페이지용 */
 export interface MemberProfileDto {
   mileage: number;
+  walletBalance?: number;
   membershipGrade: string;
 }
+
+export const fetch_wallet_balance_api = async (): Promise<{ success: boolean; data: number; message: string }> => {
+  try {
+    const raw = await userAxios.get('/api/v1/members/me/wallet');
+    const res = unwrapApi<{ balance: number }>(raw);
+    return { success: res.success, data: res.data?.balance ?? 0, message: res.message };
+  } catch (e) {
+    return { success: false, data: 0, message: '지갑 잔액 조회 실패' };
+  }
+};
+
+export const charge_wallet_api = async (amount: number): Promise<{ success: boolean; data: number; message: string }> => {
+  try {
+    const raw = await userAxios.post('/api/v1/members/me/wallet/charge', { amount });
+    const res = unwrapApi<{ balance: number }>(raw);
+    return { success: res.success, data: res.data?.balance ?? 0, message: res.message };
+  } catch (e) {
+    return { success: false, data: 0, message: '지갑 충전 실패' };
+  }
+};
 
 export const fetch_member_me_api = async (): Promise<{
   success: boolean;
@@ -93,15 +114,20 @@ export const fetch_member_profile_api = async (): Promise<{
   data: MemberProfileDto;
   message: string;
 }> => {
-  const res = await fetch_member_mileage_api();
+  const [res, walletRes] = await Promise.all([
+    fetch_member_mileage_api(),
+    fetch_wallet_balance_api()
+  ]);
+  
   if (!res.success || !res.data) {
-    return { success: false, data: { mileage: 0, membershipGrade: 'BASIC MEMBER' }, message: res.message };
+    return { success: false, data: { mileage: 0, walletBalance: walletRes.data, membershipGrade: 'BASIC MEMBER' }, message: res.message };
   }
   return {
     success: true,
     message: res.message,
     data: {
       mileage: res.data.mileageBalance,
+      walletBalance: walletRes.data,
       membershipGrade: `${res.data.memberGrade} MEMBER`,
     },
   };

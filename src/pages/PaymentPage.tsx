@@ -2,20 +2,14 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { prepare_payment_api, validate_payment_api } from '@/api/paymentApi';
 import { confirm_flight_payment_api } from '@/api/flightApi';
-import { PAYMENT_PRODUCT_NAME, PORTONE_PG } from '@/constants/paymentConfig';
 import { MileageUsagePanel } from '@/components/common/MileageUsagePanel';
 import { useTravelStore } from '@/store/useTravelStore';
 import type { PaymentCheckoutState } from '@/types/payment';
 import { calcPgAmount } from '@/utils/paymentCheckout';
-import { requestPortOnePay } from '@/utils/portOne';
 
 type PaymentStep = 'checkout' | 'processing' | 'success';
 
-function getDisplayName(username: string): string {
-  if (!username) return 'ONDE 회원';
-  if (username.includes('@')) return username.split('@')[0] || username;
-  return username;
-}
+
 
 function resolvePaymentErrorMessage(err: unknown): string {
   const apiMsg = (err as { error?: { message?: string }; message?: string })?.error?.message;
@@ -39,7 +33,7 @@ function resolvePaymentToastType(message: string): 'warning' | 'info' {
 export const PaymentPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { username, mileage: userMileage, addToast } = useTravelStore();
+  const { mileage: userMileage, walletBalance, addToast } = useTravelStore();
 
   const checkout = location.state as PaymentCheckoutState | null;
 
@@ -72,9 +66,6 @@ export const PaymentPage: React.FC = () => {
 
   const order = checkout;
 
-  const buyerName = getDisplayName(username);
-  const buyerEmail = username.includes('@') ? username : `${username}@example.com`;
-
   async function handlePay() {
     setStep('processing');
 
@@ -92,25 +83,23 @@ export const PaymentPage: React.FC = () => {
 
       const { merchantUid, pgAmount: serverPgAmount } = prepareRes.data;
 
-      const portOneRes = await requestPortOnePay({
-        pg: PORTONE_PG,
-        pay_method: 'card',
-        merchant_uid: merchantUid,
-        name: PAYMENT_PRODUCT_NAME,
-        amount: serverPgAmount,
-        buyer_email: buyerEmail,
-        buyer_name: buyerName,
-        m_redirect_url: `${window.location.origin}/payment/callback`,
-      });
-
-      if (!portOneRes.success || !portOneRes.imp_uid || !portOneRes.merchant_uid) {
-        throw new Error(portOneRes.error_msg || '결제가 취소되었거나 실패했습니다.');
+      // ONDE Wallet 결제 처리 (내부 지갑 결제)
+      if (walletBalance < serverPgAmount) {
+        throw new Error('지갑 잔액이 부족합니다. 마이페이지에서 가상 화폐를 충전해주세요.');
       }
+
+      const mockImpUid = `wallet_tx_${Date.now()}`;
+      const portOneRes = {
+        success: true,
+        imp_uid: mockImpUid,
+        merchant_uid: merchantUid,
+        paid_amount: serverPgAmount,
+      };
 
       const validateRes = await validate_payment_api({
         impUid: portOneRes.imp_uid,
         merchantUid: portOneRes.merchant_uid,
-        pgAmount: portOneRes.paid_amount ?? serverPgAmount,
+        pgAmount: portOneRes.paid_amount,
       });
 
       if (!validateRes.success || !validateRes.data) {
@@ -143,7 +132,7 @@ export const PaymentPage: React.FC = () => {
           ONDE 안전 결제
         </h1>
         <p className="payment-page-desc">
-          포트원(PortOne) PG를 통해 결제 금액이 검증된 뒤 최종 승인됩니다.
+          ONDE 지갑(가상 계좌) 잔액으로 빠르고 안전하게 결제됩니다.
         </p>
       </div>
 
@@ -334,8 +323,8 @@ export const PaymentPage: React.FC = () => {
 
             <div className="payment-summary-foot">
               <div className="payment-pg-notice">
-                <i className="fa-solid fa-shield-halved"></i>
-                <span>카드/간편결제는 포트원 결제창에서 안전하게 진행됩니다.</span>
+                <i className="fa-solid fa-wallet"></i>
+                <span>결제는 회원님의 ONDE 가상 지갑에서 차감됩니다. (현재 잔액: ₩{walletBalance.toLocaleString('ko-KR')})</span>
               </div>
 
               <button
