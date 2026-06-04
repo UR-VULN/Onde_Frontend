@@ -123,19 +123,19 @@ export const fetch_my_reservations_api = async (): Promise<{
 
   if (flightsRes.status === 'fulfilled') {
     const data = unwrapApi<MyPageList<Record<string, unknown>>>(flightsRes.value).data;
-    (data.bookings ?? []).forEach((b) => reservations.push(mapFlightBooking(b)));
+    (data?.bookings ?? []).forEach((b) => reservations.push(mapFlightBooking(b)));
   }
   if (roomsRes.status === 'fulfilled') {
     const data = unwrapApi<MyPageList<Record<string, unknown>>>(roomsRes.value).data;
-    (data.reservations ?? []).forEach((r) => reservations.push(mapRoomReservation(r)));
+    (data?.reservations ?? data?.bookings ?? []).forEach((r) => reservations.push(mapRoomReservation(r)));
   }
   if (carsRes.status === 'fulfilled') {
     const data = unwrapApi<MyPageList<Record<string, unknown>>>(carsRes.value).data;
-    (data.reservations ?? []).forEach((r) => reservations.push(mapCarReservation(r)));
+    (data?.reservations ?? data?.bookings ?? []).forEach((r) => reservations.push(mapCarReservation(r)));
   }
   if (insRes.status === 'fulfilled') {
     const data = unwrapApi<MyPageList<Record<string, unknown>>>(insRes.value).data;
-    (data.bookings ?? data.reservations ?? []).forEach((p) =>
+    (data?.bookings ?? data?.reservations ?? []).forEach((p) =>
       reservations.push(mapInsurancePolicy(p))
     );
   }
@@ -165,26 +165,15 @@ export const cancel_member_reservation_api = async (
   reservationId: number,
   category: MemberReservationDto['category']
 ): Promise<{ success: boolean; message: string }> => {
-  if (category === 'flight' || category === 'ins') {
-    try {
-      // Try to call backend just in case
-      const raw = await userAxios.delete(`/api/v1/reservations/${reservationId}`);
-      const res = unwrapApi<unknown>(raw);
-      if (res.success) {
-        const cancelled = JSON.parse(localStorage.getItem('cancelled_reservations') || '[]');
-        cancelled.push(`${category}-${reservationId}`);
-        localStorage.setItem('cancelled_reservations', JSON.stringify(cancelled));
-        return { success: true, message: '취소되었습니다.' };
-      }
-    } catch {
-      // ignore and use fallback
-    }
-
-    const cancelled = JSON.parse(localStorage.getItem('cancelled_reservations') || '[]');
-    cancelled.push(`${category}-${reservationId}`);
-    localStorage.setItem('cancelled_reservations', JSON.stringify(cancelled));
-    return { success: true, message: '취소되었습니다.' };
+  if (category === 'flight') {
+    await userAxios.delete(`/api/v1/members/me/reservations/flights/${reservationId}`);
+    return { success: true, message: '항공 예약이 취소되었습니다.' };
   }
+  if (category === 'ins') {
+    await userAxios.delete(`/api/v1/members/me/insurances/${reservationId}`);
+    return { success: true, message: '보험 가입이 취소되었습니다.' };
+  }
+  // flight/ins 분기의 localStorage 폴백 제거
 
   const raw = await userAxios.delete(`/api/v1/reservations/${reservationId}`);
   const res = unwrapApi<unknown>(raw);

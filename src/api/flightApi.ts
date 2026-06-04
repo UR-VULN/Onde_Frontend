@@ -102,6 +102,7 @@ export interface FlightBookingPayload {
 }
 
 export interface FlightBookingResult {
+  bookingId: number;
   bookingCode: string;
   passengerName: string;
   seatClass: string;

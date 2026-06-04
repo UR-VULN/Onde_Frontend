@@ -235,7 +235,7 @@ export const book_car_api = async (
       data: { reservationId: 0, status: '', message: '', totalPrice: 0 },
     };
   }
-  const raw = await userAxios.post('/api/v1/reservations/cars', {
+  const raw = await userAxios.post('/api/v1/accommodations/reservations/cars', {
     memberId,
     carId: payload.carId,
     startDate: payload.startDate,

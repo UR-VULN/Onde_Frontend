@@ -4,6 +4,7 @@ import { useTravelStore } from '@/store/useTravelStore';
 import { fetch_member_profile_api, fetch_member_mileage_history_api } from '@/api/userApi';
 import type { MileageLogDto } from '@/api/userApi';
 import { fetch_my_reservations_api, mapReservationDtoToMyPage, cancel_member_reservation_api } from '@/api/reservationsApi';
+import { WalletPanel } from '@/components/common/WalletPanel';
 
 type ReservationFilter = 'all' | 'stay' | 'flight' | 'car' | 'ins';
 
@@ -175,6 +176,8 @@ export const MyPageDashboard: React.FC = () => {
           </aside>
 
           <section className="mypage-main">
+            <WalletPanel />
+
             <h4 className="mypage-main-title">
               <i className="fa-solid fa-list-check"></i> 실시간 예약 및 가입 현황
             </h4>
@@ -199,7 +202,7 @@ export const MyPageDashboard: React.FC = () => {
             <div className="mypage-list-wrapper">
               {filteredReservations.length > 0 ? (
                 filteredReservations.map((reservationItem) => (
-                  <article key={reservationItem.id} className="mp-card">
+                  <article key={`${reservationItem.category}-${reservationItem.id}`} className="mp-card">
                     <div className={`mp-card-icon ${reservationItem.category}`}>
                       {reservationItem.category === 'flight' && <i className="fa-solid fa-plane"></i>}
                       {reservationItem.category === 'ins' && <i className="fa-solid fa-shield-halved"></i>}
@@ -222,17 +225,7 @@ export const MyPageDashboard: React.FC = () => {
                       <button
                         type="button"
                         className="mp-card-cancel"
-                        disabled={reservationItem.category === 'flight'}
-                        title={
-                          reservationItem.category === 'flight'
-                            ? '항공 취소는 백엔드 미지원'
-                            : undefined
-                        }
                         onClick={() => {
-                          if (reservationItem.category === 'flight') {
-                            addToast('항공 예약 취소는 현재 지원되지 않습니다.', 'info');
-                            return;
-                          }
                           openConfirmPopup(async (choice) => {
                             if (!choice) return;
                             try {
