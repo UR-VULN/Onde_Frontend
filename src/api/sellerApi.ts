@@ -5,6 +5,9 @@ const PLATFORM_COMMISSION_RATE = 0.03;
 
 export interface SellerSettlementAccountPayload {
   bankName: string;
+  businessName?: string;
+  contactPhone?: string;
+  businessAddress?: string;
   accountNumber: string;
   accountHolder: string;
   businessNumber: string;
@@ -19,11 +22,16 @@ export interface SellerSettlementAccountDto extends SellerSettlementAccountPaylo
 
 export const get_seller_settlement_account_api = async (): Promise<{
   success: boolean;
-  data: SellerSettlementAccountDto;
+  data: SellerSettlementAccountDto | null;
   message: string;
 }> => {
-  const raw = await sellerAxios.get('/api/v1/seller/settlements/accounts');
-  return unwrapApi<SellerSettlementAccountDto>(raw);
+  const raw = await sellerAxios.get('/api/v1/seller/settlements/accounts', { skipErrorRedirect: true });
+  const res = unwrapApi<SellerSettlementAccountDto | null>(raw);
+  return {
+    success: res.success,
+    data: res.data ?? null,
+    message: res.message,
+  };
 };
 
 
@@ -50,16 +58,19 @@ export const save_seller_profile_api = async (payload: {
   bankName: string;
   accountNumber: string;
   accountHolder: string;
-}): Promise<{ success: boolean; message: string }> => {
+}): Promise<{ success: boolean; data: SellerSettlementAccountDto | null; message: string }> => {
   const res = await put_seller_settlement_account_api({
     bankName: payload.bankName,
+    businessName: payload.businessName,
+    contactPhone: payload.contactPhone,
+    businessAddress: payload.address,
     accountNumber: payload.accountNumber,
     accountHolder: payload.accountHolder,
     businessNumber: payload.businessNumber,
     representativeName: payload.representativeName,
     openedAt: payload.openDate.replace(/-/g, ''),
   });
-  return { success: res.success, message: res.message };
+  return { success: res.success, data: res.data, message: res.message };
 };
 
 export interface SellerSettlementDto {
@@ -236,17 +247,18 @@ export interface BusinessVerifyPayload {
 
 export const verify_business_api = async (
   payload: BusinessVerifyPayload
-): Promise<{ success: boolean; verified: boolean; message: string }> => {
+): Promise<{ success: boolean; verified: boolean; message: string; businessStatusCode?: string }> => {
   const raw = await sellerAxios.post('/api/v1/seller/account/verify-business', {
     businessNumber: payload.businessNumber.replace(/\D/g, ''),
     representativeName: payload.representativeName.trim(),
     openDate: payload.openDate.replace(/\D/g, ''),
   });
-  const res = unwrapApi<{ verified?: boolean }>(raw);
+  const res = unwrapApi<{ verified?: boolean; businessStatusCode?: string }>(raw);
   return {
     success: res.success,
     verified: Boolean(res.data?.verified),
     message: res.message,
+    businessStatusCode: res.data?.businessStatusCode,
   };
 };
 

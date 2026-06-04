@@ -30,6 +30,7 @@ export interface SignupResponse {
   email: string;
   name?: string;
   role: string;
+  status?: string;
   createdAt?: string;
 }
 
@@ -40,7 +41,7 @@ export interface TokenRefreshResponse {
 }
 
 export const login_api = async (body: LoginRequest): Promise<LoginResponse> => {
-  const raw = await userAxios.post('/api/v1/auth/login', body);
+  const raw = await userAxios.post('/api/v1/auth/login', body, { skipErrorRedirect: true });
   return unwrapApi<LoginResponse>(raw).data;
 };
 
