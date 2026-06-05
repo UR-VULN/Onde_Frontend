@@ -871,3 +871,59 @@ export const deploy_mail_template_api = async (_payload: {
   return { success: false, message: '메일 템플릿 API는 백엔드에 아직 없습니다.' };
 
 };
+
+
+
+export interface AdminSettlementDto {
+  settlementId: number;
+  settlementMonth: string;
+  grossAmount: number;
+  commission: number;
+  netAmount: number;
+  status: string;
+  sellerId?: number;
+  sellerName?: string;
+  bankName?: string;
+  accountNumber?: string;
+}
+
+export interface AdminSettlementsResponse {
+  settlements: AdminSettlementDto[];
+  totalCount: number;
+}
+
+export const get_admin_settlements_api = async (
+  status?: string,
+  page = 0,
+  size = 20
+): Promise<{ success: boolean; data: AdminSettlementsResponse; message: string }> => {
+  const raw = await adminAxios.get('/api/v1/admin/settlements', { params: { status, page, size } });
+  const res = unwrapApi<{ settlements: AdminSettlementDto[]; totalCount: number }>(raw);
+  return {
+    success: res.success,
+    message: res.message,
+    data: {
+      settlements: res.data?.settlements ?? [],
+      totalCount: res.data?.totalCount ?? 0,
+    },
+  };
+};
+
+export const approve_first_settlement_api = async (
+  settlementId: number,
+  comment?: string
+): Promise<{ success: boolean; message: string }> => {
+  const raw = await adminAxios.post(`/api/v1/admin/settlements/${settlementId}/approve-first`, { comment: comment ?? '' });
+  const res = unwrapApi<unknown>(raw);
+  return { success: res.success, message: res.message };
+};
+
+export const finalize_settlement_api = async (
+  settlementId: number,
+  comment?: string
+): Promise<{ success: boolean; message: string }> => {
+  const raw = await adminAxios.post(`/api/v1/admin/settlements/${settlementId}/finalize`, { comment: comment ?? '' });
+  const res = unwrapApi<unknown>(raw);
+  return { success: res.success, message: res.message };
+};
+

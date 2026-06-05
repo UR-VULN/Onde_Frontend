@@ -210,7 +210,7 @@ export const book_room_api = async (
       data: { reservationId: 0, status: '', message: '' },
     };
   }
-  const raw = await userAxios.post('/api/v1/reservations/rooms', {
+  const raw = await userAxios.post('/api/v1/accommodations/reservations/rooms', {
     memberId,
     roomId: payload.roomId,
     checkInDate: payload.checkInDate,

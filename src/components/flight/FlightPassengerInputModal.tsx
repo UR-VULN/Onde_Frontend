@@ -131,7 +131,7 @@ export const FlightPassengerInputModal: React.FC<FlightPassengerInputModalProps>
 
       const checkoutState = buildPaymentCheckout({
         reservationType: 'FLIGHT',
-        reservationId: 0,
+        reservationId: res.data.bookingId,
         flightBookingCode: res.data.bookingCode,
         productTitle: `${flightInfo.flightNumber} (${flightInfo.classType})`,
         productSubtitle: `${flightInfo.departureAirport} → ${flightInfo.arrivalAirport}`,
