@@ -1,6 +1,6 @@
 import React from 'react';
 import type { FeedItem } from '@/types/feed';
-import { getAvatarBg, getInitials, getCategoryLabel, renderStars } from './feedHelpers';
+import { getCategoryAvatar, formatDate, getCategoryLabel, renderStars } from './feedHelpers';
 
 interface FeedDetailModalProps {
   feed: FeedItem | null;
@@ -44,17 +44,15 @@ export const FeedDetailModal: React.FC<FeedDetailModalProps> = ({ feed, onClose 
         
         {/* Right Information Area */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1.8rem', height: '100%', background: 'white' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem', marginBottom: '1rem' }}>
-            <div 
-              className="feed-user-avatar" 
-              style={{ background: getAvatarBg(feed.author), margin: 0, width: '38px', height: '38px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: '0.8rem' }}
-            >
-              {getInitials(feed.author)}
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem', marginBottom: '1rem' }}>
+            <span style={{ fontSize: '2.2rem', flexShrink: 0, userSelect: 'none' }}>
+              {getCategoryAvatar(feed.category)}
+            </span>
             <div>
-              <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-dark)' }}>{feed.author}</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                {feed.date} • {feed.location} 여행
+              <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-dark)' }}>{feed.author}</div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '2px', fontWeight: 600 }}>
+                <span>{formatDate(feed.date)}</span>
+                <span style={{ color: 'var(--text-dark)', fontWeight: 800 }}>{feed.location} 여행</span>
               </div>
             </div>
           </div>

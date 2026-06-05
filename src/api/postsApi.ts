@@ -1,7 +1,7 @@
 import { userAxios } from '@/api/axiosInstance';
 import { unwrapApi } from '@/utils/apiResponse';
 
-export type BackendPostType = 'REVIEW' | 'COMPANION';
+export type BackendPostType = 'REVIEW' | 'COMPANION' | 'STAY' | 'FOOD' | 'PHOTO' | 'TIP';
 
 export interface PostDto {
   postId: number;
@@ -13,6 +13,7 @@ export interface PostDto {
   thumbnailUrl: string;
   createdAt: string;
   content?: string;
+  rating?: number;
 }
 
 export interface PostsListResponse {
@@ -49,6 +50,7 @@ export interface CreatePostPayload {
   type: BackendPostType;
   title: string;
   content: string;
+  rating: number;
   images?: File[];
 }
 
@@ -59,6 +61,7 @@ export const create_post_api = async (
   form.append('title', payload.title);
   form.append('content', payload.content);
   form.append('type', payload.type);
+  form.append('rating', String(payload.rating));
   payload.images?.forEach((file) => form.append('images', file));
 
   const raw = await userAxios.post('/api/v1/posts', form, {

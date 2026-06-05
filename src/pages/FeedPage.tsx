@@ -64,7 +64,8 @@ export const FeedPage: React.FC = () => {
       const res = await create_post_api({
         type: feedCategoryToPostType(category),
         title: location,
-        content: `${content}\n\n평점: ${rating}/5`,
+        content: content,
+        rating: rating,
         images: imageFile ? [imageFile] : undefined,
       });
       if (!res.success) {
@@ -72,6 +73,7 @@ export const FeedPage: React.FC = () => {
         return;
       }
       const postId = res.data?.postId ?? Date.now();
+      const returnedImg = (res.data as any)?.imageUrls?.[0] || (res.data as any)?.thumbnailUrl || img;
       const newFeed: FeedItem = {
         id: `feed-${postId}`,
         postId,
@@ -79,7 +81,7 @@ export const FeedPage: React.FC = () => {
         author: res.data?.authorName ?? '회원',
         location,
         date: res.data?.createdAt ?? new Date().toLocaleDateString('ko-KR'),
-        img,
+        img: returnedImg,
         content,
         rating,
       };
