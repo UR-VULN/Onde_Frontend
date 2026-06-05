@@ -21,9 +21,11 @@ export const Header: React.FC = () => {
   };
 
   const handleLogout = () => {
-    logout();
-    addToast('안전하게 로그아웃되었습니다.', 'info');
-    navigate('/');
+    navigate('/', { replace: true });
+    setTimeout(() => {
+      logout();
+      addToast('안전하게 로그아웃되었습니다.', 'info');
+    }, 50);
   };
 
   return (
