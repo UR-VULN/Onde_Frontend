@@ -39,8 +39,7 @@ function statusBadge(status: string): { badge: string; badgeType: string } {
 }
 
 interface MyPageList<T> {
-  bookings?: T[];
-  reservations?: T[];
+  content?: T[];
   totalCount: number;
 }
 
@@ -123,21 +122,19 @@ export const fetch_my_reservations_api = async (): Promise<{
 
   if (flightsRes.status === 'fulfilled') {
     const data = unwrapApi<MyPageList<Record<string, unknown>>>(flightsRes.value).data;
-    (data?.bookings ?? []).forEach((b) => reservations.push(mapFlightBooking(b)));
+    (data?.content ?? []).forEach((b) => reservations.push(mapFlightBooking(b)));
   }
   if (roomsRes.status === 'fulfilled') {
     const data = unwrapApi<MyPageList<Record<string, unknown>>>(roomsRes.value).data;
-    (data?.reservations ?? data?.bookings ?? []).forEach((r) => reservations.push(mapRoomReservation(r)));
+    (data?.content ?? []).forEach((r) => reservations.push(mapRoomReservation(r)));
   }
   if (carsRes.status === 'fulfilled') {
     const data = unwrapApi<MyPageList<Record<string, unknown>>>(carsRes.value).data;
-    (data?.reservations ?? data?.bookings ?? []).forEach((r) => reservations.push(mapCarReservation(r)));
+    (data?.content ?? []).forEach((r) => reservations.push(mapCarReservation(r)));
   }
   if (insRes.status === 'fulfilled') {
     const data = unwrapApi<MyPageList<Record<string, unknown>>>(insRes.value).data;
-    (data?.bookings ?? data?.reservations ?? []).forEach((p) =>
-      reservations.push(mapInsurancePolicy(p))
-    );
+    (data?.content ?? []).forEach((p) => reservations.push(mapInsurancePolicy(p)));
   }
 
   // Load cancelled IDs from localStorage
