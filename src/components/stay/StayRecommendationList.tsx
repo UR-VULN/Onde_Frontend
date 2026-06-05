@@ -126,6 +126,9 @@ interface StayRecommendationListProps {
   searchParams: StaySearchParams | null;
   loading?: boolean;
   hasSearched?: boolean;
+  hasMore?: boolean;
+  loadingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
 export const StayRecommendationList: React.FC<StayRecommendationListProps> = ({
@@ -133,8 +136,29 @@ export const StayRecommendationList: React.FC<StayRecommendationListProps> = ({
   searchParams,
   loading = false,
   hasSearched = false,
+  hasMore = false,
+  loadingMore = false,
+  onLoadMore,
 }) => {
   const [selectedStay, setSelectedStay] = useState<StayDto | null>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!hasMore || loading || loadingMore || !onLoadMore) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          onLoadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, loading, loadingMore, onLoadMore]);
 
   const rangeCheckIn = searchParams?.checkIn ?? todayStr();
   const rangeCheckOut = searchParams?.checkOut ?? addDaysStr(rangeCheckIn, 1);
@@ -169,17 +193,41 @@ export const StayRecommendationList: React.FC<StayRecommendationListProps> = ({
       ) : stays.length === 0 ? (
         <p className="recommendation-section-status">표시할 숙소가 없습니다.</p>
       ) : (
-        <div className="recommendation-section-content grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {stays.map((stay, index) => (
-            <StayCard
-              key={stay.accommodationId}
-              stay={stay}
-              index={index}
-              roomCount={searchParams?.rooms ?? 1}
-              onSelect={setSelectedStay}
-            />
-          ))}
-        </div>
+        <>
+          <div className="recommendation-section-content grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {stays.map((stay, index) => (
+              <StayCard
+                key={stay.accommodationId}
+                stay={stay}
+                index={index}
+                roomCount={searchParams?.rooms ?? 1}
+                onSelect={setSelectedStay}
+              />
+            ))}
+          </div>
+
+          {/* Sentinel / Infinite scroll feedback */}
+          {hasMore && (
+            <div ref={sentinelRef} className="w-full flex justify-center py-8 mt-4">
+              {loadingMore ? (
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-sm font-semibold text-slate-500 animate-pulse">더 많은 숙소를 불러오는 중...</span>
+                </div>
+              ) : (
+                <div className="h-4" />
+              )}
+            </div>
+          )}
+
+          {!hasMore && stays.length > 0 && (
+            <div className="w-full flex justify-center py-8 mt-4">
+              <span className="text-sm font-bold text-slate-400 tracking-wide bg-slate-50 px-4 py-2 rounded-full border border-slate-100">
+                모든 숙소를 다 불러왔습니다 ✨
+              </span>
+            </div>
+          )}
+        </>
       )}
 
       {selectedStay && (
