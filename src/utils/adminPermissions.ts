@@ -1,7 +1,7 @@
 import { isAdminRole } from '@/utils/memberRole';
 
 /** 관리자 포탈 탭 ID */
-export type AdminTabId = 'stat' | 'approve' | 'book' | 'user' | 'lbs' | 'settlement';
+export type AdminTabId = 'stat' | 'approve' | 'book' | 'user' | 'lbs' | 'settlement' | 'community';
 
 const USER_ADMIN_ROLES = new Set([
   'USER_ADMIN',
