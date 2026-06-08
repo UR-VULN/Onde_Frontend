@@ -42,77 +42,44 @@ export interface PendingApprovalsResponse {
 /** GET /api/v1/admin/approvals/pending — category 생략 시 항공+보험 모두 조회 */
 
 export const get_pending_approvals_api = async (
-
   category?: string
-
 ): Promise<{ success: boolean; data: PendingApprovalsResponse; message: string }> => {
-
   const raw = await adminAxios.get('/api/v1/admin/approvals/pending', {
-
     params: category ? { category } : undefined,
-
   });
-
   const res = unwrapApi<{
-
     pendingFlights?: Array<Record<string, unknown>>;
-
     pendingInsurances?: Array<Record<string, unknown>>;
-
   }>(raw);
-
-
 
   const content: PendingApprovalDto[] = [];
 
-
-
   (res.data.pendingFlights ?? []).forEach((f) => {
-
+    const depTimeFormatted = f.departureTime ? String(f.departureTime).replace('T', ' ').slice(0, 16) : '';
     content.push({
-
       requestId: Number(f.scheduleId ?? 0),
-
       productName: `${f.flightNumber ?? '항공'} (${f.departureAirport ?? ''}→${f.arrivalAirport ?? ''})`,
-
       category: 'FLIGHT',
-
-      details: String(f.status ?? ''),
-
+      createdAt: f.departureTime ? String(f.departureTime) : undefined,
+      details: `출발시각: ${depTimeFormatted} / ${f.status ?? ''}`,
     });
-
   });
-
-
 
   (res.data.pendingInsurances ?? []).forEach((i) => {
-
     content.push({
-
       requestId: Number(i.productId ?? 0),
-
       productName: String(i.productName ?? '보험 상품'),
-
       category: 'INSURANCE',
-
+      createdAt: i.createdAt ? String(i.createdAt) : undefined,
       details: String(i.status ?? ''),
-
     });
-
   });
 
-
-
   return {
-
     success: res.success,
-
     message: res.message,
-
     data: { content, totalCount: content.length },
-
   };
-
 };
 
 
