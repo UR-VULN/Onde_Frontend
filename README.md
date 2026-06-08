@@ -21,7 +21,7 @@ Onde 웹 서비스의 최적화된 웹 애플리케이션 프론트엔드 저장
 
 ## 🖥️ 주요 페이지 구성 및 기능 소개 (Pages & Flows)
 
-각 서비스 페이지의 상세 기능과 UI 흐름을 소개합니다. *(스크린샷 이미지들은 `src/assets/readme/int1.png` 경로에 위치하도록 준비되어 있습니다)*
+각 서비스 페이지의 상세 기능과 UI 흐름을 소개합니다.
 
 ### 1. 숙소 예약 페이지 (Stay Page)
 * **경로**: `/` (기본 홈 경로)
@@ -30,9 +30,9 @@ Onde 웹 서비스의 최적화된 웹 애플리케이션 프론트엔드 저장
   * **상세 정보 및 객실 토글**: 숙소의 세부 소개글 및 등록된 개별 객실의 정원, 가격 상세 정보를 리스트로 조회.
   * **일정 지정 및 실시간 요금 계산**: 투숙일정(체크인/체크아웃)을 달력으로 지정하면 성수기 기간 매핑 및 숙박 일수를 자동으로 연산하여 객실별 최종 합산 요금을 실시간 동적 표시.
   * **예약 흐름 진입**: 원하는 객실과 투숙 인원을 지정해 결제 단계로 즉시 넘겨주는 핵심 홈 페이지.
-* **스크린샷**:
+
   <p align="center">
-    <img src="./src/assets/readme/int1.png" width="80%" alt="숙소 예약 페이지 스크린샷" style="border-radius: 8px; border: 1px solid #ddd;" />
+    <img src="./src/assets/readme/int1.png" width="80%" alt="숙소 예약 페이지" style="border-radius: 8px; border: 1px solid #ddd;" />
   </p>
 
 ---
@@ -42,9 +42,9 @@ Onde 웹 서비스의 최적화된 웹 애플리케이션 프론트엔드 저장
 * **주요 기능**:
   * **다양한 노선 조회**: 출발지/도착지 공항, 일자, 탑승 인원 설정을 통한 노선 실시간 필터 조회.
   * **편도/왕복 설정**: 여정에 따라 편도 및 왕복 노선을 번갈아 선택하고 통합 예약 번호를 부여받는 기능.
-* **스크린샷**:
+
   <p align="center">
-    <img src="./src/assets/readme/int2.png" width="80%" alt="항공권 예약 페이지 스크린샷" style="border-radius: 8px; border: 1px solid #ddd;" />
+    <img src="./src/assets/readme/int2.png" width="80%" alt="항공권 예약 페이지" style="border-radius: 8px; border: 1px solid #ddd;" />
   </p>
 
 ---
@@ -55,9 +55,9 @@ Onde 웹 서비스의 최적화된 웹 애플리케이션 프론트엔드 저장
   * **차종 필터 및 정렬**: 경형/소형/준중형/SUV/대형 등 분류별 검색 및 하루 기본 렌트비 순 정렬 기능.
   * **차량 상세 제원 확인**: 차량 연식, 유종, 인수 위치 정보를 명시하여 오예약 방지.
   * **대여 일정 설정 및 요금 자동 계산**: 대여일시와 반납일시(픽업/반납 날짜 및 시간)를 선택하면 일 단위 기본 렌트 단가에 이용 기간을 실시간으로 곱하여 최종 총 결제 대금을 화면에 동적 노출 및 홀드(Hold) 예약 생성.
-* **스크린샷**:
+
   <p align="center">
-    <img src="./src/assets/readme/int3.png" width="80%" alt="렌터카 탐색 페이지 스크린샷" style="border-radius: 8px; border: 1px solid #ddd;" />
+    <img src="./src/assets/readme/int3.png" width="80%" alt="렌터카 탐색 페이지" style="border-radius: 8px; border: 1px solid #ddd;" />
   </p>
 
 ---
@@ -66,9 +66,9 @@ Onde 웹 서비스의 최적화된 웹 애플리케이션 프론트엔드 저장
 * **경로**: `/insurance`
 * **주요 기능**:
   * **여행 상품 연계 보험**: 여행 일정 중 발생할 수 있는 사고에 대비하기 위한 단기 여행자 보험 상품 정보 소개 및 신청 안내.
-* **스크린샷**:
+
   <p align="center">
-    <img src="./src/assets/readme/int4.png" width="80%" alt="여행자 보험 페이지 스크린샷" style="border-radius: 8px; border: 1px solid #ddd;" />
+    <img src="./src/assets/readme/int4.png" width="80%" alt="여행자 보험 페이지" style="border-radius: 8px; border: 1px solid #ddd;" />
   </p>
 
 ---
@@ -79,9 +79,9 @@ Onde 웹 서비스의 최적화된 웹 애플리케이션 프론트엔드 저장
   * **Leaflet 인터랙티브 지도**: 마커를 활용한 실시간 숙박 업소 위치 맵핑 및 드래그/확대 시 필터링 동기화.
   * **위경도 바운즈(Bounds) 탐색**: 지도 영역 및 일정 조건에 걸리는 자산 검색 및 스케일 자동 flyTo 리포커스.
   * **퀵 프리뷰**: 지도 위의 특정 마커 클릭 시 간편 요약 팝업을 띄우고 디테일 상세 페이지로 라우팅 연계.
-* **스크린샷**:
+
   <p align="center">
-    <img src="./src/assets/readme/int5.png" width="80%" alt="지도 탐색 페이지 스크린샷" style="border-radius: 8px; border: 1px solid #ddd;" />
+    <img src="./src/assets/readme/int5.png" width="80%" alt="지도 탐색 페이지" style="border-radius: 8px; border: 1px solid #ddd;" />
   </p>
 
 ---
@@ -91,10 +91,10 @@ Onde 웹 서비스의 최적화된 웹 애플리케이션 프론트엔드 저장
 * **주요 기능**:
   * **소셜 타임라인**: 유저들이 본인의 숙박 및 여행 경험을 포토 후기로 남기는 인스타그램 스타일의 카드형 피드.
   * **리치 미디어 업로드**: MinIO 오브젝트 스토리지와 연계하여 드래그앤드롭 이미지 업로드 및 후기 쓰기 기능 지원.
-* **스크린샷**:
-  <p align="center" style="display: flex; justify-content: center; gap: 2%; width: 100%;">
-    <img src="./src/assets/readme/int6_1.png" style="width: 48%; height: 350px; object-fit: contain; background-color: #f8fafc; border-radius: 8px; border: 1px solid #ddd;" alt="여행 피드 타임라인" />
-    <img src="./src/assets/readme/int6_2.png" style="width: 48%; height: 350px; object-fit: contain; background-color: #f8fafc; border-radius: 8px; border: 1px solid #ddd;" alt="포토 다이어리 작성 및 업로드" />
+
+  <p align="center">
+    <img src="./src/assets/readme/int6_1.png" width="48%" style="border-radius: 8px; border: 1px solid #ddd;" alt="여행 피드 타임라인" />
+    <img src="./src/assets/readme/int6_2.png" width="48%" style="border-radius: 8px; border: 1px solid #ddd;" alt="포토 다이어리 작성 및 업로드" />
   </p>
 
 ---
@@ -104,9 +104,9 @@ Onde 웹 서비스의 최적화된 웹 애플리케이션 프론트엔드 저장
 * **주요 기능**:
   * **동적 숙소/객실 등록**: 객실 크기, 침대 타입, 기준 인원 등을 실시간 폼 배열에 동적으로 추가하여 신청.
   * **렌터카 자산 등록**: 렌터카 차량 모델 및 요금 정보를 백엔드 승인 큐에 등록.
-* **스크린샷**:
+
   <p align="center">
-    <img src="./src/assets/readme/int7.png" width="80%" alt="판매자 백오피스 페이지 스크린샷" style="border-radius: 8px; border: 1px solid #ddd;" />
+    <img src="./src/assets/readme/int7.png" width="80%" alt="판매자 백오피스 페이지" style="border-radius: 8px; border: 1px solid #ddd;" />
   </p>
 
 ---
@@ -116,9 +116,9 @@ Onde 웹 서비스의 최적화된 웹 애플리케이션 프론트엔드 저장
 * **주요 기능**:
   * **승인 프로세스 관리**: 판매자가 신규 신청한 숙박/렌터카 자산에 대한 상세 검증 및 승인/반려 제어.
   * **종합 통계 및 정산**: 누적 예약 수, 일간 결제 지표 등 핵심 비즈니스 KPI 대시보드 및 파트너 정산 기능.
-* **스크린샷**:
+
   <p align="center">
-    <img src="./src/assets/readme/int8.png" width="80%" alt="관리자 대시보드 스크린샷" style="border-radius: 8px; border: 1px solid #ddd;" />
+    <img src="./src/assets/readme/int8.png" width="80%" alt="관리자 대시보드" style="border-radius: 8px; border: 1px solid #ddd;" />
   </p>
 
 ---
@@ -128,9 +128,9 @@ Onde 웹 서비스의 최적화된 웹 애플리케이션 프론트엔드 저장
 * **주요 기능**:
   * **ONDE 가상 지갑(Wallet) 결제**: 외주 PG 모듈 대신 서비스 가입 시 지급되거나 충전 가능한 ONDE 내부 가상 지갑 잔액을 실시간으로 차감하여 차별화된 인클라우드 안전 결제 처리.
   * **마일리지 할인 및 사전 검증**: 사용자가 입력한 마일리지 차감액을 즉시 반영하여 최종 결제액을 연산하고, 백엔드 지갑 DB 트랜잭션과 검증 단계를 연동해 고정성 있는 무결성 결제 승인 완료.
-* **스크린샷**:
+
   <p align="center">
-    <img src="./src/assets/readme/int9.png" width="80%" alt="결제 페이지 스크린샷" style="border-radius: 8px; border: 1px solid #ddd;" />
+    <img src="./src/assets/readme/int9.png" width="80%" alt="결제 페이지" style="border-radius: 8px; border: 1px solid #ddd;" />
   </p>
 
 ---
@@ -140,9 +140,9 @@ Onde 웹 서비스의 최적화된 웹 애플리케이션 프론트엔드 저장
 * **주요 기능**:
   * **예약 통합 타임라인**: 항공, 숙소, 렌터카 예약 내역 및 실시간 예약 상태(`PENDING`, `CONFIRMED`, `CANCELLED`) 추적.
   * **회원 정보 편집**: 프로필 변경 및 비밀번호 재설정 기능.
-* **스크린샷**:
+
   <p align="center">
-    <img src="./src/assets/readme/int10.png" width="80%" alt="마이페이지 스크린샷" style="border-radius: 8px; border: 1px solid #ddd;" />
+    <img src="./src/assets/readme/int10.png" width="80%" alt="마이페이지" style="border-radius: 8px; border: 1px solid #ddd;" />
   </p>
 
 ---
@@ -151,12 +151,12 @@ Onde 웹 서비스의 최적화된 웹 애플리케이션 프론트엔드 저장
 * **경로**: `/error` (401, 403, 404, 500 대응)
 * **주요 기능**:
   * **UX 친화적 안내**: 에러 종류에 맞는 전용 일러스트와 원인 메시지를 출력하여 안전하게 홈으로 복귀 유도.
-* **스크린샷**:
-  <p align="center" style="display: flex; justify-content: center; gap: 1%; width: 100%; flex-wrap: wrap;">
-    <img src="./src/assets/readme/int11_1.png" style="width: 23%; height: 180px; object-fit: contain; background-color: #f8fafc; border-radius: 8px; border: 1px solid #ddd;" alt="401 Error" />
-    <img src="./src/assets/readme/int11_2.png" style="width: 23%; height: 180px; object-fit: contain; background-color: #f8fafc; border-radius: 8px; border: 1px solid #ddd;" alt="403 Error" />
-    <img src="./src/assets/readme/int11_3.png" style="width: 23%; height: 180px; object-fit: contain; background-color: #f8fafc; border-radius: 8px; border: 1px solid #ddd;" alt="404 Error" />
-    <img src="./src/assets/readme/int11_4.png" style="width: 23%; height: 180px; object-fit: contain; background-color: #f8fafc; border-radius: 8px; border: 1px solid #ddd;" alt="500 Error" />
+
+  <p align="center">
+    <img src="./src/assets/readme/int11_1.png" width="23%" style="border-radius: 8px; border: 1px solid #ddd;" alt="401 Error" />
+    <img src="./src/assets/readme/int11_2.png" width="23%" style="border-radius: 8px; border: 1px solid #ddd;" alt="403 Error" />
+    <img src="./src/assets/readme/int11_3.png" width="23%" style="border-radius: 8px; border: 1px solid #ddd;" alt="404 Error" />
+    <img src="./src/assets/readme/int11_4.png" width="23%" style="border-radius: 8px; border: 1px solid #ddd;" alt="500 Error" />
   </p>
 
 ---
@@ -166,10 +166,10 @@ Onde 웹 서비스의 최적화된 웹 애플리케이션 프론트엔드 저장
 * **주요 기능**:
   * **반응형 네비게이션 헤더**: 인증 상태(로그인/로그아웃) 및 역할(일반 사용자, 판매자, 관리자)에 맞춘 메뉴 및 마이페이지 동적 노출.
   * **통합 인증 모달 (AuthModal)**: 미려한 글라스모피즘 스타일 백드롭 하에 로그인(`LoginForm`) 및 회원가입(`SignupForm`) 모달을 부드러운 애니메이션 전환으로 일괄 제공.
-* **스크린샷**:
+
   <p align="center">
-    <img src="./src/assets/readme/int12_1.png" width="48%" alt="로그인 폼 스크린샷" style="border-radius: 8px; border: 1px solid #ddd; margin-right: 2%;" />
-    <img src="./src/assets/readme/int12_2.png" width="48%" alt="회원가입 폼 스크린샷" style="border-radius: 8px; border: 1px solid #ddd;" />
+    <img src="./src/assets/readme/int12_1.png" width="48%" alt="로그인 폼" style="border-radius: 8px; border: 1px solid #ddd; margin-right: 2%;" />
+    <img src="./src/assets/readme/int12_2.png" width="48%" alt="회원가입 폼" style="border-radius: 8px; border: 1px solid #ddd;" />
   </p>
 
 ---
@@ -178,7 +178,7 @@ Onde 웹 서비스의 최적화된 웹 애플리케이션 프론트엔드 저장
 가입 대상자의 역할(Role)에 맞춰 노출되는 맞춤형 환영 팝업 모달입니다.
 * **일반 사용자 가입 환영 팝업 (WelcomeModal)**: 일반 유저(`cust`) 회원가입이 성공하면, 온데와 함께하는 프리미엄 여정의 시작을 축하하는 감성 팝업 UI입니다.
 * **판매자 승인 대기 안내 팝업 (SellerPendingModal)**: 비즈니스용 판매자(`sell`) 가입 시 관리자 승인 대기 상태(`PENDING`)임을 명확히 인지시키는 보안 안내 팝업 UI입니다.
-* **스크린샷**:
+
   <p align="center">
     <img src="./src/assets/readme/int13_1.png" width="48%" alt="일반 사용자 환영 팝업" style="border-radius: 8px; border: 1px solid #ddd; margin-right: 2%;" />
     <img src="./src/assets/readme/int13_2.png" width="48%" alt="판매자 승인 대기 안내 팝업" style="border-radius: 8px; border: 1px solid #ddd;" />
@@ -203,7 +203,7 @@ Onde 웹 서비스의 최적화된 웹 애플리케이션 프론트엔드 저장
 Onde_Frontend/
 ├── src/
 │   ├── api/          # Axios Instance 및 인터셉터, 도메인별 API 연동부
-│   ├── assets/       # 로컬 정적 자원 (Font, Image, readme 스크린샷)
+│   ├── assets/       # 로컬 정적 자원 (Font, Image, readme 이미지)
 │   ├── components/   # 재사용 가능한 UI 컴포넌트
 │   │   ├── auth/     # 로그인 및 회원가입 모달 UI 폼
 │   │   ├── layout/   # MainLayout(고객용), BackOfficeLayout(어드민/판매자용)
