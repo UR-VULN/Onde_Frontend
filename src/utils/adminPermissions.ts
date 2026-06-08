@@ -59,7 +59,7 @@ export function canApproveProducts(role: string | null | undefined): boolean {
 }
 
 export function canManageMembers(role: string | null | undefined): boolean {
-  return isSuperAdmin(role);
+  return isSuperAdmin(role) || isUserAdmin(role);
 }
 
 export function canAccessSettlement(role: string | null | undefined): boolean {
