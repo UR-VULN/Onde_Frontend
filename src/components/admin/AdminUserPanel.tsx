@@ -3,6 +3,7 @@ import { useTravelStore } from '@/store/useTravelStore';
 import {
   get_admin_members_api,
   patch_admin_member_api,
+  patch_admin_member_status_api,
   type AdminMemberDto,
 } from '@/api/adminApi';
 import { ROLE_BADGE_CLASS } from '@/constants/appConstants';
@@ -59,6 +60,35 @@ export const AdminUserPanel: React.FC = () => {
       title: '회원 권한 변경',
       description: `${user.email} 회원의 권한을 ${nextRole}(으)로 변경합니다.`,
       yesLabel: '변경',
+      noLabel: '취소',
+    });
+  };
+
+  const handle_status_change = (userId: number, nextStatus: 'ACTIVE' | 'WITHDRAWN') => {
+    const user = users.find((u) => u.id === userId);
+    if (!user) return;
+
+    const actionText = nextStatus === 'ACTIVE' ? '승인' : '거절';
+
+    openConfirmPopup(async (confirmed) => {
+      if (!confirmed) return;
+      const res = await patch_admin_member_status_api(userId, nextStatus);
+      if (res.success) {
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === userId
+              ? { ...u, status: nextStatus }
+              : u
+          )
+        );
+        addToast(`#${userId} 회원의 가입 신청을 ${actionText}했습니다.`, 'success');
+      } else {
+        addToast(res.message || `${actionText} 처리에 실패했습니다.`, 'warning');
+      }
+    }, {
+      title: `판매자 가입 ${actionText}`,
+      description: `${user.email} 회원의 판매자 가입 신청을 ${actionText}하시겠습니까?`,
+      yesLabel: actionText,
       noLabel: '취소',
     });
   };
@@ -145,15 +175,40 @@ export const AdminUserPanel: React.FC = () => {
                   </span>
                 </td>
                 <td className="text-center">
-                  <span className={`status-badge ${user.isBlacklisted ? 'status-rejected' : 'status-active'}`}>
+                  <span className={`status-badge ${
+                    user.status === 'PENDING'
+                      ? 'bg-amber-50 text-amber-600 border border-amber-200 px-2 py-0.5 rounded-full text-[10px] font-bold'
+                      : user.status === 'ACTIVE'
+                      ? 'status-active'
+                      : 'status-rejected'
+                  }`}>
                     {user.status}
                   </span>
                 </td>
                 <td className="text-center">
                   {!isProtectedAdminRole(user.role) && canEditMembers ? (
-                    <button type="button" className="btn-secondary text-[11px] py-1.5 px-4" onClick={() => handle_role_change(user.id)}>
-                      {user.role === 'ROLE_USER' ? 'SELLER 전환' : 'USER 전환'}
-                    </button>
+                    user.status === 'PENDING' ? (
+                      <div style={{ display: 'flex', gap: '0.35rem', justifyContent: 'center' }}>
+                        <button
+                          type="button"
+                          className="text-[11px] py-1 px-2.5 font-bold rounded-lg text-emerald-600 bg-emerald-50 border border-emerald-100 hover:bg-emerald-100 transition-colors"
+                          onClick={() => handle_status_change(user.id, 'ACTIVE')}
+                        >
+                          승인
+                        </button>
+                        <button
+                          type="button"
+                          className="text-[11px] py-1 px-2.5 font-bold rounded-lg text-rose-600 bg-rose-50 border border-rose-100 hover:bg-rose-100 transition-colors"
+                          onClick={() => handle_status_change(user.id, 'WITHDRAWN')}
+                        >
+                          거절
+                        </button>
+                      </div>
+                    ) : (
+                      <button type="button" className="btn-secondary text-[11px] py-1.5 px-4" onClick={() => handle_role_change(user.id)}>
+                        {user.role === 'ROLE_USER' ? 'SELLER 전환' : 'USER 전환'}
+                      </button>
+                    )
                   ) : (
                     !isProtectedAdminRole(user.role) && <span className="text-[11px] font-black text-slate-400">조회 전용</span>
                   )}

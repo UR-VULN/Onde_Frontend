@@ -2,13 +2,13 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTravelStore } from '@/store/useTravelStore';
 
-/** 모바일 PG 리다이렉트 콜백 — PC 결제는 PaymentPage 인라인 콜백 사용 */
+/** 모바일 결제 리다이렉트 콜백 — PC 결제는 PaymentPage 인라인 처리 사용 */
 export const PaymentCallbackPage: React.FC = () => {
   const navigate = useNavigate();
   const { addToast } = useTravelStore();
 
   useEffect(() => {
-    addToast('모바일 결제 결과를 확인 중입니다. 잠시만 기다려 주세요.', 'info');
+    addToast('결제 결과를 확인 중입니다. 잠시만 기다려 주세요.', 'info');
     navigate('/mypage', { replace: true });
   }, [navigate, addToast]);
 

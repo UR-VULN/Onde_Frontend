@@ -770,6 +770,36 @@ export const patch_admin_member_api = async (
 
 
 
+export const patch_admin_member_status_api = async (
+
+  memberId: number,
+
+  status: string
+
+): Promise<{ success: boolean; message: string }> => {
+
+  try {
+
+    const raw = await adminAxios.patch(`/api/v1/admin/members/${memberId}/status`, { status });
+
+    const res = unwrapApi<unknown>(raw);
+
+    return { success: res.success, message: res.message || '상태가 변경되었습니다.' };
+
+  } catch (err: unknown) {
+
+    const msg =
+
+      (err as { error?: { message?: string } })?.error?.message ?? '상태 변경에 실패했습니다.';
+
+    return { success: false, message: msg };
+
+  }
+
+};
+
+
+
 export const blind_reported_post_api = async (
 
   postId: number,

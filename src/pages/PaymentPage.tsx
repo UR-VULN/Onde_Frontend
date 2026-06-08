@@ -91,7 +91,7 @@ export const PaymentPage: React.FC = () => {
       }
 
       const mockImpUid = `wallet_tx_${Date.now()}`;
-      const portOneRes = {
+      const walletPaymentRes = {
         success: true,
         imp_uid: mockImpUid,
         merchant_uid: merchantUid,
@@ -99,9 +99,9 @@ export const PaymentPage: React.FC = () => {
       };
 
       const validateRes = await validate_payment_api({
-        impUid: portOneRes.imp_uid,
-        merchantUid: portOneRes.merchant_uid,
-        pgAmount: portOneRes.paid_amount,
+        impUid: walletPaymentRes.imp_uid,
+        merchantUid: walletPaymentRes.merchant_uid,
+        pgAmount: walletPaymentRes.paid_amount,
       });
 
       if (!validateRes.success || !validateRes.data) {
@@ -111,8 +111,8 @@ export const PaymentPage: React.FC = () => {
       if (order.reservationType === 'FLIGHT' && order.flightBookingCode) {
         await confirm_flight_payment_api(
           order.flightBookingCode,
-          portOneRes.imp_uid,
-          portOneRes.paid_amount ?? serverPgAmount
+          walletPaymentRes.imp_uid,
+          walletPaymentRes.paid_amount ?? serverPgAmount
         );
       }
 
