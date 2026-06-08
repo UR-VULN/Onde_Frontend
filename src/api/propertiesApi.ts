@@ -1,4 +1,5 @@
 import { userAxios } from '@/api/axiosInstance';
+import { STORAGE_BASE_URL } from '@/constants/apiConfig';
 import { unwrapApi } from '@/utils/apiResponse';
 
 export interface PropertyMarkerDto {
@@ -38,7 +39,7 @@ interface BackendPropertyMarker {
 function mapMarker(item: BackendPropertyMarker): PropertyMarkerDto {
   let thumbnailUrl = item.thumbnailUrl ?? '';
   if (thumbnailUrl && !thumbnailUrl.startsWith('http://') && !thumbnailUrl.startsWith('https://')) {
-    thumbnailUrl = `http://localhost:9000/onde-local/${thumbnailUrl}`;
+    thumbnailUrl = `${STORAGE_BASE_URL}/${thumbnailUrl}`;
   }
   return {
     propertyId: item.propertyId,

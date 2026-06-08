@@ -4,6 +4,8 @@ import {
   get_seller_accommodations_api,
   get_seller_inventory_calendar_api,
   patch_seller_inventory_day_api,
+  register_seller_accommodation_api,
+  type SellerAccommodationRegisterPayload,
   type SellerPropertyDto,
 } from '@/api/sellerApi';
 import { SellerMonthYearSelect } from '@/components/seller/SellerMonthYearSelect';
@@ -18,6 +20,43 @@ export const SellerStayPanel: React.FC = () => {
   const [dailyData, setDailyData] = useState<Record<number, { stock: number; price: number; isClosed?: boolean }>>({});
   const [overrideTarget, setOverrideTarget] = useState<{ day: number; stock: number; price: number } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [registerSubmitting, setRegisterSubmitting] = useState(false);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [registerForm, setRegisterForm] = useState<SellerAccommodationRegisterPayload>({
+    name: '',
+    description: '',
+    category: '호텔',
+    location: '',
+    businessLicense: '',
+    latitude: undefined,
+    longitude: undefined,
+    rooms: [{ name: '스탠다드룸', capacity: 2, baseCapacity: 2, extraPersonFee: 30000 }],
+  });
+
+  const reset_register_form = () => {
+    setRegisterForm({
+      name: '',
+      description: '',
+      category: '호텔',
+      location: '',
+      businessLicense: '',
+      latitude: undefined,
+      longitude: undefined,
+      rooms: [{ name: '스탠다드룸', capacity: 2, baseCapacity: 2, extraPersonFee: 30000 }],
+    });
+    setThumbnailFile(null);
+    if (thumbnailPreview) {
+      URL.revokeObjectURL(thumbnailPreview);
+    }
+    setThumbnailPreview(null);
+  };
+
+  const has_coordinate_precision = (value: number) => {
+    const decimal = String(value).split('.')[1];
+    return decimal != null && decimal.length >= 4;
+  };
 
   const loadInventory = useCallback(async () => {
     setLoading(true);
@@ -59,6 +98,59 @@ export const SellerStayPanel: React.FC = () => {
       loadCalendar(selectedPropertyKey, year, month);
     }
   }, [selectedPropertyKey, year, month, loadCalendar]);
+
+  const handle_thumbnail_change = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    if (thumbnailPreview) {
+      URL.revokeObjectURL(thumbnailPreview);
+    }
+    setThumbnailFile(file);
+    setThumbnailPreview(file ? URL.createObjectURL(file) : null);
+  };
+
+  const handle_register_submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!registerForm.name.trim() || !registerForm.location.trim()) {
+      addToast('숙소명과 위치는 필수입니다.', 'warning');
+      return;
+    }
+    if (registerForm.latitude == null || registerForm.longitude == null) {
+      addToast('지도 노출을 위해 위도·경도를 입력해주세요.', 'warning');
+      return;
+    }
+    if (
+      !has_coordinate_precision(registerForm.latitude) ||
+      !has_coordinate_precision(registerForm.longitude)
+    ) {
+      addToast('위도·경도는 소수점 4자리 이상으로 입력해주세요. (예: 33.4890, 126.4983)', 'warning');
+      return;
+    }
+
+    setRegisterSubmitting(true);
+    try {
+      const res = await register_seller_accommodation_api({
+        ...registerForm,
+        thumbnailFile,
+      });
+      if (res.success) {
+        addToast(res.message || '숙소 등록 신청이 완료되었습니다. 관리자 승인 후 노출됩니다.', 'success');
+        setIsRegisterOpen(false);
+        reset_register_form();
+        await loadInventory();
+        return;
+      }
+      addToast(res.message || '숙소 등록에 실패했습니다.', 'warning');
+    } catch (err: unknown) {
+      const msg =
+        (err as { error?: { systemMessage?: string; message?: string } })?.error?.systemMessage ||
+        (err as { error?: { message?: string } })?.error?.message ||
+        (err as { message?: string })?.message ||
+        '숙소 등록 중 오류가 발생했습니다.';
+      addToast(msg, 'warning');
+    } finally {
+      setRegisterSubmitting(false);
+    }
+  };
 
   const handle_override_save = async (day: number, stock: number, price: number) => {
     try {
@@ -141,6 +233,14 @@ export const SellerStayPanel: React.FC = () => {
             등록하신 숙소의 일자별 판매 객실 수량과 가격을 조절합니다.
           </p>
         </div>
+        <button
+          type="button"
+          className="btn-primary"
+          style={{ flexShrink: 0 }}
+          onClick={() => setIsRegisterOpen(true)}
+        >
+          <i className="fa-solid fa-plus"></i> 숙소 등록
+        </button>
       </div>
 
       {loading ? (
@@ -173,7 +273,9 @@ export const SellerStayPanel: React.FC = () => {
                 ))}
                 {stays.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="text-center py-4 text-slate-400">등록된 숙소 상품이 없습니다.</td>
+                    <td colSpan={3} className="text-center py-4 text-slate-400">
+                      등록된 숙소 상품이 없습니다.
+                    </td>
                   </tr>
                 )}
               </tbody>
@@ -228,6 +330,189 @@ export const SellerStayPanel: React.FC = () => {
           {renderCalendarCells()}
         </div>
       </div>
+
+      {isRegisterOpen && (
+        <div className="modal-backdrop" style={{ display: 'flex' }}>
+          <div className="app-modal" style={{ width: '640px', maxWidth: '96%', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>
+                <i className="fa-solid fa-hotel" style={{ color: 'var(--primary)' }}></i> 숙소 신규 등록
+              </h3>
+              <button type="button" onClick={() => setIsRegisterOpen(false)}>
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            <form onSubmit={handle_register_submit}>
+              <div className="grid-2" style={{ marginBottom: '1rem' }}>
+                <div className="form-group">
+                  <label className="form-label">숙소명 *</label>
+                  <input
+                    className="form-input"
+                    value={registerForm.name}
+                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, name: e.target.value }))}
+                    placeholder="예: ONDE 오션뷰 호텔"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">카테고리</label>
+                  <select
+                    className="form-input"
+                    value={registerForm.category}
+                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, category: e.target.value }))}
+                  >
+                    <option value="호텔">호텔</option>
+                    <option value="펜션">펜션</option>
+                    <option value="리조트">리조트</option>
+                    <option value="게스트하우스">게스트하우스</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">위치 *</label>
+                <input
+                  className="form-input"
+                  value={registerForm.location}
+                  onChange={(e) => setRegisterForm((prev) => ({ ...prev, location: e.target.value }))}
+                  placeholder="예: 제주시 애월읍"
+                  required
+                />
+              </div>
+
+              <div className="grid-2" style={{ marginBottom: '1rem' }}>
+                <div className="form-group">
+                  <label className="form-label">위도 *</label>
+                  <input
+                    type="number"
+                    step="0.0001"
+                    className="form-input"
+                    value={registerForm.latitude ?? ''}
+                    onChange={(e) =>
+                      setRegisterForm((prev) => ({
+                        ...prev,
+                        latitude: e.target.value === '' ? undefined : Number(e.target.value),
+                      }))
+                    }
+                    placeholder="33.4890"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">경도 *</label>
+                  <input
+                    type="number"
+                    step="0.0001"
+                    className="form-input"
+                    value={registerForm.longitude ?? ''}
+                    onChange={(e) =>
+                      setRegisterForm((prev) => ({
+                        ...prev,
+                        longitude: e.target.value === '' ? undefined : Number(e.target.value),
+                      }))
+                    }
+                    placeholder="126.4983"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">대표 사진</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="form-input"
+                  onChange={handle_thumbnail_change}
+                />
+                {thumbnailPreview && (
+                  <img
+                    src={thumbnailPreview}
+                    alt="숙소 미리보기"
+                    style={{
+                      marginTop: '0.75rem',
+                      width: '100%',
+                      maxHeight: '180px',
+                      objectFit: 'cover',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-color)',
+                    }}
+                  />
+                )}
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">숙소 소개</label>
+                <textarea
+                  className="form-input"
+                  rows={3}
+                  value={registerForm.description}
+                  onChange={(e) => setRegisterForm((prev) => ({ ...prev, description: e.target.value }))}
+                  placeholder="숙소 특징과 편의시설을 입력해주세요."
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">사업자등록번호</label>
+                <input
+                  className="form-input"
+                  value={registerForm.businessLicense}
+                  onChange={(e) => setRegisterForm((prev) => ({ ...prev, businessLicense: e.target.value }))}
+                  placeholder="000-00-00000"
+                />
+              </div>
+
+              <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
+                <h4 style={{ fontWeight: 800, marginBottom: '0.75rem', fontSize: '0.95rem' }}>대표 객실 정보</h4>
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">객실명</label>
+                    <input
+                      className="form-input"
+                      value={registerForm.rooms[0]?.name ?? ''}
+                      onChange={(e) =>
+                        setRegisterForm((prev) => ({
+                          ...prev,
+                          rooms: [{ ...prev.rooms[0], name: e.target.value }],
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">기준 인원</label>
+                    <input
+                      type="number"
+                      min={1}
+                      className="form-input"
+                      value={registerForm.rooms[0]?.baseCapacity ?? 2}
+                      onChange={(e) =>
+                        setRegisterForm((prev) => ({
+                          ...prev,
+                          rooms: [{ ...prev.rooms[0], baseCapacity: Number(e.target.value), capacity: Number(e.target.value) }],
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '1rem' }}>
+                위도·경도는 지도 마커 위치에 사용됩니다. 등록 후 관리자 승인(PENDING)을 거쳐 고객 화면에 노출됩니다.
+              </p>
+
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+                <button type="submit" className="btn-primary" style={{ flex: 1 }} disabled={registerSubmitting}>
+                  {registerSubmitting ? '등록 중...' : '등록 신청'}
+                </button>
+                <button type="button" className="btn-secondary" style={{ flex: 1 }} onClick={() => setIsRegisterOpen(false)}>
+                  취소
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {overrideTarget && (
         <OverrideModal

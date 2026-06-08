@@ -1,4 +1,5 @@
 import { userAxios } from '@/api/axiosInstance';
+import { STORAGE_BASE_URL } from '@/constants/apiConfig';
 import { unwrapApi } from '@/utils/apiResponse';
 import { getMemberId } from '@/utils/authCookies';
 
@@ -137,7 +138,7 @@ const CAR_IMAGE_MAP: Record<string, string> = {
 
 function mapCarListItemToDto(item: CarListItemDto): CarDto {
   const filename = CAR_IMAGE_MAP[item.modelName];
-  const imageUrl = filename ? `http://localhost:9000/onde-local/car/${filename}` : undefined;
+  const imageUrl = filename ? `${STORAGE_BASE_URL}/car/${filename}` : undefined;
   return {
     id: item.carId,
     carId: item.carId,

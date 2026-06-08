@@ -9,11 +9,13 @@ import { calcPgAmount } from '@/utils/paymentCheckout';
 
 type PaymentStep = 'checkout' | 'processing' | 'success';
 
-
-
 function resolvePaymentErrorMessage(err: unknown): string {
-  const apiMsg = (err as { error?: { message?: string }; message?: string })?.error?.message;
-  const directMsg = (err as Error)?.message;
+  const apiErr = err as {
+    error?: { message?: string; systemMessage?: string };
+    message?: string;
+  };
+  const apiMsg = apiErr?.error?.message ?? apiErr?.error?.systemMessage;
+  const directMsg = apiErr?.message ?? (err as Error)?.message;
   return apiMsg || directMsg || '결제 처리 중 오류가 발생했습니다.';
 }
 

@@ -3,8 +3,7 @@
 interface ImportMetaEnv {
   readonly VITE_USER_API_BASE?: string;
   readonly VITE_ADMIN_API_BASE?: string;
-  readonly VITE_PORTONE_IMP_CODE?: string;
-  readonly VITE_PORTONE_PG?: string;
+  readonly VITE_S3_ENDPOINT?: string;
 }
 
 interface ImportMeta {

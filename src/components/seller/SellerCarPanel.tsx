@@ -4,8 +4,10 @@ import {
   get_seller_cars_inventory_api,
   groupSellerCarsByModel,
   patch_seller_inventory_day_api,
+  register_seller_car_api,
   type SellerCarInventoryDto,
   type SellerCarModelGroup,
+  type SellerCarRegisterPayload,
 } from '@/api/sellerApi';
 import { SellerMonthYearSelect } from '@/components/seller/SellerMonthYearSelect';
 import { getDefaultYearMonthValue, parseYearMonthValue } from '@/utils/calendarUtils';
@@ -29,6 +31,14 @@ export const SellerCarPanel: React.FC = () => {
   const [dailyData, setDailyData] = useState<Record<number, { stock: number; price: number; isClosed?: boolean }>>({});
   const [overrideTarget, setOverrideTarget] = useState<{ day: number; stock: number; price: number } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [registerSubmitting, setRegisterSubmitting] = useState(false);
+  const [registerForm, setRegisterForm] = useState<SellerCarRegisterPayload>({
+    licensePlate: '',
+    modelName: '',
+    carType: 'SUV',
+    dailyPrice: 75000,
+  });
 
   const loadInventory = useCallback(async () => {
     setLoading(true);
@@ -61,6 +71,36 @@ export const SellerCarPanel: React.FC = () => {
       loadCalendar(selectedGroup, year, month);
     }
   }, [selectedGroup, year, month, loadCalendar]);
+
+  const handle_register_submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!registerForm.licensePlate.trim() || !registerForm.modelName.trim()) {
+      addToast('차량 번호와 모델명은 필수입니다.', 'warning');
+      return;
+    }
+
+    setRegisterSubmitting(true);
+    try {
+      const res = await register_seller_car_api(registerForm);
+      if (res.success) {
+        addToast(res.message || '렌터카 등록 신청이 완료되었습니다. 관리자 승인 후 노출됩니다.', 'success');
+        setIsRegisterOpen(false);
+        setRegisterForm({ licensePlate: '', modelName: '', carType: 'SUV', dailyPrice: 75000 });
+        await loadInventory();
+        return;
+      }
+      addToast(res.message || '렌터카 등록에 실패했습니다.', 'warning');
+    } catch (err: unknown) {
+      const msg =
+        (err as { error?: { systemMessage?: string; message?: string } })?.error?.systemMessage ||
+        (err as { error?: { message?: string } })?.error?.message ||
+        (err as { message?: string })?.message ||
+        '렌터카 등록 중 오류가 발생했습니다.';
+      addToast(msg, 'warning');
+    } finally {
+      setRegisterSubmitting(false);
+    }
+  };
 
   const handle_override_save = async (day: number, stock: number, price: number) => {
     if (!selectedGroup) return;
@@ -157,6 +197,14 @@ export const SellerCarPanel: React.FC = () => {
             등록하신 차량의 일자별 대여 수량과 요금을 조절합니다.
           </p>
         </div>
+        <button
+          type="button"
+          className="btn-primary"
+          style={{ flexShrink: 0 }}
+          onClick={() => setIsRegisterOpen(true)}
+        >
+          <i className="fa-solid fa-plus"></i> 렌터카 등록
+        </button>
       </div>
 
       {loading ? (
@@ -198,7 +246,9 @@ export const SellerCarPanel: React.FC = () => {
                 ))}
                 {carGroups.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="text-center py-4 text-slate-400">등록된 렌터카 상품이 없습니다.</td>
+                    <td colSpan={3} className="text-center py-4 text-slate-400">
+                      등록된 렌터카 상품이 없습니다.
+                    </td>
                   </tr>
                 )}
               </tbody>
@@ -254,6 +304,85 @@ export const SellerCarPanel: React.FC = () => {
           {renderCalendarCells()}
         </div>
       </div>
+
+      {isRegisterOpen && (
+        <div className="modal-backdrop" style={{ display: 'flex' }}>
+          <div className="app-modal" style={{ width: '520px', maxWidth: '96%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>
+                <i className="fa-solid fa-car-side" style={{ color: '#008a05' }}></i> 렌터카 신규 등록
+              </h3>
+              <button type="button" onClick={() => setIsRegisterOpen(false)}>
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            <form onSubmit={handle_register_submit}>
+              <div className="form-group">
+                <label className="form-label">차량 번호 *</label>
+                <input
+                  className="form-input"
+                  value={registerForm.licensePlate}
+                  onChange={(e) => setRegisterForm((prev) => ({ ...prev, licensePlate: e.target.value }))}
+                  placeholder="12가 3456"
+                  required
+                />
+              </div>
+
+              <div className="grid-2">
+                <div className="form-group">
+                  <label className="form-label">모델명 *</label>
+                  <input
+                    className="form-input"
+                    value={registerForm.modelName}
+                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, modelName: e.target.value }))}
+                    placeholder="예: 현대 아이오닉 5"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">차종</label>
+                  <select
+                    className="form-input"
+                    value={registerForm.carType}
+                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, carType: e.target.value }))}
+                  >
+                    <option value="SUV">SUV</option>
+                    <option value="승용">승용</option>
+                    <option value="전기">전기</option>
+                    <option value="밴">밴</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">기본 일일 대여 요금 (원)</label>
+                <input
+                  type="number"
+                  min={10000}
+                  step={1000}
+                  className="form-input"
+                  value={registerForm.dailyPrice}
+                  onChange={(e) => setRegisterForm((prev) => ({ ...prev, dailyPrice: Number(e.target.value) }))}
+                />
+              </div>
+
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                등록 후 관리자 승인(PENDING)을 거쳐 고객 화면에 노출됩니다.
+              </p>
+
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+                <button type="submit" className="btn-primary" style={{ flex: 1 }} disabled={registerSubmitting}>
+                  {registerSubmitting ? '등록 중...' : '등록 신청'}
+                </button>
+                <button type="button" className="btn-secondary" style={{ flex: 1 }} onClick={() => setIsRegisterOpen(false)}>
+                  취소
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {overrideTarget && (
         <OverrideModal

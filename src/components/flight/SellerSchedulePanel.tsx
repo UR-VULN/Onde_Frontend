@@ -251,66 +251,84 @@ export const SellerSchedulePanel: React.FC = () => {
 
       {/* Batch Register Modal */}
       {isBatchOpen && (
-        <div className="modal-backdrop" style={{ display: 'flex' }}>
-          <div className="app-modal" style={{ width: '640px', maxWidth: '96%', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <i className="fa-solid fa-plane-up" style={{ color: 'var(--primary)' }}></i> 정기 스케줄 일괄 신청 등록
+        <div className="modal-backdrop">
+          <div className="app-modal app-modal--wide app-modal--scrollable" role="dialog" aria-modal="true" aria-labelledby="flight-batch-modal-title">
+            <div className="app-modal__header">
+              <h3 id="flight-batch-modal-title" className="app-modal__title">
+                <i className="fa-solid fa-plane-up" style={{ color: 'var(--primary)', marginRight: '0.4rem' }}></i>
+                정기 스케줄 일괄 등록
               </h3>
-              <button type="button" style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }} onClick={() => setIsBatchOpen(false)}>
+              <button type="button" style={{ color: 'var(--text-muted)', fontSize: '1.1rem', flexShrink: 0 }} onClick={() => setIsBatchOpen(false)} aria-label="닫기">
                 <i className="fa-solid fa-xmark"></i>
               </button>
             </div>
 
-            <form onSubmit={handle_batch_submit}>
-              <div className="grid-2" style={{ marginBottom: '1.2rem' }}>
-                <div className="form-group">
-                  <label className="form-label">출발 / 도착 공항 IATA</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <input type="text" value={batchForm.departureAirport} onChange={(e) => setBatchForm({ ...batchForm, departureAirport: e.target.value.toUpperCase() })} className="form-input" style={{ flex: 1, textAlign: 'center' }} placeholder="ICN" required />
-                    <i className="fa-solid fa-arrow-right" style={{ color: 'var(--text-muted)' }}></i>
-                    <input type="text" value={batchForm.arrivalAirport} onChange={(e) => setBatchForm({ ...batchForm, arrivalAirport: e.target.value.toUpperCase() })} className="form-input" style={{ flex: 1, textAlign: 'center' }} placeholder="NRT" required />
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">비행 편명 (Flight No.)</label>
-                  <input type="text" value={batchForm.flightNumber} onChange={(e) => setBatchForm({ ...batchForm, flightNumber: e.target.value })} className="form-input" placeholder="KE-023" required />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">출발 / 도착 시간 (Local)</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <input type="text" value={batchForm.departureTime} onChange={(e) => setBatchForm({ ...batchForm, departureTime: e.target.value })} className="form-input" style={{ flex: 1, textAlign: 'center' }} placeholder="14:30" required />
-                    <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>~</span>
-                    <input type="text" value={batchForm.arrivalTime} onChange={(e) => setBatchForm({ ...batchForm, arrivalTime: e.target.value })} className="form-input" style={{ flex: 1, textAlign: 'center' }} placeholder="17:00" required />
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">운항 기간 (Start ~ End)</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <input type="date" value={batchForm.startDate} onChange={(e) => setBatchForm({ ...batchForm, startDate: e.target.value })} className="form-input" style={{ flex: 1 }} required />
-                    <input type="date" value={batchForm.endDate} onChange={(e) => setBatchForm({ ...batchForm, endDate: e.target.value })} className="form-input" style={{ flex: 1 }} required />
-                  </div>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">클래스별 공급 좌석 및 기준가 설정</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
-                  {[
-                    { key: 'economy', label: 'ECONOMY', seatsKey: 'economySeats', priceKey: 'economyPrice', color: '#eff6ff', textColor: '#1d4ed8' },
-                    { key: 'business', label: 'BUSINESS', seatsKey: 'businessSeats', priceKey: 'businessPrice', color: '#eef2ff', textColor: '#4338ca' },
-                    { key: 'first', label: 'FIRST CLASS', seatsKey: 'firstSeats', priceKey: 'firstPrice', color: 'var(--bg-light)', textColor: 'var(--text-dark)' },
-                  ].map((cls) => (
-                    <div key={cls.key} style={{ background: cls.color, padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      <span style={{ fontSize: '0.72rem', fontWeight: 800, color: cls.textColor, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{cls.label}</span>
-                      <input type="number" value={(batchForm as any)[cls.seatsKey]} onChange={(e) => setBatchForm({ ...batchForm, [cls.seatsKey]: parseInt(e.target.value) })} className="form-input" style={{ padding: '0.5rem 0.75rem', fontSize: '0.85rem' }} placeholder="공급석" />
-                      <input type="number" value={(batchForm as any)[cls.priceKey]} onChange={(e) => setBatchForm({ ...batchForm, [cls.priceKey]: parseInt(e.target.value) })} className="form-input" style={{ padding: '0.5rem 0.75rem', fontSize: '0.85rem' }} placeholder="기준 요금" />
+            <form onSubmit={handle_batch_submit} style={{ display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1 }}>
+              <div className="app-modal__body">
+                <div className="seller-modal-form-grid">
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">출발 / 도착 공항</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <input type="text" value={batchForm.departureAirport} onChange={(e) => setBatchForm({ ...batchForm, departureAirport: e.target.value.toUpperCase() })} className="form-input" style={{ flex: 1, minWidth: 0, textAlign: 'center' }} placeholder="ICN" required />
+                      <i className="fa-solid fa-arrow-right" style={{ color: 'var(--text-muted)', flexShrink: 0 }}></i>
+                      <input type="text" value={batchForm.arrivalAirport} onChange={(e) => setBatchForm({ ...batchForm, arrivalAirport: e.target.value.toUpperCase() })} className="form-input" style={{ flex: 1, minWidth: 0, textAlign: 'center' }} placeholder="NRT" required />
                     </div>
-                  ))}
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">비행 편명</label>
+                    <input type="text" value={batchForm.flightNumber} onChange={(e) => setBatchForm({ ...batchForm, flightNumber: e.target.value })} className="form-input" placeholder="KE-023" required />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">출발 / 도착 시간</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <input type="time" value={batchForm.departureTime} onChange={(e) => setBatchForm({ ...batchForm, departureTime: e.target.value })} className="form-input" style={{ flex: 1, minWidth: 0 }} required />
+                      <span style={{ color: 'var(--text-muted)', fontWeight: 600, flexShrink: 0 }}>~</span>
+                      <input type="time" value={batchForm.arrivalTime} onChange={(e) => setBatchForm({ ...batchForm, arrivalTime: e.target.value })} className="form-input" style={{ flex: 1, minWidth: 0 }} required />
+                    </div>
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">운항 기간</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <input type="date" value={batchForm.startDate} onChange={(e) => setBatchForm({ ...batchForm, startDate: e.target.value })} className="form-input" style={{ flex: 1, minWidth: 0 }} required />
+                      <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>~</span>
+                      <input type="date" value={batchForm.endDate} onChange={(e) => setBatchForm({ ...batchForm, endDate: e.target.value })} className="form-input" style={{ flex: 1, minWidth: 0 }} required />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">운항 요일 (예: MON,WED,FRI)</label>
+                  <input
+                    type="text"
+                    value={batchForm.operatingDays}
+                    onChange={(e) => setBatchForm({ ...batchForm, operatingDays: e.target.value.toUpperCase() })}
+                    className="form-input"
+                    placeholder="MON,WED,FRI"
+                    required
+                  />
+                </div>
+
+                <div className="form-group" style={{ marginTop: '1rem', marginBottom: 0 }}>
+                  <label className="form-label">클래스별 좌석 / 기준 요금</label>
+                  <div className="seller-flight-seat-grid">
+                    {(
+                      [
+                        { key: 'economy', label: 'ECONOMY', seatsKey: 'economySeats' as const, priceKey: 'economyPrice' as const, color: '#eff6ff', textColor: '#1d4ed8' },
+                        { key: 'business', label: 'BUSINESS', seatsKey: 'businessSeats' as const, priceKey: 'businessPrice' as const, color: '#eef2ff', textColor: '#4338ca' },
+                        { key: 'first', label: 'FIRST', seatsKey: 'firstSeats' as const, priceKey: 'firstPrice' as const, color: 'var(--bg-light)', textColor: 'var(--text-dark)' },
+                      ] as const
+                    ).map((cls) => (
+                      <div key={cls.key} style={{ background: cls.color, padding: '0.85rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.45rem', minWidth: 0 }}>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 800, color: cls.textColor }}>{cls.label}</span>
+                        <input type="number" min={0} value={batchForm[cls.seatsKey]} onChange={(e) => setBatchForm({ ...batchForm, [cls.seatsKey]: parseInt(e.target.value, 10) || 0 })} className="form-input" style={{ padding: '0.5rem 0.65rem', fontSize: '0.85rem', width: '100%' }} placeholder="좌석 수" />
+                        <input type="number" min={0} value={batchForm[cls.priceKey]} onChange={(e) => setBatchForm({ ...batchForm, [cls.priceKey]: parseInt(e.target.value, 10) || 0 })} className="form-input" style={{ padding: '0.5rem 0.65rem', fontSize: '0.85rem', width: '100%' }} placeholder="요금 (원)" />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
+              <div className="app-modal__footer">
                 <button type="button" className="btn-secondary" style={{ flex: 1, padding: '0.8rem' }} onClick={() => setIsBatchOpen(false)}>취소</button>
                 <button type="submit" className="btn-primary" style={{ flex: 1, padding: '0.8rem' }}>배치 심사 신청</button>
               </div>

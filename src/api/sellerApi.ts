@@ -315,6 +315,71 @@ export function groupSellerCarsByModel(cars: SellerCarInventoryDto[]): SellerCar
     .sort((a, b) => a.modelName.localeCompare(b.modelName, 'ko'));
 }
 
+export interface SellerAccommodationRegisterPayload {
+  name: string;
+  description: string;
+  category: string;
+  location: string;
+  businessLicense: string;
+  thumbnailUrl?: string;
+  thumbnailFile?: File | null;
+  latitude?: number;
+  longitude?: number;
+  rooms: Array<{
+    name: string;
+    capacity: number;
+    baseCapacity: number;
+    extraPersonFee: number;
+  }>;
+}
+
+export interface SellerCarRegisterPayload {
+  licensePlate: string;
+  modelName: string;
+  carType: string;
+  dailyPrice: number;
+}
+
+export const register_seller_accommodation_api = async (
+  payload: SellerAccommodationRegisterPayload
+): Promise<{
+  success: boolean;
+  message: string;
+  data: { accommodationId: number; name: string; approvalStatus?: string } | null;
+}> => {
+  if (payload.thumbnailFile) {
+    const form = new FormData();
+    form.append('thumbnail', payload.thumbnailFile);
+    form.append('name', payload.name);
+    form.append('description', payload.description);
+    form.append('category', payload.category);
+    form.append('location', payload.location);
+    form.append('businessLicense', payload.businessLicense);
+    form.append('rooms', JSON.stringify(payload.rooms));
+    if (payload.latitude != null) form.append('latitude', String(payload.latitude));
+    if (payload.longitude != null) form.append('longitude', String(payload.longitude));
+
+    const raw = await sellerAxios.post('/api/v1/seller/accommodations', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    const res = unwrapApi<{ accommodationId: number; name: string; approvalStatus?: string }>(raw);
+    return { success: res.success, message: res.message, data: res.data ?? null };
+  }
+
+  const { thumbnailFile: _thumbnailFile, ...jsonPayload } = payload;
+  const raw = await sellerAxios.post('/api/v1/seller/accommodations', jsonPayload);
+  const res = unwrapApi<{ accommodationId: number; name: string; approvalStatus?: string }>(raw);
+  return { success: res.success, message: res.message, data: res.data ?? null };
+};
+
+export const register_seller_car_api = async (
+  payload: SellerCarRegisterPayload
+): Promise<{ success: boolean; message: string; data: number | null }> => {
+  const raw = await sellerAxios.post('/api/v1/seller/cars', payload);
+  const res = unwrapApi<number>(raw);
+  return { success: res.success, message: res.message, data: res.data ?? null };
+};
+
 export const get_seller_accommodations_api = async (): Promise<{
   success: boolean;
   data: SellerPropertyDto[];
