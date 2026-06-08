@@ -7,10 +7,9 @@ import {
   restore_admin_post_api,
   type AdminPostDto
 } from '@/api/adminApi';
-import { isSuperAdmin } from '@/utils/adminPermissions';
 
 export const AdminCommunityPanel: React.FC = () => {
-  const { addToast, openConfirmPopup, memberRole } = useTravelStore();
+  const { addToast, openConfirmPopup } = useTravelStore();
   const [posts, setPosts] = useState<AdminPostDto[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [page, setPage] = useState(0);
