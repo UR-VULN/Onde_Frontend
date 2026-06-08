@@ -927,3 +927,118 @@ export const finalize_settlement_api = async (
   return { success: res.success, message: res.message };
 };
 
+// ── Admin Community API DTOs ──
+export interface AdminPostDto {
+  postId: number;
+  type: string;
+  title: string;
+  content: string;
+  rating: number;
+  createdAt: string;
+  status: string;
+  imageUrls: string[];
+  authorName: string;
+}
+
+export interface AdminPostsResponse {
+  content: AdminPostDto[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+}
+
+// ── Admin Community API Calls ──
+export const get_admin_posts_api = async (
+  status?: string,
+  page = 0,
+  size = 20
+): Promise<{ success: boolean; data: AdminPostsResponse; message: string }> => {
+  const raw = await adminAxios.get('/api/v1/admin/posts', {
+    params: {
+      status: status || undefined,
+      page,
+      size,
+    },
+  });
+  const res = unwrapApi<any>(raw);
+  
+  // 백엔드 Page<AdminPostDetailResponse>의 content 매핑
+  const rawContent = res.data?.content ?? [];
+  const content: AdminPostDto[] = rawContent.map((item: any) => ({
+    postId: item.postId,
+    type: item.type,
+    title: item.title,
+    content: item.content,
+    rating: item.rating,
+    createdAt: item.createdAt,
+    status: item.status,
+    imageUrls: item.imageUrls ?? [],
+    authorName: item.authorName,
+  }));
+
+  return {
+    success: res.success,
+    message: res.message,
+    data: {
+      content,
+      totalElements: res.data?.totalElements ?? 0,
+      totalPages: res.data?.totalPages ?? 0,
+      size: res.data?.size ?? 20,
+      number: res.data?.number ?? 0,
+    },
+  };
+};
+
+export const get_admin_post_detail_api = async (
+  postId: number
+): Promise<{ success: boolean; data: AdminPostDto; message: string }> => {
+  const raw = await adminAxios.get(`/api/v1/admin/posts/${postId}`);
+  const res = unwrapApi<any>(raw);
+  
+  const item = res.data ?? {};
+  const data: AdminPostDto = {
+    postId: item.postId,
+    type: item.type,
+    title: item.title,
+    content: item.content,
+    rating: item.rating,
+    createdAt: item.createdAt,
+    status: item.status,
+    imageUrls: item.imageUrls ?? [],
+    authorName: item.authorName,
+  };
+
+  return {
+    success: res.success,
+    message: res.message,
+    data,
+  };
+};
+
+export const delete_admin_post_api = async (
+  postId: number
+): Promise<{ success: boolean; message: string }> => {
+  const raw = await adminAxios.delete(`/api/v1/admin/posts/${postId}`);
+  const res = unwrapApi<unknown>(raw);
+  return { success: res.success, message: res.message };
+};
+
+export const blind_admin_post_api = async (
+  postId: number,
+  reason: string
+): Promise<{ success: boolean; message: string }> => {
+  const raw = await adminAxios.patch(`/api/v1/admin/posts/${postId}/blind`, { reason });
+  const res = unwrapApi<unknown>(raw);
+  return { success: res.success, message: res.message };
+};
+
+export const restore_admin_post_api = async (
+  postId: number
+): Promise<{ success: boolean; message: string }> => {
+  const raw = await adminAxios.post(`/api/v1/admin/posts/${postId}/restore`);
+  const res = unwrapApi<unknown>(raw);
+  return { success: res.success, message: res.message };
+};
+
+
