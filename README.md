@@ -93,8 +93,8 @@ Onde 웹 서비스의 최적화된 웹 애플리케이션 프론트엔드 저장
   * **리치 미디어 업로드**: MinIO 오브젝트 스토리지와 연계하여 드래그앤드롭 이미지 업로드 및 후기 쓰기 기능 지원.
 
   <p align="center">
-    <img src="./src/assets/readme/int6_1.png" width="48%" style="border-radius: 8px; border: 1px solid #ddd;" alt="여행 피드 타임라인" />
-    <img src="./src/assets/readme/int6_2.png" width="48%" style="border-radius: 8px; border: 1px solid #ddd;" alt="포토 다이어리 작성 및 업로드" />
+    <img src="./src/assets/readme/int6_1.png" height="280" style="border-radius: 8px; border: 1px solid #ddd; margin-right: 10px;" alt="여행 피드 타임라인" />
+    <img src="./src/assets/readme/int6_2.png" height="280" style="border-radius: 8px; border: 1px solid #ddd;" alt="포토 다이어리 작성 및 업로드" />
   </p>
 
 ---
@@ -153,10 +153,10 @@ Onde 웹 서비스의 최적화된 웹 애플리케이션 프론트엔드 저장
   * **UX 친화적 안내**: 에러 종류에 맞는 전용 일러스트와 원인 메시지를 출력하여 안전하게 홈으로 복귀 유도.
 
   <p align="center">
-    <img src="./src/assets/readme/int11_1.png" width="23%" style="border-radius: 8px; border: 1px solid #ddd;" alt="401 Error" />
-    <img src="./src/assets/readme/int11_2.png" width="23%" style="border-radius: 8px; border: 1px solid #ddd;" alt="403 Error" />
-    <img src="./src/assets/readme/int11_3.png" width="23%" style="border-radius: 8px; border: 1px solid #ddd;" alt="404 Error" />
-    <img src="./src/assets/readme/int11_4.png" width="23%" style="border-radius: 8px; border: 1px solid #ddd;" alt="500 Error" />
+    <img src="./src/assets/readme/int11_1.png" height="160" style="border-radius: 8px; border: 1px solid #ddd; margin-right: 5px;" alt="401 Error" />
+    <img src="./src/assets/readme/int11_2.png" height="160" style="border-radius: 8px; border: 1px solid #ddd; margin-right: 5px;" alt="403 Error" />
+    <img src="./src/assets/readme/int11_3.png" height="160" style="border-radius: 8px; border: 1px solid #ddd; margin-right: 5px;" alt="404 Error" />
+    <img src="./src/assets/readme/int11_4.png" height="160" style="border-radius: 8px; border: 1px solid #ddd;" alt="500 Error" />
   </p>
 
 ---
@@ -168,8 +168,8 @@ Onde 웹 서비스의 최적화된 웹 애플리케이션 프론트엔드 저장
   * **통합 인증 모달 (AuthModal)**: 미려한 글라스모피즘 스타일 백드롭 하에 로그인(`LoginForm`) 및 회원가입(`SignupForm`) 모달을 부드러운 애니메이션 전환으로 일괄 제공.
 
   <p align="center">
-    <img src="./src/assets/readme/int12_1.png" width="48%" alt="로그인 폼" style="border-radius: 8px; border: 1px solid #ddd; margin-right: 2%;" />
-    <img src="./src/assets/readme/int12_2.png" width="48%" alt="회원가입 폼" style="border-radius: 8px; border: 1px solid #ddd;" />
+    <img src="./src/assets/readme/int12_1.png" height="280" style="border-radius: 8px; border: 1px solid #ddd; margin-right: 10px;" alt="로그인 폼" />
+    <img src="./src/assets/readme/int12_2.png" height="280" style="border-radius: 8px; border: 1px solid #ddd;" alt="회원가입 폼" />
   </p>
 
 ---
@@ -180,8 +180,8 @@ Onde 웹 서비스의 최적화된 웹 애플리케이션 프론트엔드 저장
 * **판매자 승인 대기 안내 팝업 (SellerPendingModal)**: 비즈니스용 판매자(`sell`) 가입 시 관리자 승인 대기 상태(`PENDING`)임을 명확히 인지시키는 보안 안내 팝업 UI입니다.
 
   <p align="center">
-    <img src="./src/assets/readme/int13_1.png" width="48%" alt="일반 사용자 환영 팝업" style="border-radius: 8px; border: 1px solid #ddd; margin-right: 2%;" />
-    <img src="./src/assets/readme/int13_2.png" width="48%" alt="판매자 승인 대기 안내 팝업" style="border-radius: 8px; border: 1px solid #ddd;" />
+    <img src="./src/assets/readme/int13_1.png" height="280" style="border-radius: 8px; border: 1px solid #ddd; margin-right: 10px;" alt="일반 사용자 환영 팝업" />
+    <img src="./src/assets/readme/int13_2.png" height="280" style="border-radius: 8px; border: 1px solid #ddd;" alt="판매자 승인 대기 안내 팝업" />
   </p>
 
 ---
