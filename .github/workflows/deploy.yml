@@ -1,0 +1,72 @@
+name: Frontend CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    #   - feat/infra_cicd
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: onde/frontend
+
+jobs:
+  build-and-push:
+    name: Build & Push to ECR
+    runs-on: ubuntu-latest
+
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image tag
+        id: meta
+        run: echo "tag=${{ github.sha }}" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker build -f docker/Dockerfile -t $IMAGE_URI .
+          docker push $IMAGE_URI
+          docker tag $IMAGE_URI $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+  trigger-deploy:
+    name: Trigger Infra Deployment
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Dispatch deploy to Infra repo
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.INFRA_REPO_TOKEN }}
+          script: |
+            await github.rest.repos.createDispatchEvent({
+              owner: context.repo.owner,
+              repo: 'Onde_Infra',
+              event_type: 'deploy-frontend',
+              client_payload: {
+                image_tag: '${{ needs.build-and-push.outputs.image_tag }}',
+                sha: context.sha,
+                ref: context.ref
+              }
+            });
+            console.log('✅ Deploy event dispatched to Onde_Infra');
