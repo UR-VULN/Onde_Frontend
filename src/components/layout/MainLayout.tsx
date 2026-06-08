@@ -1,7 +1,9 @@
-import React from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Outlet, useLocation, Navigate } from 'react-router-dom';
 import { Header } from './Header';
 import { Footer } from './Footer';
+import { useTravelStore } from '@/store/useTravelStore';
+import { isSellerRole, isAdminRole } from '@/utils/memberRole';
 
 // Import local assets for Hero section background images
 import stayBg from '@/assets/stay.avif';
@@ -18,6 +20,27 @@ interface MainLayoutProps {
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const location = useLocation();
+  const { isLoggedIn, memberRole, addToast } = useTravelStore();
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      if (isSellerRole(memberRole)) {
+        addToast('잘못된 접근입니다. 판매자 페이지로 이동합니다.', 'warning');
+      } else if (isAdminRole(memberRole)) {
+        addToast('잘못된 접근입니다. 관리자 페이지로 이동합니다.', 'warning');
+      }
+    }
+  }, [isLoggedIn, memberRole, addToast]);
+
+  if (isLoggedIn) {
+    if (isSellerRole(memberRole)) {
+      return <Navigate to="/seller" replace />;
+    }
+    if (isAdminRole(memberRole)) {
+      return <Navigate to="/admin" replace />;
+    }
+  }
+
 
   const heroImages: Record<string, string> = {
     '/':           stayBg,
@@ -40,6 +63,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const getHeroSubtitle = () =>
     '가장 나다운 일상에서 출발하여, 온전한 나로 되돌아오는 따뜻한 여정';
 
+  const heroPaddingBottom = '5.5rem';
+
   return (
     <div className="min-h-screen flex flex-col bg-[#f7f9fa] text-slate-700 font-main">
       {/* 1. Global Header GNB */}
@@ -52,7 +77,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           className="hero select-none"
           style={{
             backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.55)), url("${getBgImage()}")`,
-            paddingBottom: '8rem',
+            paddingBottom: heroPaddingBottom,
             transition: 'background-image 0.6s ease-in-out'
           }}
         >

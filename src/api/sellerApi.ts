@@ -1,6 +1,8 @@
 import { sellerAxios } from '@/api/axiosInstance';
 import { unwrapApi } from '@/utils/apiResponse';
 
+const PLATFORM_COMMISSION_RATE = 0.03;
+
 export interface SellerSettlementAccountPayload {
   bankName: string;
   accountNumber: string;
@@ -23,6 +25,8 @@ export const get_seller_settlement_account_api = async (): Promise<{
   const raw = await sellerAxios.get('/api/v1/seller/settlements/accounts');
   return unwrapApi<SellerSettlementAccountDto>(raw);
 };
+
+
 
 export const put_seller_settlement_account_api = async (
   payload: SellerSettlementAccountPayload
@@ -114,8 +118,18 @@ export const request_monthly_settlement_api = async (): Promise<{
   message: string;
 }> => {
   const list = await get_seller_settlements_api(0, 20);
+  if (!list.success) return { success: false, message: list.message };
   const pending = list.data?.settlements?.find((s) => s.status === 'PENDING');
-  if (!pending) return { success: false, message: '정산 대상이 없습니다.' };
+  if (!pending) {
+    // PENDING 상태인 정산 건이 없는 경우, 실시간 집계 및 신청 API를 호출합니다.
+    try {
+      const raw = await sellerAxios.post('/api/v1/seller/settlements/request-realtime');
+      const res = unwrapApi<{ settlementId: number; status: string }>(raw);
+      return { success: res.success, message: res.message };
+    } catch (err: any) {
+      return { success: false, message: err?.error?.message || '실시간 정산 신청 중 오류가 발생했습니다.' };
+    }
+  }
   const res = await request_settlement_api(pending.settlementId);
   return { success: res.success, message: res.message };
 };
@@ -156,11 +170,15 @@ export const get_seller_sales_stat_api = async (): Promise<{
   data: SellerSalesStatDto;
   message: string;
 }> => {
-  const res = await get_seller_dashboard_statistics_api({
-    period: 'MONTHLY',
-    startDate: '2026-01-01',
-    endDate: '2026-12-31',
-  });
+  const year = new Date().getFullYear();
+  const [res, settlementsRes] = await Promise.all([
+    get_seller_dashboard_statistics_api({
+      period: 'MONTHLY',
+      startDate: `${year}-01-01`,
+      endDate: `${year}-12-31`,
+    }),
+    get_seller_settlements_api(0, 100).catch(() => null),
+  ]);
   if (!res.success || !res.data) {
     return {
       success: false,
@@ -168,21 +186,29 @@ export const get_seller_sales_stat_api = async (): Promise<{
         totalSalesAmount: 0,
         completedBookingsCount: 0,
         settlementPendingAmount: 0,
-        commissionRate: 0.1,
+        commissionRate: PLATFORM_COMMISSION_RATE,
         month: '',
       },
       message: res.message,
     };
   }
   const last = res.data.breakdown?.[res.data.breakdown.length - 1];
+  const completedBookingsCount =
+    res.data.breakdown?.reduce((sum, item) => sum + Number(item.bookingCount ?? 0), 0) ?? 0;
+  const settlementPendingAmount =
+    settlementsRes?.success
+      ? settlementsRes.data.settlements
+          .filter((s) => s.status === 'PENDING')
+          .reduce((sum, item) => sum + item.netAmount, 0)
+      : 0;
   return {
     success: true,
     message: res.message,
     data: {
       totalSalesAmount: res.data.totalRevenue,
-      completedBookingsCount: last?.bookingCount ?? 0,
-      settlementPendingAmount: Math.floor(res.data.totalRevenue * 0.1),
-      commissionRate: 0.1,
+      completedBookingsCount,
+      settlementPendingAmount,
+      commissionRate: PLATFORM_COMMISSION_RATE,
       month: last?.month ?? '',
     },
   };
@@ -221,9 +247,9 @@ export const verify_business_api = async (
   payload: BusinessVerifyPayload
 ): Promise<{ success: boolean; verified: boolean; message: string }> => {
   const raw = await sellerAxios.post('/api/v1/seller/account/verify-business', {
-    businessNumber: payload.businessNumber,
-    representativeName: payload.representativeName,
-    openDate: payload.openDate,
+    businessNumber: payload.businessNumber.replace(/\D/g, ''),
+    representativeName: payload.representativeName.trim(),
+    openDate: payload.openDate.replace(/\D/g, ''),
   });
   const res = unwrapApi<{ verified?: boolean }>(raw);
   return {
@@ -245,6 +271,48 @@ export interface SellerCarInventoryDto {
   name: string;
   stock: number;
   basePrice: number;
+  status?: 'ACTIVE' | 'PENDING' | 'REJECTED';
+}
+
+/** 동일 모델명(차종)끼리 묶은 판매자 렌터카 그룹 */
+export interface SellerCarModelGroup {
+  modelName: string;
+  groupKey: string;
+  vehicles: SellerCarInventoryDto[];
+  vehicleCount: number;
+  totalStock: number;
+  basePrice: number;
+  minPrice: number;
+  maxPrice: number;
+}
+
+export function groupSellerCarsByModel(cars: SellerCarInventoryDto[]): SellerCarModelGroup[] {
+  const byModel = new Map<string, SellerCarInventoryDto[]>();
+
+  for (const car of cars) {
+    const key = car.name.trim();
+    const list = byModel.get(key) ?? [];
+    list.push(car);
+    byModel.set(key, list);
+  }
+
+  return Array.from(byModel.entries())
+    .map(([modelName, vehicles]) => {
+      const prices = vehicles.map((v) => v.basePrice);
+      const minPrice = Math.min(...prices);
+      const maxPrice = Math.max(...prices);
+      return {
+        modelName,
+        groupKey: `model:${modelName}`,
+        vehicles,
+        vehicleCount: vehicles.length,
+        totalStock: vehicles.reduce((sum, v) => sum + v.stock, 0),
+        basePrice: vehicles[0].basePrice,
+        minPrice,
+        maxPrice,
+      };
+    })
+    .sort((a, b) => a.modelName.localeCompare(b.modelName, 'ko'));
 }
 
 export const get_seller_accommodations_api = async (): Promise<{
@@ -275,6 +343,7 @@ export const get_seller_cars_inventory_api = async (): Promise<{
     name: c.name,
     stock: 1,
     basePrice: c.basePrice,
+    status: (c.status as SellerCarInventoryDto['status']) ?? 'ACTIVE',
   }));
   return { success: res.success, message: res.message, data: cars };
 };

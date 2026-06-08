@@ -4,9 +4,65 @@ import { unwrapApi } from '@/utils/apiResponse';
 
 /** 백엔드 SeatInventoryDto.price → UI basePrice */
 function normalizeFlightSearchResponse(data: FlightSearchResponse): FlightSearchResponse {
+  const raw = data as FlightSearchResponse & {
+    schedules?: Array<{
+      scheduleId: number;
+      flightNumber: string;
+      origin?: string;
+      destination?: string;
+      departureAirport?: string;
+      arrivalAirport?: string;
+      departureTime: string;
+      arrivalTime: string;
+      durationMinutes: number;
+      seatClass?: string;
+      remainingSeats?: number;
+      basePrice?: number;
+      price?: number;
+    }>;
+    totalCount?: number;
+  };
+
+  const sourceJourneys = raw.journeys?.length
+    ? raw.journeys
+    : [{
+        journeyIndex: 0,
+        description: '검색 결과',
+        flights: Object.values(
+          (raw.schedules ?? []).reduce<Record<number, FlightSearchResponse['journeys'][number]['flights'][number]>>(
+            (acc, schedule) => {
+              const existing = acc[schedule.scheduleId];
+              const seat = {
+                classType: schedule.seatClass ?? 'ECONOMY',
+                remainingSeats: Number(schedule.remainingSeats ?? 0),
+                basePrice: Number(schedule.basePrice ?? schedule.price ?? 0),
+              };
+              if (existing) {
+                existing.availableSeats.push(seat);
+                return acc;
+              }
+              acc[schedule.scheduleId] = {
+                scheduleId: schedule.scheduleId,
+                flightNumber: schedule.flightNumber,
+                departureAirport: schedule.departureAirport ?? schedule.origin ?? '',
+                arrivalAirport: schedule.arrivalAirport ?? schedule.destination ?? '',
+                departureTime: schedule.departureTime,
+                arrivalTime: schedule.arrivalTime,
+                durationMinutes: schedule.durationMinutes,
+                availableSeats: [seat],
+              };
+              return acc;
+            },
+            {}
+          )
+        ),
+      }];
+
   return {
     ...data,
-    journeys: (data.journeys ?? []).map((journey) => ({
+    tripType: data.tripType ?? 'ONE_WAY',
+    passengerCount: data.passengerCount ?? 1,
+    journeys: sourceJourneys.map((journey) => ({
       ...journey,
       flights: (journey.flights ?? []).map((flight) => ({
         ...flight,
@@ -46,6 +102,7 @@ export interface FlightBookingPayload {
 }
 
 export interface FlightBookingResult {
+  bookingId: number;
   bookingCode: string;
   passengerName: string;
   seatClass: string;
@@ -135,6 +192,8 @@ export interface SellerCalendarCellDto {
   scheduleId: number;
   flightNumber: string;
   departureTime: string;
+  departureAirport?: string;
+  arrivalAirport?: string;
   classType: string;
   totalSeats: number;
   remainingSeats: number;

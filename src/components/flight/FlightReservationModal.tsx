@@ -1,7 +1,22 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import type { FlightDto, AvailableSeat } from '@/store/useFlightStore';
 import { useFlightStore } from '@/store/useFlightStore';
 import { useTravelStore } from '@/store/useTravelStore';
+
+function format_time(isoString?: string) {
+  if (!isoString) return '';
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return isoString;
+  return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+function format_date(isoString?: string) {
+  if (!isoString) return '';
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return isoString;
+  return `${d.getMonth() + 1}월 ${d.getDate()}일`;
+}
 
 interface FlightReservationModalProps {
   flight: FlightDto | null;
@@ -16,9 +31,9 @@ export const FlightReservationModal: React.FC<FlightReservationModalProps> = ({
   onClose,
   onConfirm,
 }) => {
-  const { flight_search_results } = useFlightStore();
+  const { search_query } = useFlightStore();
   const { isLoggedIn, openAuthModal, addToast } = useTravelStore();
-  const passengerCount = flight_search_results?.passengerCount || 1;
+  const passengerCount = search_query.passengerCount;
 
   if (!flight || !seat) return null;
 
@@ -33,7 +48,7 @@ export const FlightReservationModal: React.FC<FlightReservationModalProps> = ({
     onConfirm(); // 로그인 완료된 유저만 2단계 탑승객 정보 기입으로 안내
   };
 
-  return (
+  return createPortal(
     <div
       style={{
         position: 'fixed',
@@ -65,7 +80,7 @@ export const FlightReservationModal: React.FC<FlightReservationModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* 상단 럭셔리 데코레이션 */}
-        <div style={{ height: '6px', background: '#005ce6' }} />
+        <div style={{ height: '6px', background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)' }} />
 
         {/* ── Header ── */}
         <div
@@ -89,7 +104,7 @@ export const FlightReservationModal: React.FC<FlightReservationModalProps> = ({
                 gap: '8px',
               }}
             >
-              <i className="fa-solid fa-plane-departure" style={{ color: '#005ce6' }}></i>
+              <i className="fa-solid fa-plane-departure" style={{ color: 'var(--primary)' }}></i>
               선택한 여정 요약 확인
             </h3>
           </div>
@@ -124,12 +139,12 @@ export const FlightReservationModal: React.FC<FlightReservationModalProps> = ({
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b' }}>
-                FLIGHT NO: <strong style={{ color: '#005ce6' }}>{flight.flightNumber}</strong>
+                FLIGHT NO: <strong style={{ color: 'var(--primary)' }}>{flight.flightNumber}</strong>
               </span>
               <span
                 style={{
                   background: 'rgba(0, 92, 230, 0.08)',
-                  color: '#005ce6',
+                  color: 'var(--primary)',
                   fontSize: '0.65rem',
                   fontWeight: 900,
                   padding: '3px 10px',
@@ -152,18 +167,28 @@ export const FlightReservationModal: React.FC<FlightReservationModalProps> = ({
             >
               <div>
                 <span style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'block', fontWeight: 700 }}>출발지</span>
-                <strong style={{ fontSize: '1rem', color: '#1e293b', fontWeight: 800 }}>
+                <strong style={{ fontSize: '1rem', color: '#1e293b', fontWeight: 800, display: 'block' }}>
                   {flight.departureAirport}
                 </strong>
+                {flight.departureTime && (
+                  <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'block', marginTop: '3px', fontWeight: 700 }}>
+                    {format_date(flight.departureTime)} {format_time(flight.departureTime)}
+                  </span>
+                )}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, padding: '0 0.8rem' }}>
                 <i className="fa-solid fa-arrow-right" style={{ color: '#94a3b8', fontSize: '0.8rem' }}></i>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <span style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'block', fontWeight: 700 }}>도착지</span>
-                <strong style={{ fontSize: '1rem', color: '#1e293b', fontWeight: 800 }}>
+                <strong style={{ fontSize: '1rem', color: '#1e293b', fontWeight: 800, display: 'block' }}>
                   {flight.arrivalAirport}
                 </strong>
+                {flight.arrivalTime && (
+                  <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'block', marginTop: '3px', fontWeight: 700 }}>
+                    {format_date(flight.arrivalTime)} {format_time(flight.arrivalTime)}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -205,7 +230,7 @@ export const FlightReservationModal: React.FC<FlightReservationModalProps> = ({
 
           {/* 동의 안내 문구 */}
           <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', background: '#f8fafc', padding: '0.8rem 1rem', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
-            <i className="fa-solid fa-circle-info" style={{ color: '#005ce6', marginTop: '2px', fontSize: '0.85rem' }}></i>
+            <i className="fa-solid fa-circle-info" style={{ color: 'var(--primary)', marginTop: '2px', fontSize: '0.85rem' }}></i>
             <p style={{ fontSize: '0.72rem', color: '#64748b', margin: 0, lineHeight: 1.4, fontWeight: 500 }}>
               다음 단계에서 정부 출입국 보안 규정에 의거하여 모든 승객의 여권에 기재된 영문 성명, 여권번호, 생년월일 수집이 필요합니다.
             </p>
@@ -213,6 +238,23 @@ export const FlightReservationModal: React.FC<FlightReservationModalProps> = ({
 
           {/* ── Action Buttons ── */}
           <div style={{ display: 'flex', gap: '0.8rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+            <button
+              onClick={handleConfirmClick}
+              style={{
+                padding: '0.75rem 1.8rem',
+                border: 'none',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
+                color: '#ffffff',
+                fontSize: '0.8rem',
+                fontWeight: 900,
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(255, 90, 95, 0.25)',
+                transition: 'all 0.15s',
+              }}
+            >
+              예약 및 정보 입력하기
+            </button>
             <button
               onClick={onClose}
               style={{
@@ -229,26 +271,10 @@ export const FlightReservationModal: React.FC<FlightReservationModalProps> = ({
             >
               돌아가기
             </button>
-            <button
-              onClick={handleConfirmClick}
-              style={{
-                padding: '0.75rem 1.8rem',
-                border: 'none',
-                borderRadius: '12px',
-                background: '#005ce6',
-                color: '#ffffff',
-                fontSize: '0.8rem',
-                fontWeight: 900,
-                cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(0, 92, 230, 0.2)',
-                transition: 'all 0.15s',
-              }}
-            >
-              예약 및 정보 입력하기
-            </button>
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

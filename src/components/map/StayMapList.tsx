@@ -1,5 +1,7 @@
 import React, { memo } from 'react';
 import type { MapStayItem } from '@/types/mapStay';
+import { ListingThumbnail } from '@/components/common/ListingThumbnail';
+import { formatKrwPriceOrDash } from '@/utils/listingDisplay';
 
 interface StayMapListProps {
   stays: MapStayItem[];
@@ -19,21 +21,39 @@ const StayMapListItem = memo(function StayMapListItem({
   onSelect: (stay: MapStayItem) => void;
   onDetail: (stay: MapStayItem) => void;
 }) {
+  const cardRef = React.useRef<HTMLElement>(null);
+
+  React.useEffect(() => {
+    if (isSelected && cardRef.current) {
+      const timer = setTimeout(() => {
+        cardRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+        });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isSelected]);
+
   return (
     <article
+      ref={cardRef}
       className={`map-stay-item${isSelected ? ' is-selected' : ''}`}
       onClick={() => onSelect(stay)}
       onKeyDown={(e) => e.key === 'Enter' && onSelect(stay)}
       role="button"
       tabIndex={0}
     >
-      <img src={stay.imageUrl} alt={stay.title} className="map-stay-item__thumb" loading="lazy" />
+      <ListingThumbnail
+        imageUrl={stay.imageUrl}
+        alt={stay.title}
+        iconClass="fa-hotel"
+        className="map-stay-item__thumb"
+        imgClassName="map-stay-item__thumb"
+      />
       <div className="map-stay-item__body">
-        <span className="map-stay-item__meta">
-          {stay.city} · {stay.tags[0] ?? '숙소'}
-        </span>
         <strong className="map-stay-item__title">{stay.title}</strong>
-        <span className="map-stay-item__price">₩{stay.pricePerNight.toLocaleString('ko-KR')}</span>
+        <span className="map-stay-item__price">{formatKrwPriceOrDash(stay.pricePerNight)}</span>
         <button
           type="button"
           className="map-stay-item__detail-btn"

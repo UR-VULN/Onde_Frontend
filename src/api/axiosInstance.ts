@@ -1,9 +1,16 @@
 import axios from 'axios';
 import { refresh_token_api } from '@/api/authApi';
 import { ADMIN_API_BASE, USER_API_BASE } from '@/constants/apiConfig';
-import { clearAuthSession } from '@/utils/authSession';
+import { clearAuthSession, hasPostLogoutRedirect } from '@/utils/authSession';
 import { getAccessToken, getMemberId, updateAccessToken } from '@/utils/authCookies';
-import { isErrorPagePath, redirectByHttpStatus } from '@/utils/errorNavigation';
+import { isBackofficePath, isErrorPagePath, redirectByHttpStatus } from '@/utils/errorNavigation';
+import { useTravelStore } from '@/store/useTravelStore';
+
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    skipErrorRedirect?: boolean;
+  }
+}
 
 const axiosDefaults = {
   timeout: 15000,
@@ -29,6 +36,10 @@ export const adminAxios = axios.create({
 });
 
 const injectToken = (config: any) => {
+  const url = config.url ?? '';
+  if (url.includes('/api/v1/auth/refresh')) {
+    return config;
+  }
   const token = getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -61,17 +72,27 @@ function isRefreshable401(config: { url?: string; _retry?: boolean } | undefined
 
 const finalizeResponseError = (error: {
   response?: { status?: number; data?: unknown };
+  config?: { skipErrorRedirect?: boolean };
 }) => {
   console.error('[API ERROR INTERCEPTOR]:', error);
 
   const status = error.response?.status;
   const onErrorPage = isErrorPagePath(window.location.pathname);
 
-  if (status && !onErrorPage) {
+  const suppressErrorRedirect = hasPostLogoutRedirect();
+
+  if (status && !onErrorPage && !error.config?.skipErrorRedirect && !suppressErrorRedirect) {
     if (status === 401) {
       clearAuthSession();
     }
-    redirectByHttpStatus(status);
+    if (status === 403) {
+      useTravelStore.getState().addToast('해당 기능을 수행할 권한이 없습니다.', 'warning');
+      if (!isBackofficePath(window.location.pathname)) {
+        redirectByHttpStatus(status);
+      }
+    } else {
+      redirectByHttpStatus(status);
+    }
   }
 
   const errorData = error.response?.data;
@@ -83,7 +104,7 @@ const finalizeResponseError = (error: {
 const createAuthAwareErrorHandler = (instance: typeof userAxios) => {
   return async (error: {
     response?: { status?: number; data?: unknown };
-    config?: { url?: string; _retry?: boolean; headers: Record<string, string> };
+    config?: { url?: string; _retry?: boolean; headers: Record<string, string>; skipErrorRedirect?: boolean };
   }) => {
     const status = error.response?.status;
     const config = error.config;

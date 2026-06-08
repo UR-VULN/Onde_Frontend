@@ -29,25 +29,17 @@ export const InsuranceCoverageGrid: React.FC = () => {
   ];
 
   return (
-    <div className="flex flex-col space-y-8">
-      <div className="grid grid-cols-1 gap-8 flex-1">
+    <div className="flex flex-col space-y-4">
+      <div className="grid grid-cols-1 gap-4 flex-1">
         
         {/* Plan Cards */}
         {plans.map((plan) => (
           <div 
             key={plan.level}
             onClick={() => {
-              const productIdMap: Record<string, number> = {
-                STANDARD: 1,
-                DELUXE: 2,
-                PREMIUM: 3
-              };
-              set_insured_details({ 
-                coverageLevel: plan.level,
-                insuranceProductId: productIdMap[plan.level]
-              });
+              set_insured_details({ coverageLevel: plan.level });
             }}
-            style={{ padding: '20px 40px', borderRadius: '12px' }}
+            style={{ padding: '12px 24px', borderRadius: '12px' }}
             className={`group relative bg-white border-2 transition-all cursor-pointer hover:shadow-2xl flex flex-col justify-center ${
               insured_details.coverageLevel === plan.level 
                 ? (plan.color === 'primary' ? 'border-primary shadow-xl scale-[1.01]' : plan.color === 'secondary' ? 'border-secondary shadow-xl scale-[1.01]' : 'border-slate-800 shadow-xl scale-[1.01]')
@@ -67,15 +59,15 @@ export const InsuranceCoverageGrid: React.FC = () => {
             </div>
 
             <p 
-              style={{ margin: '18px 0' }}
-              className="text-sm font-bold text-slate-400 whitespace-nowrap overflow-hidden text-ellipsis"
+              style={{ margin: '8px 0' }}
+              className="text-xs font-bold text-slate-400 whitespace-nowrap overflow-hidden text-ellipsis"
             >
               {plan.desc}
             </p>
 
-            <ul className="grid grid-cols-1 gap-y-1 mb-4">
+            <ul className="grid grid-cols-1 gap-y-0.5 mb-2">
               {plan.benefits.map((benefit, i) => (
-                <li key={i} className="flex items-start gap-2 py-0.5 text-[15px] font-bold text-slate-600 leading-tight whitespace-nowrap">
+                <li key={i} className="flex items-start gap-2 py-0.5 text-[13.5px] font-bold text-slate-600 leading-tight whitespace-nowrap">
                   <i className={`fa-solid fa-circle-check mt-1 text-base shrink-0 ${
                     plan.color === 'primary' ? 'text-primary/60' : plan.color === 'secondary' ? 'text-secondary/60' : 'text-slate-600'
                   }`}></i>
@@ -84,7 +76,7 @@ export const InsuranceCoverageGrid: React.FC = () => {
               ))}
             </ul>
 
-            <div className={`mt-4 pt-4 border-t border-slate-50 flex items-center justify-between transition-all duration-500 ${
+            <div className={`mt-2 pt-2 border-t border-slate-50 flex items-center justify-between transition-all duration-500 ${
               insured_details.coverageLevel === plan.level ? 'opacity-100' : 'opacity-0 group-hover:opacity-30'
             }`}>
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Selected Coverage</span>

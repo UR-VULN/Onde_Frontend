@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useInsuranceStore } from '@/store/useInsuranceStore';
 import { useTravelStore } from '@/store/useTravelStore';
 import { InsuranceHeader } from './InsuranceHeader';
 import { InsuranceCalculatorForm } from './InsuranceCalculatorForm';
 import { InsuranceCoverageGrid } from './InsuranceCoverageGrid';
 import { calculate_premium_api, apply_insurance_policy_api } from '@/api/insuranceApi';
+import { buildPaymentCheckout } from '@/utils/paymentCheckout';
 import type { InsuranceQuotePanelStatus } from '@/components/insurance/insuranceQuoteTypes';
 
 function getQuoteInputIssue(
@@ -33,8 +35,9 @@ function resolveApiErrorMessage(err: unknown): string {
 }
 
 export const InsuranceCalculatorWidget: React.FC = () => {
+  const navigate = useNavigate();
   const { insured_details, premium_estimate, set_premium_estimate } = useInsuranceStore();
-  const { addToast, isLoggedIn, addReservation, openAuthModal } = useTravelStore();
+  const { addToast, isLoggedIn, openAuthModal } = useTravelStore();
 
   const [insuredName, setInsuredName] = useState('');
   const [gender, setGender] = useState<'M' | 'F'>('M');
@@ -165,20 +168,28 @@ export const InsuranceCalculatorWidget: React.FC = () => {
           addToast(res.message || '보험 가입에 실패했습니다.', 'warning');
           return;
         }
-        const policyCode = res.data.policyCode;
-        addToast('여행자 보험 가입이 완료되었습니다!', 'success');
-        addReservation({
-          id: policyCode,
-          category: 'ins',
-          title: `🛡️ 여행자 보험 (${insured_details.coverageLevel})`,
-          badge: '가입 완료',
-          badgeType: 'active',
-          date: `${insured_details.startDate} ~ ${insured_details.endDate}`,
-          details: `피보험자: ${insuredName} | 증권: ${policyCode}`,
-          price: `₩${res.data.totalPremium.toLocaleString()}`,
-        });
+        const policy = res.data;
         setInsuredName('');
         setIsAgreed(false);
+        navigate('/payment', {
+          state: buildPaymentCheckout({
+            reservationType: 'INSURANCE',
+            reservationId: policy.policyId ?? 0,
+            productTitle: `🛡️ 여행자 보험 (${insured_details.coverageLevel})`,
+            productSubtitle: `피보험자: ${insuredName} | 플랜: ${insured_details.coverageLevel}`,
+            categoryLabel: '여행자 보험',
+            categoryIcon: 'fa-shield-halved',
+            totalAmount: policy.totalPremium,
+            usedMileage: 0,
+            dateSummary: `${insured_details.startDate} ~ ${insured_details.endDate}`,
+            detailLines: [
+              `피보험자: ${insuredName}`,
+              `보장 기간: ${insured_details.startDate} ~ ${insured_details.endDate}`,
+              `증권 번호: ${policy.policyCode}`
+            ],
+            returnPath: '/insurance',
+          }),
+        });
       } catch (err: unknown) {
         const msg =
           (err as { message?: string })?.message ||
@@ -195,7 +206,7 @@ export const InsuranceCalculatorWidget: React.FC = () => {
   };
 
   return (
-    <div className="w-full space-y-16 pt-32 pb-6 animate-[fadeIn_0.35s_ease]">
+    <div className="w-full space-y-8 page-hero-gap pb-6 animate-[fadeIn_0.35s_ease]">
       {/* 1. Header Area */}
       <InsuranceHeader />
 

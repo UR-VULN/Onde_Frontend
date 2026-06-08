@@ -18,8 +18,7 @@ export const ToastContainer: React.FC = () => {
       {toastStack.map((toast) => (
         <div 
           key={toast.id}
-          className="premium-toast"
-          style={{ display: 'flex', alignItems: 'center', minHeight: '64px', padding: '0.8rem 1.2rem' }}
+          className="premium-toast flex items-center min-h-[64px] px-[1.2rem] py-[0.8rem]"
         >
           {/* Left Premium Icon Wrapper */}
           <div className="toast-icon-wrapper" style={{ 
@@ -29,8 +28,8 @@ export const ToastContainer: React.FC = () => {
           </div>
 
           {/* Main Content Area - Single bold line layout */}
-          <div className="toast-content" style={{ display: 'flex', alignItems: 'center', marginLeft: '1rem' }}>
-            <h4 className="toast-title" style={{ margin: 0, fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-dark)' }}>
+          <div className="toast-content flex items-center ml-4">
+            <h4 className="toast-title m-0 font-extrabold text-[0.9rem] text-[var(--text-dark)]">
               {toast.message}
             </h4>
           </div>

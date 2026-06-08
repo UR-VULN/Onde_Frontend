@@ -2,9 +2,7 @@ import React from 'react';
 
 export const FeedHeader: React.FC = () => {
   return (
-    <div className="text-center space-y-10 pt-16 select-none">
-      {/* Spacer to balance the layout offset */}
-      <div className="h-16 w-full"></div>
+    <div className="text-center space-y-4 select-none">
       
       <h2 className="text-4xl md:text-5xl font-black text-slate-800 tracking-tight leading-tight">
         새로운 세상으로 향하는 모든 순간의 기록,<br />

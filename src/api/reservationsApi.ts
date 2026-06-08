@@ -39,8 +39,7 @@ function statusBadge(status: string): { badge: string; badgeType: string } {
 }
 
 interface MyPageList<T> {
-  bookings?: T[];
-  reservations?: T[];
+  content?: T[];
   totalCount: number;
 }
 
@@ -123,27 +122,28 @@ export const fetch_my_reservations_api = async (): Promise<{
 
   if (flightsRes.status === 'fulfilled') {
     const data = unwrapApi<MyPageList<Record<string, unknown>>>(flightsRes.value).data;
-    (data.bookings ?? []).forEach((b) => reservations.push(mapFlightBooking(b)));
+    (data?.content ?? []).forEach((b) => reservations.push(mapFlightBooking(b)));
   }
   if (roomsRes.status === 'fulfilled') {
     const data = unwrapApi<MyPageList<Record<string, unknown>>>(roomsRes.value).data;
-    (data.reservations ?? []).forEach((r) => reservations.push(mapRoomReservation(r)));
+    (data?.content ?? []).forEach((r) => reservations.push(mapRoomReservation(r)));
   }
   if (carsRes.status === 'fulfilled') {
     const data = unwrapApi<MyPageList<Record<string, unknown>>>(carsRes.value).data;
-    (data.reservations ?? []).forEach((r) => reservations.push(mapCarReservation(r)));
+    (data?.content ?? []).forEach((r) => reservations.push(mapCarReservation(r)));
   }
   if (insRes.status === 'fulfilled') {
     const data = unwrapApi<MyPageList<Record<string, unknown>>>(insRes.value).data;
-    (data.bookings ?? data.reservations ?? []).forEach((p) =>
-      reservations.push(mapInsurancePolicy(p))
-    );
+    (data?.content ?? []).forEach((p) => reservations.push(mapInsurancePolicy(p)));
   }
+
+  // 서버에서 내려온 상태가 '취소'인 데이터만 걸러냅니다. (localStorage ID 필터링은 제거됨)
+  const activeReservations = reservations.filter((r) => r.badgeType !== 'cancelled');
 
   return {
     success: true,
     message: '예약 목록 조회 완료',
-    data: { reservations, totalCount: reservations.length },
+    data: { reservations: activeReservations, totalCount: activeReservations.length },
   };
 };
 
@@ -152,13 +152,17 @@ export const cancel_member_reservation_api = async (
   category: MemberReservationDto['category']
 ): Promise<{ success: boolean; message: string }> => {
   if (category === 'flight') {
-    return { success: false, message: '항공 예약 취소는 고객 API가 아직 지원되지 않습니다.' };
+    await userAxios.delete(`/api/v1/members/me/reservations/flights/${reservationId}`);
+    return { success: true, message: '항공 예약이 취소되었습니다.' };
   }
   if (category === 'ins') {
-    return { success: false, message: '보험 계약 취소는 고객 API가 아직 지원되지 않습니다.' };
+    await userAxios.delete(`/api/v1/members/me/insurances/${reservationId}`);
+    return { success: true, message: '보험 가입이 취소되었습니다.' };
   }
+
   const raw = await userAxios.delete(`/api/v1/reservations/${reservationId}`);
   const res = unwrapApi<unknown>(raw);
+  
   return { success: res.success, message: res.message || '예약이 취소되었습니다.' };
 };
 

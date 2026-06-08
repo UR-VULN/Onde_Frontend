@@ -2,9 +2,7 @@ import React from 'react';
 
 export const InsuranceHeader: React.FC = () => {
   return (
-    <div className="text-center space-y-10 pt-16">
-      {/* Explicit spacer in the exact position of the removed badge */}
-      <div className="h-16 w-full"></div>
+    <div className="text-center space-y-4">
       
       <h2 className="text-4xl md:text-5xl font-black text-slate-800 tracking-tight leading-tight">
         낯선 곳에서의 일상도 안심할 수 있도록,<br />

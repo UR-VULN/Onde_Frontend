@@ -13,7 +13,14 @@ export interface CalculatePremiumPayload {
 export const calculate_premium_api = async (
   payload: CalculatePremiumPayload
 ): Promise<{ success: boolean; data: PremiumEstimate; message: string }> => {
-  const raw = await userAxios.post('/api/v1/insurance/calculate', payload);
+  const raw = await userAxios.post('/api/v1/insurances/calculate', {
+    productId: payload.insuranceProductId,
+    insuranceProductId: payload.insuranceProductId,
+    birthdate: payload.birthdate,
+    startDate: payload.startDate,
+    endDate: payload.endDate,
+    coverageLevel: payload.coverageLevel,
+  }, { skipErrorRedirect: true });
   return unwrapApi<PremiumEstimate>(raw);
 };
 
@@ -28,6 +35,7 @@ export interface InsuranceReservationPayload {
 }
 
 export interface InsurancePolicyResponse {
+  policyId?: number;
   policyCode: string;
   insuredName: string;
   startDate?: string;
@@ -40,7 +48,16 @@ export interface InsurancePolicyResponse {
 export const apply_insurance_policy_api = async (
   payload: InsuranceReservationPayload
 ): Promise<{ success: boolean; data: InsurancePolicyResponse; message: string }> => {
-  const raw = await userAxios.post('/api/v1/reservations/insurances', payload);
+  const raw = await userAxios.post('/api/v1/reservations/insurances', {
+    productId: payload.insuranceProductId,
+    insuranceProductId: payload.insuranceProductId,
+    insuredName: payload.insuredName,
+    insuredBirthdate: payload.insuredBirthdate,
+    startDate: payload.startDate,
+    endDate: payload.endDate,
+    coverageLevel: payload.coverageLevel,
+    totalPremium: payload.totalPremium,
+  }, { skipErrorRedirect: true });
   return unwrapApi<InsurancePolicyResponse>(raw);
 };
 
@@ -53,11 +70,7 @@ export interface RegisterInsuranceProductPayload {
 export const seller_register_insurance_rate_api = async (
   payload: RegisterInsuranceProductPayload
 ): Promise<{ success: boolean; message: string }> => {
-  const body =
-    typeof payload.coverageDetails === 'string'
-      ? payload
-      : { ...payload, coverageDetails: JSON.stringify(payload.coverageDetails) };
-  const raw = await userAxios.post('/api/v1/seller/insurance', body);
+  const raw = await userAxios.post('/api/v1/seller/insurances', payload);
   const res = unwrapApi<unknown>(raw);
   return { success: res.success, message: res.message };
 };

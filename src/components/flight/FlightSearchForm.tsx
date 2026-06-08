@@ -89,7 +89,7 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, lo
     <div className="w-full relative z-20 transition-all duration-300">
       <div className="w-full bg-white border border-slate-200/80 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] flex flex-col select-none overflow-visible">
         <div className="lg:hidden h-1 w-full" style={{ background: 'linear-gradient(135deg, #005ce6 0%, #ff5a5f 100%)' }} />
-        <div className="p-4 md:p-5 flex flex-col">
+        <div className="flex flex-col">
           <form onSubmit={handle_search} className="w-full">
             <div className="flex flex-col lg:flex-row items-stretch gap-4">
               <div className="flex-1 bg-slate-50 border border-slate-200/80 rounded-xl flex flex-col lg:flex-row items-stretch min-h-[64px] lg:h-[68px] relative overflow-visible">

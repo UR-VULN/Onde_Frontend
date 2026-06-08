@@ -11,10 +11,13 @@ export interface CarSearchParams {
 }
 
 interface BackendCarItem {
-  id: number;
+  id?: number;
+  carId?: number;
   modelName: string;
   carType: string;
-  price: number;
+  price?: number;
+  dailyPrice?: number;
+  licensePlate?: string;
 }
 
 export interface CarListItemDto {
@@ -22,6 +25,7 @@ export interface CarListItemDto {
   modelName: string;
   carType: string;
   dailyPrice: number;
+  licensePlate?: string;
 }
 
 export interface CarListResponse {
@@ -45,11 +49,12 @@ export interface CarDto {
   type: string;
   typeLabel: string;
   description: string;
-  imageUrl: string;
+  imageUrl?: string;
   pricePerDay: number;
-  seats: number;
-  fuel: string;
+  seats?: number;
+  fuel?: string;
   tags: string[];
+  licensePlate?: string;
 }
 
 export interface CarSearchResponse {
@@ -59,23 +64,80 @@ export interface CarSearchResponse {
   cars: CarDto[];
 }
 
-const DEFAULT_CAR_IMAGE =
-  'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=600';
-
 function toDateTime(dateStr: string, time = '10:00:00'): string {
   return `${dateStr}T${time}`;
 }
 
 function mapBackendCar(item: BackendCarItem): CarListItemDto {
   return {
-    carId: item.id,
+    carId: Number(item.carId ?? item.id ?? 0),
     modelName: item.modelName,
     carType: item.carType,
-    dailyPrice: item.price ?? 0,
+    dailyPrice: Number(item.dailyPrice ?? item.price ?? 0),
+    licensePlate: item.licensePlate,
   };
 }
 
+const CAR_IMAGE_MAP: Record<string, string> = {
+  "Audi A4": "Audi A4.jpg",
+  "BMW 3 Series": "BMW 3 Series.avif",
+  "BMW X5": "BMW X5.jpg",
+  "Bentley Bentayga": "Bentley Bentayga.avif",
+  "Cadillac Escalade": "Cadillac Escalade.jpg",
+  "Chevrolet Corvette": "Chevrolet Corvette.jpg",
+  "Chevrolet Suburban": "Chevrolet Suburban.jpg",
+  "EV6": "EV6.jpg",
+  "Ferrari 488 GTB": "Ferrari 488 GTB.jpg",
+  "Ford F-150": "Ford F-150.jpg",
+  "Ford Focus": "Ford Focus.jpg",
+  "Ford Mustang": "Ford Mustang.jpg",
+  "G80 전기": "G80 전기.avif",
+  "GV80": "GV80.avif",
+  "Honda City": "Honda City.jpg",
+  "Honda Fit": "Honda Fit.avif",
+  "Honda Odyssey": "Honda Odyssey.avif",
+  "Jeep Wrangler": "Jeep Wrangler.jpg",
+  "K3 세단": "K3 세단.jpg",
+  "K5 LPi": "K5 LPi.jpg",
+  "Lamborghini Huracan": "Lamborghini Huracan.jpg",
+  "Mercedes C-Class": "Mercedes C-Class.avif",
+  "Mercedes S-Class": "Mercedes S-Class.jpg",
+  "Mitsubishi Pajero": "Mitsubishi Pajero.jpg",
+  "Nissan Note": "Nissan Note.jpg",
+  "Nissan Patrol": "Nissan Patrol.jpg",
+  "Nissan X-Trail": "Nissan X-Trail.jpg",
+  "Range Rover Sport": "Range Rover Sport.jpg",
+  "Renault Clio": "Renault Clio.jpg",
+  "Tesla Model 3": "Tesla Model 3.jpg",
+  "Tesla Model Y": "Tesla Model Y.jpg",
+  "Toyota Alphard": "Toyota Alphard.jpg",
+  "Toyota Aqua": "Toyota Aqua.jpg",
+  "Toyota Camry": "Toyota Camry.avif",
+  "Toyota Corolla": "Toyota Corolla.jpg",
+  "Toyota Fortuner": "Toyota Fortuner.jpg",
+  "Toyota Innova": "Toyota Innova.jpg",
+  "Toyota Land Cruiser": "Toyota Land Cruiser.jpg",
+  "Toyota RAV4 Hybrid": "Toyota RAV4 Hybrid.jpg",
+  "Toyota Vios": "Toyota Vios.jpg",
+  "Volkswagen Golf": "Volkswagen Golf.jpg",
+  "Volkswagen Tiguan": "Volkswagen Tiguan.jpg",
+  "그랜저 GN7": "그랜저 GN7.jpg",
+  "레이 EV": "레이EV.jpg",
+  "스타리아": "스타리아.jpg",
+  "스포티지 하이브리드": "스포티지 하이브리드.jpg",
+  "싼타페 TM": "싼타페 TM.jpg",
+  "쏘나타 DN8": "쏘나타 DN8.jpg",
+  "아반떼 CN7": "아반떼 CN7.jpg",
+  "아이오닉6": "아이오닉6.jpg",
+  "카니발 4세대": "카니발 4세대.jpg",
+  "캐스퍼 1.0T": "캐스퍼 1.0T.jpg",
+  "투싼 하이브리드": "투싼 하이브리드.jpg",
+  "팰리세이드": "팰리세이드.jpg"
+};
+
 function mapCarListItemToDto(item: CarListItemDto): CarDto {
+  const filename = CAR_IMAGE_MAP[item.modelName];
+  const imageUrl = filename ? `http://localhost:9000/onde-local/car/${filename}` : undefined;
   return {
     id: item.carId,
     carId: item.carId,
@@ -83,24 +145,24 @@ function mapCarListItemToDto(item: CarListItemDto): CarDto {
     type: item.carType,
     typeLabel: item.carType,
     description: item.modelName,
-    imageUrl: DEFAULT_CAR_IMAGE,
     pricePerDay: item.dailyPrice,
-    seats: 5,
-    fuel: '가솔린',
     tags: [item.carType],
+    imageUrl,
+    licensePlate: item.licensePlate,
   };
 }
+
 
 export const search_cars_list_api = async (
   params: CarSearchParams
 ): Promise<{ success: boolean; data: CarListResponse; message: string }> => {
-  const raw = await userAxios.get('/api/v1/rental_cars/search', { params });
-  const res = unwrapApi<{ cars: BackendCarItem[] }>(raw);
+  const raw = await userAxios.get('/api/v1/cars/search', { params });
+  const res = unwrapApi<{ cars: BackendCarItem[]; totalCount?: number }>(raw);
   const cars = (res.data?.cars ?? []).map(mapBackendCar);
   return {
     success: res.success,
     message: res.message,
-    data: { cars, totalCount: cars.length },
+    data: { cars, totalCount: Number(res.data?.totalCount ?? cars.length) },
   };
 };
 
@@ -173,7 +235,7 @@ export const book_car_api = async (
       data: { reservationId: 0, status: '', message: '', totalPrice: 0 },
     };
   }
-  const raw = await userAxios.post('/api/v1/reservations/cars', {
+  const raw = await userAxios.post('/api/v1/accommodations/reservations/cars', {
     memberId,
     carId: payload.carId,
     startDate: payload.startDate,
@@ -192,3 +254,6 @@ export const book_car_api = async (
     },
   };
 };
+
+export { get_inventory_calendar_api, type CalendarDayInfo, type InventoryCalendarResponse } from './stayApi';
+

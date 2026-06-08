@@ -3,7 +3,7 @@ import { useTravelStore } from '@/store/useTravelStore';
 import {
   get_pending_approvals_api,
   get_pending_accommodations_api,
-  update_accommodation_status_api,
+  process_property_approval_action_api,
   process_approval_action_api,
   get_all_bookings_api,
   export_passenger_csv_stream_api
@@ -12,6 +12,7 @@ import type {
   PendingApprovalDto,
   AdminBookingDto
 } from '@/api/adminApi';
+import { canApproveProducts, canExportBookingCsv } from '@/utils/adminPermissions';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -30,6 +31,9 @@ const DOMAIN_BADGE: Record<string, { label: string; bg: string; color: string }>
   CARS:      { label: '렌터카', bg: '#f0fdf4', color: '#166534' },
 };
 
+const isPropertyApprovalCategory = (category?: string) =>
+  category === 'STAYS' || category === 'CARS';
+
 // ── Types ──────────────────────────────────────────────────────────────────
 
 interface AdminHQPanelProps {
@@ -39,7 +43,9 @@ interface AdminHQPanelProps {
 // ── Component ──────────────────────────────────────────────────────────────
 
 export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approval' }) => {
-  const { addToast } = useTravelStore();
+  const { addToast, memberRole } = useTravelStore();
+  const canModerateProducts = canApproveProducts(memberRole);
+  const canExportCsv = canExportBookingCsv(memberRole);
 
   const [activeTab, setActiveTab] = useState<'approval' | 'booking'>(defaultTab);
 
@@ -76,8 +82,9 @@ export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approv
         const mapped: PendingApprovalDto[] = (staysRes.value.data ?? []).map((a) => ({
           requestId: a.id,
           productName: a.name,
-          category: 'STAYS',
-          details: a.approvalStatus,
+          category: a.type === 'CAR' ? 'CARS' : 'STAYS',
+          registeredBy: a.sellerId ? `seller-${a.sellerId}` : undefined,
+          details: `${a.type ?? 'ACCOMMODATION'} / ${a.approvalStatus}`,
         }));
         setStaysPendingList(mapped);
       }
@@ -124,10 +131,14 @@ export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approv
   const handle_approve = async (requestId: number, category?: string) => {
     try {
       addToast('상품 등록 신청을 승인하고 실시간 노선 캐시를 갱신 중입니다...', 'info');
-      if (category === 'STAYS') {
-        const res = await update_accommodation_status_api(requestId, 'APPROVED');
+      if (isPropertyApprovalCategory(category)) {
+        const res = await process_property_approval_action_api(
+          requestId,
+          category as 'STAYS' | 'CARS',
+          'APPROVED'
+        );
         if (res.success) {
-          addToast('숙소 매물이 승인되었습니다.', 'success');
+          addToast(`${category === 'CARS' ? '렌터카' : '숙소'} 매물이 승인되었습니다.`, 'success');
           fetchAllPendingApprovals();
         }
         return;
@@ -156,8 +167,13 @@ export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approv
     try {
       addToast('상품 등록을 반려하고 기록 중입니다...', 'info');
       let res;
-      if (selectedRequest.category === 'STAYS') {
-        res = await update_accommodation_status_api(selectedRequest.requestId, 'REJECTED');
+      if (isPropertyApprovalCategory(selectedRequest.category)) {
+        res = await process_property_approval_action_api(
+          selectedRequest.requestId,
+          selectedRequest.category as 'STAYS' | 'CARS',
+          'REJECTED',
+          rejectReason
+        );
       } else {
         const approvalCategory =
           selectedRequest.category === 'INSURANCE' ? 'INSURANCE' : 'FLIGHT';
@@ -284,29 +300,33 @@ export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approv
                   </td>
                   <td className="text-[11px] text-slate-400 font-mono max-w-[150px] truncate">{req.details}</td>
                   <td className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        type="button"
-                        className="px-3.5 py-1.5 rounded-lg text-[11px] font-black shadow-sm transition-all active:scale-95 text-white"
-                        style={{ background: '#008a05' }}
-                        onClick={() => handle_approve(req.requestId, req.category)}
-                      >
-                        승인
-                      </button>
-                      <button
-                        type="button"
-                        className="px-3.5 py-1.5 rounded-lg text-[11px] font-black transition-all active:scale-95 text-white"
-                        style={{ background: 'var(--secondary)' }}
-                        onClick={() => {
-                          setSelectedRequest(req);
-                          setRejectPreset('');
-                          setRejectReason('');
-                          setIsRejectOpen(true);
-                        }}
-                      >
-                        반려
-                      </button>
-                    </div>
+                    {canModerateProducts ? (
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          className="px-3.5 py-1.5 rounded-lg text-[11px] font-black shadow-sm transition-all active:scale-95 text-white"
+                          style={{ background: '#008a05' }}
+                          onClick={() => handle_approve(req.requestId, req.category)}
+                        >
+                          승인
+                        </button>
+                        <button
+                          type="button"
+                          className="px-3.5 py-1.5 rounded-lg text-[11px] font-black transition-all active:scale-95 text-white"
+                          style={{ background: 'var(--secondary)' }}
+                          onClick={() => {
+                            setSelectedRequest(req);
+                            setRejectPreset('');
+                            setRejectReason('');
+                            setIsRejectOpen(true);
+                          }}
+                        >
+                          반려
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-[11px] font-black text-slate-400">조회 전용</span>
+                    )}
                   </td>
                 </tr>
               ))
@@ -344,7 +364,7 @@ export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approv
         </div>
 
         {/* Global CSV button — booking tab only, matches prototype header layout */}
-        {activeTab === 'booking' && (
+        {activeTab === 'booking' && canExportCsv && (
           <button
             type="button"
             className="btn-secondary"

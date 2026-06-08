@@ -46,10 +46,10 @@ export interface StayDto {
   city: string;
   country: string;
   description: string;
-  imageUrl: string;
-  pricePerNight: number;
-  rating: number;
-  reviewCount: number;
+  imageUrl?: string;
+  pricePerNight?: number;
+  rating?: number;
+  reviewCount?: number;
   tags: string[];
 }
 
@@ -61,26 +61,33 @@ export interface StaySearchResponse {
 }
 
 interface BackendAccommodationItem {
-  id: number;
+  id?: number;
+  accommodationId?: number;
   name: string;
   category: string;
   location: string;
   thumbnailUrl: string;
   minPrice: number;
+  availableRooms?: number;
 }
 
 function mapBackendItem(item: BackendAccommodationItem): AccommodationDto {
+  const rawUrl = item.thumbnailUrl ?? '';
+  const thumbnailUrl = rawUrl ? (rawUrl.startsWith('http') ? rawUrl : `http://localhost:9000/onde-local/${rawUrl}`) : '';
   return {
-    accommodationId: item.id,
+    accommodationId: Number(item.accommodationId ?? item.id ?? 0),
     name: item.name,
     category: item.category,
     location: item.location,
-    thumbnailUrl: item.thumbnailUrl ?? '',
+    thumbnailUrl,
     minPrice: item.minPrice ?? 0,
+    availableRooms: item.availableRooms,
   };
 }
 
 export function mapStayToStayDto(stay: MapStayItem): StayDto {
+  const rawUrl = stay.imageUrl?.trim();
+  const imageUrl = rawUrl ? (rawUrl.startsWith('http') ? rawUrl : `http://localhost:9000/onde-local/${rawUrl}`) : undefined;
   return {
     id: stay.accommodationId,
     accommodationId: stay.accommodationId,
@@ -90,16 +97,18 @@ export function mapStayToStayDto(stay: MapStayItem): StayDto {
     city: stay.city,
     country: stay.country,
     description: stay.description,
-    imageUrl: stay.imageUrl,
-    pricePerNight: stay.pricePerNight,
-    rating: stay.rating,
-    reviewCount: stay.reviewCount,
+    ...(imageUrl ? { imageUrl } : {}),
+    ...(stay.pricePerNight != null && stay.pricePerNight > 0 ? { pricePerNight: stay.pricePerNight } : {}),
+    ...(stay.rating != null && stay.rating > 0 ? { rating: stay.rating } : {}),
+    ...(stay.reviewCount != null && stay.reviewCount > 0 ? { reviewCount: stay.reviewCount } : {}),
     tags: stay.tags,
   };
 }
 
 function mapAccommodationToStayDto(item: AccommodationDto): StayDto {
   const [city = '', country = ''] = item.location.split(',').map((s) => s.trim());
+  const rawUrl = item.thumbnailUrl?.trim();
+  const imageUrl = rawUrl ? (rawUrl.startsWith('http') ? rawUrl : `http://localhost:9000/onde-local/${rawUrl}`) : undefined;
   return {
     id: item.accommodationId,
     accommodationId: item.accommodationId,
@@ -110,10 +119,8 @@ function mapAccommodationToStayDto(item: AccommodationDto): StayDto {
     city,
     country,
     description: item.name,
-    imageUrl: item.thumbnailUrl,
-    pricePerNight: item.minPrice,
-    rating: 4.8,
-    reviewCount: 0,
+    ...(imageUrl ? { imageUrl } : {}),
+    ...(item.minPrice > 0 ? { pricePerNight: item.minPrice } : {}),
     tags: [item.category],
   };
 }
@@ -122,13 +129,13 @@ export const search_accommodations_api = async (
   params: AccommodationSearchParams
 ): Promise<{ success: boolean; data: AccommodationSearchResponse; message: string }> => {
   const raw = await userAxios.get('/api/v1/accommodations/search', { params });
-  const res = unwrapApi<{ accommodations: BackendAccommodationItem[] }>(raw);
+  const res = unwrapApi<{ accommodations: BackendAccommodationItem[]; totalCount?: number }>(raw);
   const list = res.data?.accommodations ?? [];
   const accommodations = list.map(mapBackendItem);
   return {
     success: res.success,
     message: res.message,
-    data: { accommodations, totalCount: accommodations.length },
+    data: { accommodations, totalCount: Number(res.data?.totalCount ?? accommodations.length) },
   };
 };
 
@@ -203,14 +210,14 @@ export const book_room_api = async (
       data: { reservationId: 0, status: '', message: '' },
     };
   }
-  const raw = await userAxios.post('/api/v1/reservations/rooms', {
+  const raw = await userAxios.post('/api/v1/accommodations/reservations/rooms', {
     memberId,
     roomId: payload.roomId,
     checkInDate: payload.checkInDate,
     checkOutDate: payload.checkOutDate,
     guests: payload.guests,
   });
-  const res = unwrapApi<{ reservationId: number; status: string; message?: string }>(raw);
+  const res = unwrapApi<{ reservationId: number; status: string; message?: string; totalPrice?: number }>(raw);
   return {
     success: res.success,
     message: res.message,
@@ -247,3 +254,30 @@ export const book_stay_api = async (
     data: { ...res.data, totalPrice: payload.totalPrice },
   };
 };
+
+export interface CalendarDayInfo {
+  stock: number;
+  price: number;
+  isClosed: boolean;
+}
+
+export interface InventoryCalendarResponse {
+  [day: string]: CalendarDayInfo;
+}
+
+export const get_inventory_calendar_api = async (
+  targetType: 'ROOM' | 'CAR',
+  targetId: number,
+  month: string // "YYYY-MM"
+): Promise<{ success: boolean; data: InventoryCalendarResponse; message: string }> => {
+  const raw = await userAxios.get('/api/v1/inventory/calendar', {
+    params: { targetType, targetId, month },
+  });
+  const res = unwrapApi<InventoryCalendarResponse>(raw);
+  return {
+    success: res.success,
+    message: res.message,
+    data: res.data ?? {},
+  };
+};
+

@@ -18,126 +18,68 @@ export const SellerPendingModal: React.FC = () => {
 
   return (
     <div
-      style={{
-        display: 'flex',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
-        zIndex: 99999,
-        background: 'rgba(0,0,0,0.6)',
-        backdropFilter: 'blur(8px)',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '1rem',
-      }}
+      className="fixed top-0 left-0 w-screen h-screen z-[99999] bg-black/60 backdrop-blur-md flex items-center justify-center p-4"
     >
       <div
-        className="animate-[scaleUp_0.4s_cubic-bezier(0.34,1.56,0.64,1)]"
+        className="animate-[scaleUp_0.4s_cubic-bezier(0.34,1.56,0.64,1)] relative w-full max-w-[540px] rounded-[24px] bg-white shadow-[0_30px_80px_rgba(0,0,0,0.25)] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
-        style={{
-          position: 'relative',
-          width: '100%',
-          maxWidth: '540px',
-          borderRadius: '24px',
-          background: 'white',
-          boxShadow: '0 30px 80px rgba(0,0,0,0.25)',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
       >
         {/* Top Image Section */}
-        <div style={{ background: '#f8faff', padding: '40px 0 15px 0', textAlign: 'center', position: 'relative' }}>
-          <div className="animate-[glowPulse_2.8s_ease-in-out_infinite]" style={{ display: 'inline-block' }}>
+        <div className="bg-[#f8faff] pt-10 pb-[15px] text-center relative">
+          <div className="animate-[glowPulse_2.8s_ease-in-out_infinite] inline-block">
             <img
               src={waitingImg}
               alt="Waiting for approval"
-              style={{ width: '320px', height: '320px', objectFit: 'contain' }}
+              className="w-[320px] h-[320px] object-contain"
             />
           </div>
 
           <button
             onClick={closeSellerPendingPopup}
-            style={{
-              position: 'absolute',
-              top: '16px',
-              right: '16px',
-              width: '36px',
-              height: '36px',
-              borderRadius: '50%',
-              background: 'white',
-              border: '1px solid #f0f0f0',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-              cursor: 'pointer',
-              color: '#bbb',
-              fontSize: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 10,
-            }}
+            className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white border border-[#f0f0f0] shadow-[0_2px_8px_rgba(0,0,0,0.05)] cursor-pointer text-[#bbb] text-base flex items-center justify-center z-10"
           >
             <i className="fa-solid fa-xmark"></i>
           </button>
         </div>
 
         {/* Content Section */}
-        <div style={{ padding: '30px 50px 40px 50px', textAlign: 'center' }}>
-          <div style={{ marginBottom: '20px' }}>
-            <h2 className="font-logo" style={{ fontSize: '2.4rem', fontWeight: 900, lineHeight: 1.25, color: '#1a1a1a', letterSpacing: '-1.5px' }}>
+        <div className="px-[50px] pt-[30px] pb-10 text-center">
+          <div className="mb-5">
+            <h2 className="font-logo text-[2.4rem] font-black leading-snug text-[#1a1a1a] tracking-[-1.5px]">
               판매자 신청이<br />
               <span className="highlight-text">완료</span>되었습니다!
             </h2>
-            <div style={{ width: '50px', height: '3px', background: '#005ce615', margin: '20px auto', borderRadius: '10px' }}></div>
+            <div className="w-[50px] h-[3px] bg-[#005ce6]/10 mx-auto my-5 rounded-[10px]"></div>
           </div>
 
           {/* Notice Box */}
-          <div
-            style={{
-              background: '#fffbeb',
-              border: '1px solid #fde68a',
-              borderRadius: '14px',
-              padding: '18px 20px',
-              marginBottom: '28px',
-              textAlign: 'center',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '8px', marginBottom: '10px' }}>
-              <i className="fa-solid fa-triangle-exclamation" style={{ color: '#f59e0b', fontSize: '1.1rem' }}></i>
-              <p style={{ fontSize: '1.05rem', fontWeight: 800, color: '#92400e' }}>
+          <div className="bg-[#fffbeb] border border-[#fde68a] rounded-[14px] px-5 py-[18px] mb-7 text-center">
+            <div className="flex items-center justify-start gap-2 mb-2.5">
+              <i className="fa-solid fa-triangle-exclamation text-[#f59e0b] text-[1.1rem]"></i>
+              <p className="text-[1.05rem] font-extrabold text-[#92400e]">
                 승인 대기 중
               </p>
             </div>
-            <p style={{ fontSize: '1rem', color: '#a16207', fontWeight: 700, lineHeight: 1.7 }}>
+            <p className="text-[1rem] text-[#a16207] font-bold leading-[1.7]">
               관리자가 계정을 승인하기 전까지는<br />
               판매자 포탈에 로그인할 수 없습니다.
             </p>
           </div>
 
-          <div style={{ padding: '0 10px' }}>
+          <div className="px-2.5">
             <button
               type="button"
-              className="btn-primary"
-              style={{
-                width: '100%',
-                padding: '18px',
-                fontSize: '1.25rem',
-                fontWeight: 900,
-                borderRadius: '16px',
-                boxShadow: '0 10px 20px rgba(0, 92, 230, 0.2)',
-              }}
+              className="btn-primary w-full p-[18px] text-[1.25rem] font-black rounded-2xl shadow-[0_10px_20px_rgba(0, 92, 230, 0.2)]"
               onClick={closeSellerPendingPopup}
             >
               확인했습니다
             </button>
           </div>
 
-          <div style={{ marginTop: '35px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', opacity: 0.15 }}>
-            <div style={{ height: '1px', flex: 1, background: '#444' }}></div>
-            <span style={{ fontSize: '0.7rem', fontWeight: 900, letterSpacing: '5px', color: '#111' }}>ONDE PARTNER</span>
-            <div style={{ height: '1px', flex: 1, background: '#444' }}></div>
+          <div className="mt-[35px] flex items-center justify-center gap-[15px] opacity-15">
+            <div className="h-[1px] flex-1 bg-[#444]"></div>
+            <span className="text-[0.7rem] font-black tracking-[5px] text-[#111]">ONDE PARTNER</span>
+            <div className="h-[1px] flex-1 bg-[#444]"></div>
           </div>
         </div>
       </div>

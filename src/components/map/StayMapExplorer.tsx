@@ -21,6 +21,7 @@ import {
 import { propertyMarkerToMapStay } from '@/utils/mapPropertyMarkers';
 import { StayMapList } from '@/components/map/StayMapList';
 import { StayDetailModal } from '@/components/stay/StayDetailModal';
+import { formatKrwPrice, hasDisplayPrice, hasDisplayRating } from '@/utils/listingDisplay';
 
 function createStayIcon(isSelected: boolean): L.DivIcon {
   return L.divIcon({
@@ -63,12 +64,39 @@ function MapFlyToTarget({
   return null;
 }
 
-interface StayMapExplorerProps {
-  searchQuery: string;
+function MapInvalidateSize() {
+  const map = useMap();
+  useEffect(() => {
+    map.invalidateSize();
+    const timer1 = setTimeout(() => {
+      map.invalidateSize();
+    }, 150);
+    const timer2 = setTimeout(() => {
+      map.invalidateSize();
+    }, 600);
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, [map]);
+
+  return null;
 }
 
-export const StayMapExplorer: React.FC<StayMapExplorerProps> = ({ searchQuery }) => {
+interface CityTarget {
+  latitude: number;
+  longitude: number;
+  zoom?: number;
+}
+
+interface StayMapExplorerProps {
+  searchQuery: string;
+  cityTarget?: CityTarget | null;
+}
+
+export const StayMapExplorer: React.FC<StayMapExplorerProps> = ({ searchQuery, cityTarget }) => {
   const debouncedQuery = useDebouncedValue(searchQuery, MAP_SEARCH_DEBOUNCE_MS);
+  const [isMounted, setIsMounted] = useState(false);
   const [bounds, setBounds] = useState<MapBounds | null>(null);
   const apiBounds = useDebouncedValue(bounds, MAP_SEARCH_DEBOUNCE_MS);
   const [mapStays, setMapStays] = useState<MapStayItem[]>([]);
@@ -78,6 +106,10 @@ export const StayMapExplorer: React.FC<StayMapExplorerProps> = ({ searchQuery })
     null
   );
   const [detailStay, setDetailStay] = useState<MapStayItem | null>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleBoundsChange = useCallback((next: MapBounds) => {
     setBounds(next);
@@ -95,12 +127,16 @@ export const StayMapExplorer: React.FC<StayMapExplorerProps> = ({ searchQuery })
           neLat: apiBounds.north,
           neLng: apiBounds.east,
         });
-        if (cancelled || !res.success || !res.data) return;
+        if (cancelled || !res.success || !res.data) {
+          console.warn("StayMapExplorer: API Fetch failed or cancelled =>", res);
+          return;
+        }
         const stays = res.data.properties
           .map(propertyMarkerToMapStay)
           .filter((s): s is MapStayItem => s != null);
         setMapStays(stays);
-      } catch {
+      } catch (err) {
+        console.error("StayMapExplorer: API Fetch error =>", err);
         if (!cancelled) setMapStays([]);
       } finally {
         if (!cancelled) setLoadingMap(false);
@@ -126,12 +162,16 @@ export const StayMapExplorer: React.FC<StayMapExplorerProps> = ({ searchQuery })
     setFlyTarget({ latitude: stay.latitude, longitude: stay.longitude, zoom: 14 });
   }, []);
 
+
+
   useEffect(() => {
-    if (!debouncedQuery.trim()) return;
-    if (queryFiltered.length === 0) return;
-    const first = queryFiltered[0];
-    setFlyTarget({ latitude: first.latitude, longitude: first.longitude, zoom: 12 });
-  }, [debouncedQuery, queryFiltered]);
+    if (!cityTarget) return;
+    setFlyTarget({
+      latitude: cityTarget.latitude,
+      longitude: cityTarget.longitude,
+      zoom: cityTarget.zoom ?? 12,
+    });
+  }, [cityTarget]);
 
   const selectedStay = useMemo(
     () => visibleStays.find((s) => s.id === selectedId) ?? queryFiltered.find((s) => s.id === selectedId) ?? null,
@@ -160,34 +200,50 @@ export const StayMapExplorer: React.FC<StayMapExplorerProps> = ({ searchQuery })
         </aside>
 
         <div className="map-view">
-          <MapContainer
-            center={[DEFAULT_MAP_CENTER.latitude, DEFAULT_MAP_CENTER.longitude]}
-            zoom={DEFAULT_MAP_ZOOM}
-            className="map-canvas"
-            scrollWheelZoom
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-            />
-            <MapBoundsTracker onBoundsChange={handleBoundsChange} />
-            <MapFlyToTarget target={flyTarget} />
-            {visibleStays.map((stay) => (
-              <Marker
-                key={stay.id}
-                position={[stay.latitude, stay.longitude]}
-                icon={createStayIcon(selectedId === stay.id)}
-                eventHandlers={{
-                  click: () => handleSelectStay(stay),
-                }}
+          {isMounted && (
+            <MapContainer
+              center={[DEFAULT_MAP_CENTER.latitude, DEFAULT_MAP_CENTER.longitude]}
+              zoom={DEFAULT_MAP_ZOOM}
+              className="map-canvas"
+              scrollWheelZoom
+              minZoom={3}
+              maxBounds={[
+                [-90, -180],
+                [90, 180],
+              ]}
+              maxBoundsViscosity={1.0}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
+                noWrap={true}
               />
-            ))}
-          </MapContainer>
+              <MapBoundsTracker onBoundsChange={handleBoundsChange} />
+              <MapFlyToTarget target={flyTarget} />
+              <MapInvalidateSize />
+              {visibleStays.map((stay) => (
+                <Marker
+                  key={stay.id}
+                  position={[stay.latitude, stay.longitude]}
+                  icon={createStayIcon(selectedId === stay.id)}
+                  eventHandlers={{
+                    click: () => handleSelectStay(stay),
+                  }}
+                />
+              ))}
+            </MapContainer>
+          )}
           {selectedStay && (
             <div className="map-floating-card">
               <strong>{selectedStay.title}</strong>
               <span>
-                ₩{selectedStay.pricePerNight.toLocaleString('ko-KR')} / 박 · ★ {selectedStay.rating}
+                {[
+                  hasDisplayPrice(selectedStay.pricePerNight) &&
+                    `${formatKrwPrice(selectedStay.pricePerNight!)} / 박`,
+                  hasDisplayRating(selectedStay.rating) && `★ ${selectedStay.rating}`,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || '—'}
               </span>
             </div>
           )}

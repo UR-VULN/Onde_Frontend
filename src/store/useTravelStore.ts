@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { DEFAULT_MEMBERSHIP_GRADE } from '@/constants/appConstants';
 import type { MemberProfileDto } from '@/api/userApi';
 import { clearAllAuthCookies } from '@/utils/authCookies';
+import { setPostLogoutRedirect } from '@/utils/authSession';
 
 export interface MyPageReservation {
   id: string;
@@ -26,6 +26,7 @@ interface TravelState {
   memberId: number | null;
   memberRole: string | null;
   mileage: number;
+  walletBalance: number;
   membershipGrade: string;
 
   reservations: MyPageReservation[];
@@ -49,8 +50,8 @@ interface TravelState {
     profile?: MemberProfileDto,
     memberId?: number | null
   ) => void;
-  setMemberProfile: (profile: MemberProfileDto) => void;
-  logout: () => void;
+  setMemberProfile: (profile: MemberProfileDto, walletBalance?: number) => void;
+  logout: (options?: { redirectTo?: string }) => void;
 
   addToast: (message: string, type?: 'success' | 'info' | 'warning') => void;
   removeToast: (id: string) => void;
@@ -82,6 +83,7 @@ export const useTravelStore = create<TravelState>((set) => ({
   memberId: null,
   memberRole: null,
   mileage: 0,
+  walletBalance: 0,
   membershipGrade: '',
 
   reservations: [],
@@ -104,13 +106,18 @@ export const useTravelStore = create<TravelState>((set) => ({
       isAuthModalOpen: false,
     }),
 
-  setMemberProfile: (profile) =>
+  setMemberProfile: (profile, walletBalance) =>
     set({
       mileage: profile.mileage,
+      walletBalance: walletBalance ?? profile.walletBalance ?? 0,
       membershipGrade: profile.membershipGrade,
     }),
 
-  logout: () => {
+  logout: (options) => {
+    const redirectTo = options?.redirectTo;
+    if (redirectTo) {
+      setPostLogoutRedirect(redirectTo);
+    }
     clearAllAuthCookies();
     set({
       isLoggedIn: false,
@@ -118,9 +125,13 @@ export const useTravelStore = create<TravelState>((set) => ({
       memberId: null,
       memberRole: null,
       mileage: 0,
+      walletBalance: 0,
       membershipGrade: '',
       reservations: [],
     });
+    if (redirectTo) {
+      window.location.replace(redirectTo);
+    }
   },
 
   addToast: (message, type = 'success') =>
@@ -171,32 +182,12 @@ export const useTravelStore = create<TravelState>((set) => ({
   closeAuthModal: () => set({ isAuthModalOpen: false }),
   setAuthModalTab: (tab) => set({ authModalTab: tab }),
 
-  signupSuccess: (username, role) => {
-    if (role === 'sell') {
-      set({ isAuthModalOpen: false });
-      setTimeout(() => set({ isSellerPendingPopupOpen: true }), 450);
-      return;
-    }
+  /** 판매자 가입 완료 — 승인 대기 안내만 (로그인 상태는 설정하지 않음) */
+  signupSuccess: (_username, role) => {
+    if (role !== 'sell') return;
 
-    const apiRole = role === 'adm' ? 'GENERAL_ADMIN' : 'USER';
-    set({
-      isLoggedIn: true,
-      username,
-      memberRole: apiRole,
-      mileage: 0,
-      membershipGrade: DEFAULT_MEMBERSHIP_GRADE,
-      isAuthModalOpen: false,
-    });
-
-    const toastId = Math.random().toString();
-    set((state) => ({
-      toastStack: [...state.toastStack, { id: toastId, message: '👥 회원가입이 완료되었습니다!', type: 'success' }],
-    }));
-    setTimeout(() => useTravelStore.getState().removeToast(toastId), 4500);
-
-    if (role === 'cust') {
-      setTimeout(() => set({ isWelcomePopupOpen: true }), 450);
-    }
+    set({ isAuthModalOpen: false });
+    setTimeout(() => set({ isSellerPendingPopupOpen: true }), 450);
   },
 
   addReservation: (res) =>

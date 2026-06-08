@@ -1,8 +1,23 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { book_flight_reservation_api } from '@/api/flightApi';
 import { buildPaymentCheckout } from '@/utils/paymentCheckout';
 import { useTravelStore } from '@/store/useTravelStore';
+
+function format_time(isoString?: string) {
+  if (!isoString) return '';
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return isoString;
+  return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+function format_date(isoString?: string) {
+  if (!isoString) return '';
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return isoString;
+  return `${d.getMonth() + 1}월 ${d.getDate()}일`;
+}
 
 interface Passenger {
   name: string;
@@ -31,9 +46,9 @@ export const FlightPassengerInputModal: React.FC<FlightPassengerInputModalProps>
     scheduleId: 0,
     flightNumber: 'OD-702',
     departureAirport: 'ICN (서울/인천)',
-    departureTime: '10:15',
+    departureTime: '2026-06-03T10:15:00',
     arrivalAirport: 'NRT (도쿄/나리타)',
-    arrivalTime: '12:45',
+    arrivalTime: '2026-06-03T12:45:00',
     classType: 'Business Class',
     seatClass: 'BUSINESS',
     basePrice: 650000,
@@ -116,7 +131,7 @@ export const FlightPassengerInputModal: React.FC<FlightPassengerInputModalProps>
 
       const checkoutState = buildPaymentCheckout({
         reservationType: 'FLIGHT',
-        reservationId: 0,
+        reservationId: res.data.bookingId,
         flightBookingCode: res.data.bookingCode,
         productTitle: `${flightInfo.flightNumber} (${flightInfo.classType})`,
         productSubtitle: `${flightInfo.departureAirport} → ${flightInfo.arrivalAirport}`,
@@ -148,7 +163,7 @@ export const FlightPassengerInputModal: React.FC<FlightPassengerInputModalProps>
 
   const totalAmount = flightInfo.basePrice * flightInfo.passengerCount;
 
-  return (
+  return createPortal(
     <div
       style={{
         position: 'fixed',
@@ -309,9 +324,14 @@ export const FlightPassengerInputModal: React.FC<FlightPassengerInputModalProps>
             >
               <div>
                 <span style={{ fontSize: '0.6rem', color: '#94a3b8', display: 'block', fontWeight: 700 }}>ORIGIN</span>
-                <strong style={{ fontSize: '0.95rem', color: '#1e293b', fontWeight: 800 }}>
+                <strong style={{ fontSize: '0.95rem', color: '#1e293b', fontWeight: 800, display: 'block' }}>
                   {flightInfo.departureAirport}
                 </strong>
+                {flightInfo.departureTime && (
+                  <span style={{ fontSize: '0.72rem', color: '#475569', display: 'block', marginTop: '2px', fontWeight: 700 }}>
+                    {format_date(flightInfo.departureTime)} {format_time(flightInfo.departureTime)}
+                  </span>
+                )}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, padding: '0 1rem' }}>
                 <i className="fa-solid fa-plane" style={{ color: '#005ce6', fontSize: '0.9rem' }}></i>
@@ -327,9 +347,14 @@ export const FlightPassengerInputModal: React.FC<FlightPassengerInputModalProps>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <span style={{ fontSize: '0.6rem', color: '#94a3b8', display: 'block', fontWeight: 700 }}>DESTINATION</span>
-                <strong style={{ fontSize: '0.95rem', color: '#1e293b', fontWeight: 800 }}>
+                <strong style={{ fontSize: '0.95rem', color: '#1e293b', fontWeight: 800, display: 'block' }}>
                   {flightInfo.arrivalAirport}
                 </strong>
+                {flightInfo.arrivalTime && (
+                  <span style={{ fontSize: '0.72rem', color: '#475569', display: 'block', marginTop: '2px', fontWeight: 700 }}>
+                    {format_date(flightInfo.arrivalTime)} {format_time(flightInfo.arrivalTime)}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -579,6 +604,7 @@ export const FlightPassengerInputModal: React.FC<FlightPassengerInputModalProps>
           background: #94a3b8;
         }
       `}</style>
-    </div>
+    </div>,
+    document.body
   );
 };

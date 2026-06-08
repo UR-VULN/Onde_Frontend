@@ -8,11 +8,16 @@
 import { useTravelStore } from '@/store/useTravelStore';
 
 const NAMES = {
-  ACCESS: 'accessToken',
-  REFRESH: 'refreshToken',
+  ACCESS: 'onde_access_token',
+  REFRESH: 'onde_refresh_token',
   MEMBER_ID: 'onde_member_id',
   ROLE: 'onde_member_role',
   USERNAME: 'onde_username',
+} as const;
+
+const LEGACY_NAMES = {
+  ACCESS: 'accessToken',
+  REFRESH: 'refreshToken',
 } as const;
 
 const DEFAULT_ACCESS_MAX_AGE = 60 * 60 * 24 * 7; // 7일
@@ -41,11 +46,11 @@ function deleteCookie(name: string): void {
 }
 
 export function getAccessToken(): string | null {
-  return getCookie(NAMES.ACCESS);
+  return getCookie(NAMES.ACCESS) ?? getCookie(LEGACY_NAMES.ACCESS);
 }
 
 export function getRefreshToken(): string | null {
-  return getCookie(NAMES.REFRESH);
+  return getCookie(NAMES.REFRESH) ?? getCookie(LEGACY_NAMES.REFRESH);
 }
 
 export function getMemberId(): number | null {
@@ -80,12 +85,15 @@ export interface PersistAuthPayload {
 /** 로그인 성공 시 쿠키 + 스토어 동기화 */
 export function updateAccessToken(accessToken: string, expiresIn?: number): void {
   const accessMaxAge = expiresIn && expiresIn > 0 ? expiresIn : DEFAULT_ACCESS_MAX_AGE;
+  deleteCookie(LEGACY_NAMES.ACCESS);
   setCookie(NAMES.ACCESS, accessToken, accessMaxAge);
 }
 
 export function persistAuthSession(payload: PersistAuthPayload): void {
   const accessMaxAge = payload.expiresIn && payload.expiresIn > 0 ? payload.expiresIn : DEFAULT_ACCESS_MAX_AGE;
 
+  deleteCookie(LEGACY_NAMES.ACCESS);
+  deleteCookie(LEGACY_NAMES.REFRESH);
   setCookie(NAMES.ACCESS, payload.accessToken, accessMaxAge);
   setCookie(NAMES.REFRESH, payload.refreshToken, REFRESH_MAX_AGE);
   setCookie(NAMES.MEMBER_ID, String(payload.memberId), META_MAX_AGE);
@@ -95,6 +103,7 @@ export function persistAuthSession(payload: PersistAuthPayload): void {
 
 export function clearAllAuthCookies(): void {
   (Object.values(NAMES) as string[]).forEach(deleteCookie);
+  (Object.values(LEGACY_NAMES) as string[]).forEach(deleteCookie);
 }
 
 /** 앱 부팅 시 동기 복구 (RequireAuth 레이스 방지) */

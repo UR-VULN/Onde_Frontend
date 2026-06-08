@@ -1,4 +1,5 @@
 import { userAxios } from '@/api/axiosInstance';
+import { unwrapApi } from '@/utils/apiResponse';
 import { getRefreshToken } from '@/utils/authCookies';
 
 export interface LoginRequest {
@@ -20,7 +21,16 @@ export interface SignupRequest {
   password: string;
   passwordConfirm: string;
   role: 'USER' | 'SELLER';
+  name?: string;
   phoneNumber?: string;
+}
+
+export interface SignupResponse {
+  memberId: number;
+  email: string;
+  name?: string;
+  role: string;
+  createdAt?: string;
 }
 
 export interface TokenRefreshResponse {
@@ -31,12 +41,13 @@ export interface TokenRefreshResponse {
 
 export const login_api = async (body: LoginRequest): Promise<LoginResponse> => {
   const raw = await userAxios.post('/api/v1/auth/login', body);
-  return raw as unknown as LoginResponse;
+  return unwrapApi<LoginResponse>(raw).data;
 };
 
 export const signup_api = async (body: SignupRequest): Promise<string> => {
   const raw = await userAxios.post('/api/v1/auth/signup', body);
-  return typeof raw === 'string' ? raw : String(raw);
+  const res = unwrapApi<SignupResponse>(raw);
+  return res.message || '회원가입이 완료되었습니다.';
 };
 
 export const refresh_token_api = async (): Promise<TokenRefreshResponse> => {
@@ -45,7 +56,7 @@ export const refresh_token_api = async (): Promise<TokenRefreshResponse> => {
     throw new Error('Refresh token이 없습니다.');
   }
   const raw = await userAxios.post('/api/v1/auth/refresh', { refreshToken });
-  return raw as unknown as TokenRefreshResponse;
+  return unwrapApi<TokenRefreshResponse>(raw).data;
 };
 
 export const send_email_verification_api = async (email: string): Promise<void> => {
@@ -57,5 +68,5 @@ export const verify_email_code_api = async (
   code: string
 ): Promise<Record<string, string>> => {
   const raw = await userAxios.post('/api/v1/auth/email/verify', { email, code });
-  return raw as unknown as Record<string, string>;
+  return unwrapApi<Record<string, string>>(raw).data;
 };
