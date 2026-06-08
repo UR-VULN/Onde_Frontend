@@ -188,34 +188,12 @@ Onde 웹 서비스의 최적화된 웹 애플리케이션 프론트엔드 저장
 
 ## 🏗️ 핵심 아키텍처 설계 (Key Architectural Highlights)
 
-### 1. 보안 및 인증 아키텍처 (Security & Authentication)
-* **쿠키 기반 무검침 인증 복구 (Cookie-based Auth Recovery)**:
-  * React 애플리케이션이 첫 렌더링(Mount)을 마치기 전, 쿠키 스토리지에 존재하는 JWT 기반 사용자 정보(Member ID, Role, Username)를 즉각 파싱하여 Zustand 전역 스토어에 바인딩합니다.
-  * 이를 통해 비인증 레이아웃에서 인증 레이아웃으로 로드될 때 발생하는 **UI 깜빡임(Flicker Effect)을 근본적으로 제거**했습니다.
-* **역할 위계 기반 라우팅 가드 (Role-based Routing Guard)**:
-  * 사용자 등급(`cust` - 일반 고객, `sell` - 판매자, `admin` - 관리자) 간의 완벽한 권한 분리를 위해 라우터 단에 `RequireAuth` 및 `RequireRole` 컴포넌트를 이중 설계했습니다.
-  * 비정상 접근 시 401(비인증) 및 403(권한 부족) 예외 처리 모듈을 트리거하여 권한 밖의 페이지 침범을 사전에 원천 차단합니다.
-
-### 2. 고가용성 네트워크 최적화 (High-Availability Network)
-* **뮤텍스 기반 토큰 갱신 대기열 (Mutex-based JWT Refresh Queue)**:
-  * 동시다발적인 API 호출 환경에서 JWT Access Token이 만료되어 HTTP 401 응답이 동시에 대량으로 접수될 때, 중복 로그인 만료 처리 및 무한 재갱신 API 방지를 위해 **뮤텍스(Mutex) 락** 메커니즘을 구성했습니다.
-  * 첫 401 감지 시 `isRefreshing` 플래그로 락을 걸고 단 1회의 토큰 갱신 API만 원격 서버로 전송하며, 대기 중인 다른 모든 API 요청은 `refreshWaiters` 큐에 수납되어 갱신 완료 즉시 새 토큰과 함께 안전하게 재요청을 일괄 재실행합니다.
-* **Nginx 리버스 프록시 연동 및 인프라 격리 (Nginx Reverse Proxy)**:
-  * 도커 네트워크 기반 Nginx를 프론트 라인에 배치하여, 브라우저가 송신하는 모든 API 트래픽을 상대 경로(`/user-api`, `/admin-api`)로 단일 수렴시켰습니다.
-  * 브라우저 입장에서 동일 출처 정책(Same-Origin Policy)이 적용되어 **CORS 우회 헤더 추가 등의 설정 낭비가 전혀 필요 없습니다.**
-  * AWS 등 클라우드 배포 시 프라이빗 네트워크 내부의 백엔드 서비스 포트(`8080`, `8081`)를 완전 격리하고 오직 프론트엔드 포트(`80` / `443`)만 외부에 개방하여 보안 등급을 향상했습니다.
-
-### 3. 결제 데이터 정합성 보장 (Virtual Wallet Transaction Integrity)
-* **ONDE 지갑 가상 거래 무결성 구조**:
-  * 외부 PG사를 거치지 않고 가입 보상 및 가상 예치금 잔액을 차감하는 ONDE 자체 Wallet 트랜잭션을 적용했습니다.
-  * 결제 전 **사전 검증 API**(`prepare_payment_api`)를 거쳐 고유 주문 식별 코드(`merchantUid`)와 실제 결제 예정 금액의 일치 여부를 파악한 뒤, 통화 차감 즉시 **사후 검증 API**(`validate_payment_api`)를 트리거하여 원장 데이터 정합성을 크로스 체킹합니다.
-
-### 4. 고도화된 UI/UX 렌더링 가드 (Advanced Component Layout Guard)
-* **Leaflet 지도 지오바운즈 추적 및 가속 비행 (Bounds Tracking & FlyTo)**:
-  * Leaflet 지도 프레임워크와 결합하여, 사용자가 지도 영역을 조작할 때마다 위도/경도 경계 좌표(Bounds)를 백엔드 쿼리에 실시간 매핑하여 최적화된 지역 조건 상품만 dynamic으로 로드합니다.
-  * 마커 선택 혹은 조건 변화 시 맵 카메라 가속 비행(`flyTo`) 기법을 통해 물 흐르듯 자연스러운 인터랙션을 전달합니다.
-* **레이아웃 포털 가드 (Portal Layout Guard)**:
-  * 모달(Modal), 알림 토스트(Toast), 의사 결정 컨펌창(Confirm) 등 전역으로 호출되는 오버레이 컴포넌트들을 CSS `overflow: hidden`이나 부모 엘리먼트의 `z-index` 위계 왜곡 문제로부터 완전히 분리하기 위해 `createPortal` 기반의 단일 오버레이 트리거 셸(`AppOverlays`)을 구성하여 렌더링 무결성을 확보했습니다.
+* **쿠키 연동 인증 상태 유지 (Cookie-based Auth)**: 서비스 진입 시 브라우저 쿠키의 로그인 세션 정보를 Zustand 전역 스토어에 즉시 바인딩하여 화면 깜빡임 없이 세션을 복구합니다.
+* **401 JWT 재발급 중복 방지 (Token Refresh Mutex)**: Access Token 만료 시 다수의 API 요청이 동시에 실패하더라도, 재발급 API 요청을 단 1회만 보낸 뒤 대기열 큐(`refreshWaiters`)를 통해 재발급 완료 시 일괄 재요청을 수행합니다.
+* **라우팅 권한 통제 및 포털 레이아웃 (Guards & Portal)**: 페이지 이동 시 등급별 권한 검증 및 강제 리다이렉션을 처리하며, 전역 모달과 토스트가 부모 z-index 영향을 받지 않도록 React Portal을 사용해 분리 렌더링합니다.
+* **지도 범위 기반 상품 필터링 (Leaflet Map)**: 사용자의 현재 지도 화면 영역(Bounds) 좌표를 백엔드 API와 연동해 범위 내의 등록 상품만 필터링하여 노출하고 마커 중심으로 맵을 이동시킵니다.
+* **Nginx 리버스 프록시 (Reverse Proxy)**: 로컬 및 운영 배포 환경에서 API 통신 경로를 상대 경로(`/user-api`, `/admin-api`)로 단일화하여 브라우저 CORS 이슈를 방지하고 프론트엔드 포트만 공개하도록 인프라를 격리합니다.
+* **가상 지갑 결제 검증 (ONDE Wallet)**: 가상 지갑 잔액 차감 결제 방식을 지원하며, 주문 전 사전 검증(`prepare_payment_api`) 및 사후 검증(`validate_payment_api`) API를 호출해 결제 데이터 정합성을 확인합니다.
 
 ---
 
