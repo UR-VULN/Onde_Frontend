@@ -1,3 +1,12 @@
+&nbsp;
+
+## 💻 Developers
+
+| <a href="https://github.com/nirey-l" target="_blank"><img width="120" height="120" src="https://github.com/nirey-l.png" /></a> | <a href="https://github.com/Eojinn" target="_blank"><img width="120" height="120" src="https://github.com/Eojinn.png" /></a> | <a href="https://github.com/Hyeonseok93" target="_blank"><img width="120" height="120" src="https://github.com/Hyeonseok93.png" /></a> | <a href="https://github.com/pjcosmos" target="_blank"><img width="120" height="120" src="https://github.com/pjcosmos.png" /></a> | <a href="https://github.com/yoojisoo99" target="_blank"><img width="120" height="120" src="https://github.com/yoojisoo99.png" /></a> | <a href="https://github.com/JangSeonguk1011" target="_blank"><img width="120" height="120" src="https://github.com/JangSeonguk1011.png" /></a> | <a href="https://github.com/hongjiho5148" target="_blank"><img width="120" height="120" src="https://github.com/hongjiho5148.png" /></a> |
+| :----------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------: |
+|[이예린(팀장)](https://github.com/nirey-l)|[김어진](https://github.com/Eojinn)|[김현석](https://github.com/Hyeonseok93)|[박진아](https://github.com/pjcosmos)|[유지수](https://github.com/yoojisoo99)|[장성욱](https://github.com/JangSeonguk1011)|[홍지호](https://github.com/hongjiho5148)|
+
+
 # <img src="./docs/logo.png" width="48" alt="Onde Logo" style="vertical-align: middle; margin-right: 8px;" /> Onde Frontend
 
 Onde 웹 서비스의 최적화된 웹 애플리케이션 프론트엔드 저장소입니다.  
