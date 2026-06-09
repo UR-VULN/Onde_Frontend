@@ -43,7 +43,7 @@ jobs:
           IMAGE_TAG: ${{ steps.meta.outputs.tag }}
         run: |
           IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker build -f docker/Dockerfile \
+          docker build -f Dockerfile \
             --build-arg VITE_S3_BASE_URL=${{ secrets.VITE_S3_BASE_URL }} \
             -t $IMAGE_URI .
           docker push $IMAGE_URI
