@@ -287,7 +287,7 @@ export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approv
           <tbody>
             {list.length > 0 ? (
               list.map((req) => (
-                <tr key={req.requestId}>
+                <tr key={`${req.category}-${req.requestId}`}>
                   <td className="font-black text-slate-900">#{req.requestId}</td>
                   <td>{renderDomainBadge(req.category)}</td>
                   <td className="font-bold text-slate-800">{req.productName}</td>

@@ -1,4 +1,5 @@
 import { userAxios } from '@/api/axiosInstance';
+import { STORAGE_BASE_URL } from '@/constants/apiConfig';
 import type { MapStayItem } from '@/types/mapStay';
 import { unwrapApi } from '@/utils/apiResponse';
 import { getMemberId } from '@/utils/authCookies';
@@ -73,7 +74,7 @@ interface BackendAccommodationItem {
 
 function mapBackendItem(item: BackendAccommodationItem): AccommodationDto {
   const rawUrl = item.thumbnailUrl ?? '';
-  const thumbnailUrl = rawUrl ? (rawUrl.startsWith('http') ? rawUrl : `http://localhost:9000/onde-local/${rawUrl}`) : '';
+  const thumbnailUrl = rawUrl ? (rawUrl.startsWith('http') ? rawUrl : `${STORAGE_BASE_URL}/${rawUrl}`) : '';
   return {
     accommodationId: Number(item.accommodationId ?? item.id ?? 0),
     name: item.name,
@@ -87,7 +88,7 @@ function mapBackendItem(item: BackendAccommodationItem): AccommodationDto {
 
 export function mapStayToStayDto(stay: MapStayItem): StayDto {
   const rawUrl = stay.imageUrl?.trim();
-  const imageUrl = rawUrl ? (rawUrl.startsWith('http') ? rawUrl : `http://localhost:9000/onde-local/${rawUrl}`) : undefined;
+  const imageUrl = rawUrl ? (rawUrl.startsWith('http') ? rawUrl : `${STORAGE_BASE_URL}/${rawUrl}`) : undefined;
   return {
     id: stay.accommodationId,
     accommodationId: stay.accommodationId,
@@ -108,7 +109,7 @@ export function mapStayToStayDto(stay: MapStayItem): StayDto {
 function mapAccommodationToStayDto(item: AccommodationDto): StayDto {
   const [city = '', country = ''] = item.location.split(',').map((s) => s.trim());
   const rawUrl = item.thumbnailUrl?.trim();
-  const imageUrl = rawUrl ? (rawUrl.startsWith('http') ? rawUrl : `http://localhost:9000/onde-local/${rawUrl}`) : undefined;
+  const imageUrl = rawUrl ? (rawUrl.startsWith('http') ? rawUrl : `${STORAGE_BASE_URL}/${rawUrl}`) : undefined;
   return {
     id: item.accommodationId,
     accommodationId: item.accommodationId,

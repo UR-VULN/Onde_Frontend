@@ -97,6 +97,11 @@ export const FlightPassengerInputModal: React.FC<FlightPassengerInputModalProps>
         addToast(`탑승객 ${i + 1}의 생년월일을 선택해 주세요.`, 'warning');
         return;
       }
+      const today = new Date().toISOString().split('T')[0];
+      if (p.birthdate > today) {
+        addToast(`탑승객 ${i + 1}의 생년월일은 미래 날짜일 수 없습니다.`, 'warning');
+        return;
+      }
     }
 
     if (!flightInfo.scheduleId) {
@@ -461,6 +466,7 @@ export const FlightPassengerInputModal: React.FC<FlightPassengerInputModalProps>
                       <input
                         type="date"
                         value={passenger.birthdate}
+                        max={new Date().toISOString().split('T')[0]}
                         onChange={(e) => handlePassengerChange(index, 'birthdate', e.target.value)}
                         style={{
                           width: '100%',

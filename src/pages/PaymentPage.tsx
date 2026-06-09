@@ -9,11 +9,13 @@ import { calcPgAmount } from '@/utils/paymentCheckout';
 
 type PaymentStep = 'checkout' | 'processing' | 'success';
 
-
-
 function resolvePaymentErrorMessage(err: unknown): string {
-  const apiMsg = (err as { error?: { message?: string }; message?: string })?.error?.message;
-  const directMsg = (err as Error)?.message;
+  const apiErr = err as {
+    error?: { message?: string; systemMessage?: string };
+    message?: string;
+  };
+  const apiMsg = apiErr?.error?.message ?? apiErr?.error?.systemMessage;
+  const directMsg = apiErr?.message ?? (err as Error)?.message;
   return apiMsg || directMsg || '결제 처리 중 오류가 발생했습니다.';
 }
 
@@ -89,7 +91,7 @@ export const PaymentPage: React.FC = () => {
       }
 
       const mockImpUid = `wallet_tx_${Date.now()}`;
-      const portOneRes = {
+      const walletPaymentRes = {
         success: true,
         imp_uid: mockImpUid,
         merchant_uid: merchantUid,
@@ -97,9 +99,9 @@ export const PaymentPage: React.FC = () => {
       };
 
       const validateRes = await validate_payment_api({
-        impUid: portOneRes.imp_uid,
-        merchantUid: portOneRes.merchant_uid,
-        pgAmount: portOneRes.paid_amount,
+        impUid: walletPaymentRes.imp_uid,
+        merchantUid: walletPaymentRes.merchant_uid,
+        pgAmount: walletPaymentRes.paid_amount,
       });
 
       if (!validateRes.success || !validateRes.data) {
@@ -109,8 +111,8 @@ export const PaymentPage: React.FC = () => {
       if (order.reservationType === 'FLIGHT' && order.flightBookingCode) {
         await confirm_flight_payment_api(
           order.flightBookingCode,
-          portOneRes.imp_uid,
-          portOneRes.paid_amount ?? serverPgAmount
+          walletPaymentRes.imp_uid,
+          walletPaymentRes.paid_amount ?? serverPgAmount
         );
       }
 

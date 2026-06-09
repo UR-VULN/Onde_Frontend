@@ -182,8 +182,9 @@ export const seller_register_flights_batch_api = async (
   return { success: res.success, message: res.message };
 };
 
-/** 백엔드: year, month(Integer)만 사용 */
+/** 백엔드: year, month(Integer) 및 routeId 사용 */
 export interface CalendarParams {
+  routeId?: number;
   year: number;
   month: number;
 }
@@ -204,7 +205,7 @@ export const seller_get_calendar_schedules_api = async (
   params: CalendarParams
 ): Promise<{ success: boolean; data: SellerCalendarCellDto[]; message: string }> => {
   const raw = await userAxios.get('/api/v1/seller/flights/calendar', {
-    params: { year: params.year, month: params.month },
+    params,
   });
   return unwrapApi<SellerCalendarCellDto[]>(raw);
 };
@@ -232,3 +233,20 @@ export const seller_control_schedule_api = async (
   const res = unwrapApi<unknown>(raw);
   return { success: res.success, message: res.message };
 };
+
+export interface SellerFlightRouteDto {
+  propertyId: number;
+  name: string;
+  status: string;
+  basePrice: number;
+}
+
+export const seller_get_flight_routes_api = async (): Promise<{
+  success: boolean;
+  data: { flights: SellerFlightRouteDto[]; totalCount: number };
+  message: string;
+}> => {
+  const raw = await userAxios.get('/api/v1/seller/flights');
+  return unwrapApi<{ flights: SellerFlightRouteDto[]; totalCount: number }>(raw);
+};
+
