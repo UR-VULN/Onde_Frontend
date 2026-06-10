@@ -27,7 +27,7 @@ const META_MAX_AGE = 60 * 60 * 24 * 30;
 function cookieFlags(maxAge?: number): string {
   const parts = ['path=/', 'SameSite=Lax'];
   if (maxAge != null) parts.push(`max-age=${maxAge}`);
-  if (import.meta.env.PROD) parts.push('Secure');
+  if (import.meta.env.PROD && window.location.protocol === 'https:') parts.push('Secure');
   return parts.join('; ');
 }
 
