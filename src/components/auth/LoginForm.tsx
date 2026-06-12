@@ -14,11 +14,18 @@ export const LoginForm: React.FC = () => {
     handleLogin(email, password);
   };
 
-  // 컴포넌트 내부에서 백엔드로 직접 리다이렉트시키는 소셜 로그인 함수
+  // 컴포넌트 내부에서 백엔드로 직접 리다이렉트시키는 소셜 로그인 함수 (환경 자동 감지 적용)
   const handleDirectSocialLogin = (platform: 'kakao' | 'google') => {
-    window.location.href = `http://onde.click/oauth2/authorization/${platform}`;
+    // 1. 현재 접속한 프론트엔드 주소가 localhost인지 확인
+    const isLocal = window.location.hostname === 'localhost';
+    
+    // 2. 로컬이면 8080 포트로, 운영이면 https://onde.click 으로 설정
+    const backendUrl = isLocal ? 'http://localhost:8080' : 'https://onde.click';
+    
+    // 3. 동적으로 설정된 주소로 인증 요청 전송
+    window.location.href = `${backendUrl}/oauth2/authorization/${platform}`;
   };
-
+  
   return (
     <form onSubmit={onSubmit} noValidate>
       <div className="text-center select-none">
