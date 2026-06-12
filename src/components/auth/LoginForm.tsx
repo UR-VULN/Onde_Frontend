@@ -6,14 +6,26 @@ export const LoginForm: React.FC = () => {
   const [password, setPassword] = useState('');
   const [googleBg, setGoogleBg] = useState('#4285F4');
   
-  // 외부 훅에서 이메일 및 소셜 로그인 처리 함수 가져옴
-  const { isLoading, handleLogin, handleSocialLogin } = useAuthForm();
+  // 외부 훅에서 이메일 로그인 처리 함수만 가져옴
+  const { isLoading, handleLogin } = useAuthForm();
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     handleLogin(email, password);
   };
 
+  // 컴포넌트 내부에서 백엔드로 직접 리다이렉트시키는 소셜 로그인 함수 (환경 자동 감지 적용)
+  const handleDirectSocialLogin = (platform: 'kakao' | 'google') => {
+    // 1. 현재 접속한 프론트엔드 주소가 localhost인지 확인
+    const isLocal = window.location.hostname === 'localhost';
+    
+    // 2. 로컬이면 8080 포트로, 운영이면 https://onde.click 으로 설정
+    const backendUrl = isLocal ? 'http://localhost:8080' : 'https://onde.click';
+    
+    // 3. 동적으로 설정된 주소로 인증 요청 전송
+    window.location.href = `${backendUrl}/oauth2/authorization/${platform}`;
+  };
+  
   return (
     <form onSubmit={onSubmit} noValidate>
       <div className="text-center select-none">
@@ -76,7 +88,7 @@ export const LoginForm: React.FC = () => {
         type="button"
         className="btn-secondary" 
         style={{ width: '100%', background: '#fee500', border: 'none', color: '#3c1e1e' }}
-        onClick={() => handleSocialLogin('Kakao')}
+        onClick={() => handleDirectSocialLogin('kakao')}
         disabled={isLoading}
       >
         <i className="fa-solid fa-comment"></i> 카카오 로그인
@@ -88,7 +100,7 @@ export const LoginForm: React.FC = () => {
         style={{ width: '100%', background: googleBg, border: 'none', marginTop: '0.8rem', color: '#ffffff', fontWeight: 700, transition: 'background-color 0.25s ease' }}
         onMouseEnter={() => setGoogleBg('#357ae8')}
         onMouseLeave={() => setGoogleBg('#4285F4')}
-        onClick={() => handleSocialLogin('Google')} 
+        onClick={() => handleDirectSocialLogin('google')} 
         disabled={isLoading}
       >
         <i className="fa-brands fa-google" style={{ color: '#ffffff', marginRight: '0.4rem' }}></i> 구글 로그인
