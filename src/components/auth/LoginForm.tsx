@@ -5,11 +5,18 @@ export const LoginForm: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [googleBg, setGoogleBg] = useState('#4285F4');
-  const { isLoading, handleLogin, handleSocialLogin } = useAuthForm();
+  
+  // 외부 훅에서 이메일 로그인 처리 함수만 가져옴
+  const { isLoading, handleLogin } = useAuthForm();
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     handleLogin(email, password);
+  };
+
+  // 컴포넌트 내부에서 백엔드로 직접 리다이렉트시키는 소셜 로그인 함수
+  const handleDirectSocialLogin = (platform: 'kakao' | 'google') => {
+    window.location.href = `http://onde.click/oauth2/authorization/${platform}`;
   };
 
   return (
@@ -74,7 +81,7 @@ export const LoginForm: React.FC = () => {
         type="button"
         className="btn-secondary" 
         style={{ width: '100%', background: '#fee500', border: 'none', color: '#3c1e1e' }}
-        onClick={() => handleSocialLogin('Kakao')}
+        onClick={() => handleDirectSocialLogin('kakao')}
         disabled={isLoading}
       >
         <i className="fa-solid fa-comment"></i> 카카오 로그인
@@ -86,7 +93,7 @@ export const LoginForm: React.FC = () => {
         style={{ width: '100%', background: googleBg, border: 'none', marginTop: '0.8rem', color: '#ffffff', fontWeight: 700, transition: 'background-color 0.25s ease' }}
         onMouseEnter={() => setGoogleBg('#357ae8')}
         onMouseLeave={() => setGoogleBg('#4285F4')}
-        onClick={() => handleSocialLogin('Google')}
+        onClick={() => handleDirectSocialLogin('google')} 
         disabled={isLoading}
       >
         <i className="fa-brands fa-google" style={{ color: '#ffffff', marginRight: '0.4rem' }}></i> 구글 로그인
