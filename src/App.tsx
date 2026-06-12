@@ -20,6 +20,7 @@ import { SellerPage } from '@/pages/SellerPage';
 import { AdminPage } from '@/pages/AdminPage';
 import { ErrorPage } from '@/pages/ErrorPage';
 import { useTravelStore } from '@/store/useTravelStore';
+import { EmailSignupPage } from '@/pages/EmailSignupPage';
 
 const ERROR_ROUTES = (
   <>
@@ -31,17 +32,17 @@ const ERROR_ROUTES = (
   </>
 );
 
-// 리다이렉트 핸들러 컴포넌트
+// 소셜 로그인 리다이렉트 핸들러 컴포넌트 (기존 USER 권한 로그인을 처리)
 const OAuth2RedirectHandler: React.FC = () => {
   const navigate = useNavigate();
   const { login, addToast } = useTravelStore();
 
   useEffect(() => {
-    // 백엔드 API 연결 전 임시 로그인 처리
+    // 백엔드 세션/쿠키 연동을 포함한 실제 유저 로그인 처리 부분
     login("소셜유저", "cust");
     addToast("⚡ 소셜 로그인이 성공적으로 완료되었습니다!", "success");
     
-    // 처리가 끝나면 메인 홈('/')으로 이동시키며, 뒤로가기 기록을 남기지 않음(replace: true)
+    // 로그인이 완료되면 메인 홈('/')으로 리다이렉트
     navigate('/', { replace: true });
   }, [navigate, login, addToast]);
 
@@ -66,8 +67,11 @@ const App: React.FC = () => {
   return (
     <>
       <Routes>
-        {/* 소셜 로그인 리다이렉트 경로를 라우터에 등록 */}
+        {/* 소셜 로그인 성공(기존 가입 유저) 리다이렉트 핸들러 라우트 */}
         <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
+
+        {/* 최초 소셜 가입자(GUEST)를 위한 이메일 추가 수집 페이지 라우트 */}
+        <Route path="/signup/email" element={<EmailSignupPage />} />
 
         {/* 고객 포탈 */}
         <Route element={<MainLayout />}>
