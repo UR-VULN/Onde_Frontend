@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feat/infra_cicd
+      - fix/login-test
 
 env:
   AWS_REGION: ap-northeast-2
@@ -44,7 +45,7 @@ jobs:
         run: |
           IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker build -f Dockerfile \
-            --build-arg VITE_S3_BASE_URL=${{ secrets.VITE_S3_BASE_URL }} \
+            --build-arg VITE_S3_ENDPOINT=${{ secrets.VITE_S3_ENDPOINT }} \
             -t $IMAGE_URI .
           docker push $IMAGE_URI
           docker tag $IMAGE_URI $ECR_REGISTRY/$ECR_REPOSITORY:latest
