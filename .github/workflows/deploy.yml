@@ -5,7 +5,6 @@ on:
     branches:
       - main
       - feat/infra_cicd
-      - fix/login-test
 
 env:
   AWS_REGION: ap-northeast-2
