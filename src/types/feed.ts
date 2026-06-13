@@ -1,4 +1,5 @@
 import type { PostDto, BackendPostType } from '@/api/postsApi';
+import { STORAGE_BASE_URL } from '@/constants/apiConfig';
 
 export interface FeedItem {
   id: string;
@@ -28,6 +29,23 @@ function toFeedCategory(type: string): FeedItem['category'] {
     : 'PHOTO';
 }
 
+export function cleanImageUrl(url: string): string {
+  let imgUrl = url || '';
+  if (imgUrl && !imgUrl.startsWith('http://') && !imgUrl.startsWith('https://')) {
+    if (imgUrl.includes('/')) {
+      const firstSegment = imgUrl.split('/')[0];
+      if (firstSegment.includes('.')) {
+        imgUrl = 'https://' + imgUrl;
+      } else {
+        imgUrl = `${STORAGE_BASE_URL}/${imgUrl}`;
+      }
+    } else {
+      imgUrl = 'https://' + imgUrl;
+    }
+  }
+  return imgUrl;
+}
+
 export function postDtoToFeedItem(p: PostDto): FeedItem {
   let displayContent = p.content ?? p.title;
   let rating = p.rating ?? 5;
@@ -48,7 +66,7 @@ export function postDtoToFeedItem(p: PostDto): FeedItem {
     author: p.authorName,
     location: p.title,
     date: p.createdAt,
-    img: p.thumbnailUrl,
+    img: cleanImageUrl(p.thumbnailUrl),
     content: displayContent,
     rating: rating,
   };

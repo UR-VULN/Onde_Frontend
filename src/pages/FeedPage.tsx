@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
-import { postDtoToFeedItem, feedCategoryToPostType, type FeedItem } from '@/types/feed';
+import { postDtoToFeedItem, feedCategoryToPostType, cleanImageUrl, type FeedItem } from '@/types/feed';
 import { create_post_api, fetch_posts_api } from '@/api/postsApi';
 
 // Modular Subcomponents
@@ -73,7 +73,7 @@ export const FeedPage: React.FC = () => {
         return;
       }
       const postId = res.data?.postId ?? Date.now();
-      const returnedImg = (res.data as any)?.imageUrls?.[0] || (res.data as any)?.thumbnailUrl || img;
+      const returnedImg = cleanImageUrl((res.data as any)?.imageUrls?.[0] || (res.data as any)?.thumbnailUrl || img);
       const newFeed: FeedItem = {
         id: `feed-${postId}`,
         postId,
