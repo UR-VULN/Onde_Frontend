@@ -37,7 +37,7 @@ export const AdminUserPanel: React.FC = () => {
 
   const filteredUsers = users.filter(
     (u) =>
-      u.email.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+      (u.email || '').toLowerCase().includes(searchKeyword.toLowerCase()) ||
       String(u.id).includes(searchKeyword)
   );
 
