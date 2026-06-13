@@ -7,6 +7,7 @@ import {
   restore_admin_post_api,
   type AdminPostDto
 } from '@/api/adminApi';
+import { cleanImageUrl } from '@/types/feed';
 
 export const AdminCommunityPanel: React.FC = () => {
   const { addToast, openConfirmPopup } = useTravelStore();
@@ -267,7 +268,7 @@ export const AdminCommunityPanel: React.FC = () => {
                 {selectedPost.imageUrls.map((url, i) => (
                   <img
                     key={i}
-                    src={url}
+                    src={cleanImageUrl(url)}
                     alt="여행 이미지"
                     style={{ height: '140px', borderRadius: '12px', objectFit: 'cover' }}
                   />
