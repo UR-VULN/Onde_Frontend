@@ -10,6 +10,7 @@ import { ROLE_BADGE_CLASS } from '@/constants/appConstants';
 import { canManageMembers } from '@/utils/adminPermissions';
 
 function isProtectedAdminRole(role: string): boolean {
+  if (!role) return false;
   return (
     role === 'ROLE_SUPER_ADMIN' ||
     role === 'ROLE_GENERAL_ADMIN' ||
