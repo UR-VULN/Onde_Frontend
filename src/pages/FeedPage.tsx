@@ -144,6 +144,14 @@ export const FeedPage: React.FC = () => {
       <FeedDetailModal 
         feed={selectedFeed} 
         onClose={() => setSelectedFeed(null)} 
+        onFeedUpdated={(updated) => {
+          setFeeds(feeds.map(f => f.postId === updated.postId ? updated : f));
+          setSelectedFeed(updated);
+        }}
+        onFeedDeleted={(postId) => {
+          setFeeds(feeds.filter(f => f.postId !== postId));
+          setSelectedFeed(null);
+        }}
       />
 
       {/* 5. [MODAL] Traveler Feed Write Modal */}

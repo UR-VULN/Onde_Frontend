@@ -86,3 +86,66 @@ export const like_post_api = async (
   const res = unwrapApi<unknown>(raw);
   return { success: res.success, message: res.message };
 };
+
+export interface CommentDto {
+  commentId: number;
+  postId: number;
+  memberId: number;
+  authorName: string;
+  content: string;
+  isSecret: boolean;
+  createdAt: string;
+}
+
+export const fetch_comments_api = async (
+  postId: number
+): Promise<{ success: boolean; data: CommentDto[]; message: string }> => {
+  const raw = await userAxios.get(`/api/v1/posts/${postId}/comments`);
+  const res = unwrapApi<CommentDto[]>(raw);
+  return { success: res.success, data: res.data ?? [], message: res.message };
+};
+
+export const create_comment_api = async (
+  postId: number,
+  payload: { content: string; isSecret: boolean }
+): Promise<{ success: boolean; data: CommentDto; message: string }> => {
+  const raw = await userAxios.post(`/api/v1/posts/${postId}/comments`, payload);
+  const res = unwrapApi<CommentDto>(raw);
+  return { success: res.success, data: res.data, message: res.message };
+};
+
+export const update_comment_api = async (
+  commentId: number,
+  payload: { content: string; isSecret: boolean }
+): Promise<{ success: boolean; data: CommentDto; message: string }> => {
+  const raw = await userAxios.put(`/api/v1/posts/comments/${commentId}`, payload);
+  const res = unwrapApi<CommentDto>(raw);
+  return { success: res.success, data: res.data, message: res.message };
+};
+
+export const delete_comment_api = async (
+  commentId: number
+): Promise<{ success: boolean; message: string }> => {
+  const raw = await userAxios.delete(`/api/v1/posts/comments/${commentId}`);
+  const res = unwrapApi<unknown>(raw);
+  return { success: res.success, message: res.message };
+};
+
+export const update_post_api = async (
+  postId: number,
+  payload: CreatePostPayload
+): Promise<{ success: boolean; data: PostDto; message: string }> => {
+  const form = new FormData();
+  form.append('title', payload.title);
+  form.append('content', payload.content);
+  form.append('type', payload.type);
+  form.append('rating', String(payload.rating));
+  payload.images?.forEach((file) => form.append('images', file));
+
+  const raw = await userAxios.put(`/api/v1/posts/${postId}`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  const res = unwrapApi<PostDto>(raw);
+  return { success: res.success, data: res.data, message: res.message };
+};
+
