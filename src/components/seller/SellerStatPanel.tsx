@@ -311,10 +311,18 @@ export const SellerStatPanel: React.FC = () => {
                               borderRadius: '4px',
                               fontSize: '0.68rem',
                               fontWeight: 800,
-                              backgroundColor: item.targetType === 'ROOM' ? 'rgba(0, 92, 230, 0.1)' : 'rgba(255, 90, 95, 0.1)',
-                              color: item.targetType === 'ROOM' ? 'var(--primary)' : 'var(--secondary)'
+                              backgroundColor: item.targetType === 'ROOM'
+                                ? 'rgba(0, 92, 230, 0.1)'
+                                : item.targetType === 'CAR'
+                                  ? 'rgba(255, 90, 95, 0.1)'
+                                  : 'rgba(16, 185, 129, 0.1)',
+                              color: item.targetType === 'ROOM'
+                                ? 'var(--primary)'
+                                : item.targetType === 'CAR'
+                                  ? 'var(--secondary)'
+                                  : '#10b981'
                             }}>
-                              {item.targetType === 'ROOM' ? '숙소' : '렌터카'}
+                              {item.targetType === 'ROOM' ? '숙소' : item.targetType === 'CAR' ? '렌터카' : '항공'}
                             </span>
                           </td>
                           <td style={{ padding: '0.8rem 0.4rem', fontWeight: 600, color: 'var(--text-dark)' }}>{item.productName}</td>
