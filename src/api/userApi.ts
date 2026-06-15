@@ -146,6 +146,6 @@ export const fetch_member_profile_api = async (): Promise<{
 export const update_member_profile_api = async (
   payload: ProfileUpdatePayload
 ): Promise<{ success: boolean; data: any; message: string }> => {
-  const raw = await userAxios.patch('/api/v1/user/profile', payload);
+  const raw = await userAxios.patch('/api/v1/members/me/profile', payload);
   return unwrapApi<any>(raw);
 };
