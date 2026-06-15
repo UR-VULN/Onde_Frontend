@@ -5,6 +5,7 @@ import { fetch_member_profile_api, fetch_member_mileage_history_api } from '@/ap
 import type { MileageLogDto } from '@/api/userApi';
 import { fetch_my_reservations_api, mapReservationDtoToMyPage, cancel_member_reservation_api } from '@/api/reservationsApi';
 import { WalletPanel } from '@/components/common/WalletPanel';
+import { ProfileEditForm } from './ProfileEditForm';
 
 type ReservationFilter = 'all' | 'stay' | 'flight' | 'car' | 'ins';
 
@@ -50,6 +51,7 @@ export const MyPageDashboard: React.FC = () => {
 
   const [activeFilter, setActiveFilter] = useState<ReservationFilter>('all');
   const [mileageLogs, setMileageLogs] = useState<MileageLogDto[]>([]);
+  const [isProfileEditMode, setIsProfileEditMode] = useState(false);
 
   const filteredReservations = reservations.filter((r) => {
     if (activeFilter === 'all') return true;
@@ -159,6 +161,34 @@ export const MyPageDashboard: React.FC = () => {
               </div>
             </div>
 
+            {/* 프로필 관리 버튼 추가 */}
+            <div style={{ marginTop: '-0.5rem' }}>
+              <button
+                type="button"
+                onClick={() => setIsProfileEditMode(!isProfileEditMode)}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  background: isProfileEditMode ? 'var(--primary)' : 'white',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '10px',
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  color: isProfileEditMode ? 'white' : 'var(--text-dark)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: isProfileEditMode ? '0 4px 12px rgba(0, 92, 230, 0.2)' : 'none'
+                }}
+              >
+                <i className={`fa-solid ${isProfileEditMode ? 'fa-user-check' : 'fa-user-pen'}`}></i>
+                {isProfileEditMode ? '대시보드 보기' : '프로필 관리'}
+              </button>
+            </div>
+
             <div className="mypage-sidebar-actions">
               <button
                 type="button"
@@ -177,214 +207,219 @@ export const MyPageDashboard: React.FC = () => {
           </aside>
 
           <section className="mypage-main">
-            <WalletPanel />
+            {isProfileEditMode ? (
+              <ProfileEditForm onCancel={() => setIsProfileEditMode(false)} />
+            ) : (
+              <>
+                <WalletPanel />
 
-            <h4 className="mypage-main-title">
-              <i className="fa-solid fa-list-check"></i> 실시간 예약 및 가입 현황
-            </h4>
-            <p className="mypage-main-desc">
-              고객님께서 온데(ONDE)를 통해 신청 완료하신 실시간 숙소, 항공권, 렌터카 및 가입된 여행자
-              보험의 통합 예약 목록입니다.
-            </p>
+                <h4 className="mypage-main-title">
+                  <i className="fa-solid fa-list-check"></i> 실시간 예약 및 가입 현황
+                </h4>
+                <p className="mypage-main-desc">
+                  고객님께서 온데(ONDE)를 통해 신청 완료하신 실시간 숙소, 항공권, 렌터카 및 가입된 여행자
+                  보험의 통합 예약 목록입니다.
+                </p>
 
-            <div className="mypage-tabs">
-              {FILTER_TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  className={`mp-tab-btn${activeFilter === tab.id ? ' active' : ''}`}
-                  onClick={() => setActiveFilter(tab.id)}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+                <div className="mypage-tabs">
+                  {FILTER_TABS.map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      className={`mp-tab-btn${activeFilter === tab.id ? ' active' : ''}`}
+                      onClick={() => setActiveFilter(tab.id)}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
 
-            <div className="mypage-list-wrapper">
-              {filteredReservations.length > 0 ? (
-                filteredReservations.map((reservationItem) => (
-                  <article key={`${reservationItem.category}-${reservationItem.id}`} className="mp-card">
-                    <div className={`mp-card-icon ${reservationItem.category}`}>
-                      {reservationItem.category === 'flight' && <i className="fa-solid fa-plane"></i>}
-                      {reservationItem.category === 'ins' && <i className="fa-solid fa-shield-halved"></i>}
-                      {reservationItem.category === 'car' && <i className="fa-solid fa-car"></i>}
-                      {reservationItem.category === 'stay' && <i className="fa-solid fa-hotel"></i>}
-                    </div>
-                    <div className="mp-card-body">
-                      <div className="mp-card-head">
-                        <strong className="mp-card-title">{reservationItem.title}</strong>
+                <div className="mypage-list-wrapper">
+                  {filteredReservations.length > 0 ? (
+                    filteredReservations.map((reservationItem) => (
+                      <article key={`${reservationItem.category}-${reservationItem.id}`} className="mp-card">
+                        <div className={`mp-card-icon ${reservationItem.category}`}>
+                          {reservationItem.category === 'flight' && <i className="fa-solid fa-plane"></i>}
+                          {reservationItem.category === 'ins' && <i className="fa-solid fa-shield-halved"></i>}
+                          {reservationItem.category === 'car' && <i className="fa-solid fa-car"></i>}
+                          {reservationItem.category === 'stay' && <i className="fa-solid fa-hotel"></i>}
+                        </div>
+                        <div className="mp-card-body">
+                          <div className="mp-card-head">
+                            <strong className="mp-card-title">{reservationItem.title}</strong>
+                          </div>
+                          <p className="mp-card-line">
+                            <i className="fa-regular fa-calendar-check" style={{ marginRight: '0.25rem' }}></i>
+                            일정: <strong>{reservationItem.date}</strong>
+                          </p>
+                          <p className="mp-card-line-muted">{reservationItem.details}</p>
+                        </div>
+                        <div className="mp-card-footer">
+                          <span className={`mp-badge ${reservationItem.badgeType}`}>{reservationItem.badge}</span>
+                          <strong className="mp-card-price">{reservationItem.price}</strong>
+                          <button
+                            type="button"
+                            className="mp-card-cancel"
+                            onClick={() => {
+                              openConfirmPopup(async (choice) => {
+                                if (!choice) return;
+                                try {
+                                  const cancelRes = await cancel_member_reservation_api(
+                                    Number(reservationItem.id),
+                                    reservationItem.category
+                                  );
+                                  if (cancelRes.success) {
+                                    cancelReservation(reservationItem.id);
+                                    addToast('예약 취소 처리가 완료되었습니다.', 'info');
+                                  } else {
+                                    addToast(cancelRes.message || '예약 취소에 실패했습니다.', 'warning');
+                                  }
+                                } catch {
+                                  addToast('예약 취소 중 오류가 발생했습니다.', 'warning');
+                                }
+                              });
+                            }}
+                          >
+                            취소
+                          </button>
+                        </div>
+                      </article>
+                    ))
+                  ) : (
+                    <div className="mypage-empty">등록되어 있는 가입 예약 정보가 존재하지 않습니다.</div>
+                  )}
+                </div>
+
+                {/* 📄 통합 정산서 스마트 발급 위젯 (커스텀 영수증 출력용) */}
+                <div className="report-issuance-card" style={{
+                  marginTop: '3.5rem',
+                  padding: '2.25rem',
+                  borderRadius: '16px',
+                  background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                  border: '1px solid #e2e8f0',
+                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05)',
+                  textAlign: 'left'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '8px',
+                        background: '#eff6ff',
+                        color: '#3b82f6'
+                      }}>
+                        <i className="fa-solid fa-file-invoice-dollar" style={{ fontSize: '1.2rem' }}></i>
+                      </span>
+                      <div>
+                        <h4 style={{ color: '#1e293b', margin: 0, fontSize: '1.2rem', fontWeight: 'bold', letterSpacing: '-0.025em' }}>
+                          통합 정산서 스마트 발급 서비스
+                        </h4>
+                        <span style={{ fontSize: '0.75rem', color: '#64748b' }}>ONDE Smart Receipt & Report Service</span>
                       </div>
-                      <p className="mp-card-line">
-                        <i className="fa-regular fa-calendar-check" style={{ marginRight: '0.25rem' }}></i>
-                        일정: <strong>{reservationItem.date}</strong>
-                      </p>
-                      <p className="mp-card-line-muted">{reservationItem.details}</p>
                     </div>
-                    <div className="mp-card-footer">
-                      <span className={`mp-badge ${reservationItem.badgeType}`}>{reservationItem.badge}</span>
-                      <strong className="mp-card-price">{reservationItem.price}</strong>
-                      <button
-                        type="button"
-                        className="mp-card-cancel"
-                        onClick={() => {
-                          openConfirmPopup(async (choice) => {
-                            if (!choice) return;
-                            try {
-                              const cancelRes = await cancel_member_reservation_api(
-                                Number(reservationItem.id),
-                                reservationItem.category
-                              );
-                              if (cancelRes.success) {
-                                cancelReservation(reservationItem.id);
-                                addToast('예약 취소 처리가 완료되었습니다.', 'info');
-                              } else {
-                                addToast(cancelRes.message || '예약 취소에 실패했습니다.', 'warning');
-                              }
-                            } catch {
-                              addToast('예약 취소 중 오류가 발생했습니다.', 'warning');
-                            }
-                          });
+                  </div>
+
+                  <p style={{ color: '#475569', fontSize: '0.85rem', marginBottom: '1.75rem', lineHeight: '1.5', letterSpacing: '-0.01em' }}>
+                    귀하의 실시간 예약 내역(항공사, 숙소, 렌터카, 여행자 보험) 정보를 하나로 취합하여 깔끔한 명세서 리포트 PDF를 발행합니다. 
+                    원하시는 발급 양식을 아래에서 선택한 후 다운로드해 주세요.
+                  </p>
+
+                  <div style={{ display: 'grid', gap: '1.25rem', fontSize: '0.85rem' }}>
+                    {/* 양식 선택 */}
+                    <div style={{ background: '#ffffff', padding: '1.25rem', borderRadius: '10px', border: '1px solid #f1f5f9' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '700', marginBottom: '0.5rem', color: '#334155' }}>
+                        <i className="fa-solid fa-file-signature" style={{ color: '#64748b' }}></i>
+                        정산서 발급 구분 선택
+                      </label>
+                      <select
+                        id="reportTemplate"
+                        style={{
+                          width: '100%',
+                          padding: '0.65rem 0.8rem',
+                          borderRadius: '8px',
+                          border: '1px solid #cbd5e1',
+                          color: '#0f172a',
+                          background: '#f8fafc',
+                          fontSize: '0.85rem',
+                          outline: 'none',
+                          cursor: 'pointer'
                         }}
                       >
-                        취소
+                        <option value="verification">확인서용 양식</option>
+                        <option value="business">비즈니스용 양식</option>
+                      </select>
+                    </div>
+
+                    {/* PDF 생성 및 다운로드 버튼 */}
+                    <div style={{ marginTop: '0.5rem', textAlign: 'right' }}>
+                      <button
+                        onClick={async () => {
+                          const templateVal = (document.getElementById('reportTemplate') as HTMLSelectElement)?.value || 'verification';
+
+                          try {
+                            const response = await fetch('/user-api/api/v1/report/integrated', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                memberId: memberId,
+                                template: templateVal,
+                                logoUrl: 'https://onde.click/assets/logo.png'
+                              })
+                            });
+
+                            if (response.ok) {
+                              const blob = await response.blob();
+                              const downloadUrl = window.URL.createObjectURL(blob);
+                              const a = document.createElement('a');
+                              a.href = downloadUrl;
+                              a.download = 'onde_settlement_report.pdf';
+                              document.body.appendChild(a);
+                              a.click();
+                              a.remove();
+                              addToast('통합 정산서 PDF가 성공적으로 발급되었습니다.', 'success');
+                            } else {
+                              addToast('정산서 발급 과정 중 서버 내부 오류가 발생했습니다.', 'warning');
+                            }
+                          } catch (err: any) {
+                            addToast('서버 연결 중 네트워크 연결 실패: ' + err.message, 'warning');
+                          }
+                        }}
+                        style={{
+                          padding: '0.75rem 1.75rem',
+                          background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          fontWeight: '700',
+                          fontSize: '0.9rem',
+                          boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+                          transition: 'all 0.2s ease',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.5rem'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                          e.currentTarget.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.4)';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
+                        }}
+                      >
+                        <i className="fa-solid fa-file-pdf"></i>
+                        통합 정산서 PDF 다운로드
                       </button>
                     </div>
-                  </article>
-                ))
-              ) : (
-                <div className="mypage-empty">등록되어 있는 가입 예약 정보가 존재하지 않습니다.</div>
-              )}
-            </div>
-
-            {/* 📄 통합 정산서 스마트 발급 위젯 (커스텀 영수증 출력용) */}
-            <div className="report-issuance-card" style={{
-              marginTop: '3.5rem',
-              padding: '2.25rem',
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05)',
-              textAlign: 'left'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <span style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '8px',
-                    background: '#eff6ff',
-                    color: '#3b82f6'
-                  }}>
-                    <i className="fa-solid fa-file-invoice-dollar" style={{ fontSize: '1.2rem' }}></i>
-                  </span>
-                  <div>
-                    <h4 style={{ color: '#1e293b', margin: 0, fontSize: '1.2rem', fontWeight: 'bold', letterSpacing: '-0.025em' }}>
-                      통합 정산서 스마트 발급 서비스
-                    </h4>
-                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>ONDE Smart Receipt & Report Service</span>
                   </div>
                 </div>
-              </div>
-
-              <p style={{ color: '#475569', fontSize: '0.85rem', marginBottom: '1.75rem', lineHeight: '1.5', letterSpacing: '-0.01em' }}>
-                귀하의 실시간 예약 내역(항공사, 숙소, 렌터카, 여행자 보험) 정보를 하나로 취합하여 깔끔한 명세서 리포트 PDF를 발행합니다. 
-                원하시는 발급 양식을 아래에서 선택한 후 다운로드해 주세요.
-              </p>
-
-              <div style={{ display: 'grid', gap: '1.25rem', fontSize: '0.85rem' }}>
-                {/* 양식 선택 */}
-                <div style={{ background: '#ffffff', padding: '1.25rem', borderRadius: '10px', border: '1px solid #f1f5f9' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '700', marginBottom: '0.5rem', color: '#334155' }}>
-                    <i className="fa-solid fa-file-signature" style={{ color: '#64748b' }}></i>
-                    정산서 발급 구분 선택
-                  </label>
-                  <select
-                    id="reportTemplate"
-                    style={{
-                      width: '100%',
-                      padding: '0.65rem 0.8rem',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
-                      color: '#0f172a',
-                      background: '#f8fafc',
-                      fontSize: '0.85rem',
-                      outline: 'none',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <option value="verification">확인서용 양식</option>
-                    <option value="business">비즈니스용 양식</option>
-                  </select>
-                </div>
-
-                {/* PDF 생성 및 다운로드 버튼 */}
-                <div style={{ marginTop: '0.5rem', textAlign: 'right' }}>
-                  <button
-                    onClick={async () => {
-                      const templateVal = (document.getElementById('reportTemplate') as HTMLSelectElement)?.value || 'verification';
-
-                      try {
-                        const response = await fetch('/user-api/api/v1/report/integrated', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            memberId: memberId,
-                            template: templateVal,
-                            logoUrl: 'https://onde.click/assets/logo.png'
-                          })
-                        });
-
-                        if (response.ok) {
-                          const blob = await response.blob();
-                          const downloadUrl = window.URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.href = downloadUrl;
-                          a.download = 'onde_settlement_report.pdf';
-                          document.body.appendChild(a);
-                          a.click();
-                          a.remove();
-                          addToast('통합 정산서 PDF가 성공적으로 발급되었습니다.', 'success');
-                        } else {
-                          addToast('정산서 발급 과정 중 서버 내부 오류가 발생했습니다.', 'warning');
-                        }
-                      } catch (err: any) {
-                        addToast('서버 연결 중 네트워크 연결 실패: ' + err.message, 'warning');
-                      }
-                    }}
-                    style={{
-                      padding: '0.75rem 1.75rem',
-                      background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontWeight: '700',
-                      fontSize: '0.9rem',
-                      boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-                      transition: 'all 0.2s ease',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.5rem'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-1px)';
-                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.4)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
-                    }}
-                  >
-                    <i className="fa-solid fa-file-pdf"></i>
-                    통합 정산서 PDF 다운로드
-                  </button>
-                </div>
-              </div>
-            </div>
-
+              </>
+            )}
           </section>
         </div>
       </div>
