@@ -5,8 +5,18 @@ import { unwrapApi } from '@/utils/apiResponse';
 export interface MemberMeDto {
   memberId: number;
   email: string;
+  name: string;
+  phoneNumber: string;
+  nickname: string;
   role: string;
   status: string;
+}
+
+export interface ProfileUpdatePayload {
+  name: string;
+  phoneNumber: string;
+  nickname: string;
+  password?: string;
 }
 
 /** GET /api/v1/members/me/mileage */
@@ -45,7 +55,7 @@ export const fetch_wallet_balance_api = async (): Promise<{ success: boolean; da
     const raw = await userAxios.get('/api/v1/members/me/wallet');
     const res = unwrapApi<{ balance: number }>(raw);
     return { success: res.success, data: res.data?.balance ?? 0, message: res.message };
-  } catch (e) {
+  } catch {
     return { success: false, data: 0, message: '지갑 잔액 조회 실패' };
   }
 };
@@ -55,7 +65,7 @@ export const charge_wallet_api = async (amount: number): Promise<{ success: bool
     const raw = await userAxios.post('/api/v1/members/me/wallet/charge', { amount });
     const res = unwrapApi<{ balance: number }>(raw);
     return { success: res.success, data: res.data?.balance ?? 0, message: res.message };
-  } catch (e) {
+  } catch {
     return { success: false, data: 0, message: '지갑 충전 실패' };
   }
 };
@@ -131,4 +141,11 @@ export const fetch_member_profile_api = async (): Promise<{
       membershipGrade: `${res.data.memberGrade} MEMBER`,
     },
   };
+};
+
+export const update_member_profile_api = async (
+  payload: ProfileUpdatePayload
+): Promise<{ success: boolean; data: any; message: string }> => {
+  const raw = await userAxios.patch('/api/v1/user/profile', payload);
+  return unwrapApi<any>(raw);
 };
