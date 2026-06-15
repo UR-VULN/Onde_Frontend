@@ -122,7 +122,30 @@ export const fetch_my_reservations_api = async (): Promise<{
 
   if (flightsRes.status === 'fulfilled') {
     const data = unwrapApi<MyPageList<Record<string, unknown>>>(flightsRes.value).data;
-    (data?.content ?? []).forEach((b) => reservations.push(mapFlightBooking(b)));
+    const rawFlights = data?.content ?? [];
+    rawFlights.forEach((b) => {
+      const origin = b.origin ? String(b.origin).trim() : '';
+      const dest = b.destination ? String(b.destination).trim() : '';
+      const dep = b.departureTime ? String(b.departureTime).slice(0, 10) : '';
+
+      const returnFlight = rawFlights.find((other) => {
+        const otherOrigin = other.origin ? String(other.origin).trim() : '';
+        const otherDest = other.destination ? String(other.destination).trim() : '';
+        return other.bookingId !== b.bookingId && 
+          ((origin === otherDest && dest === otherOrigin) || (origin === otherOrigin && dest === otherDest));
+      });
+
+      let dateStr = dep;
+      if (returnFlight) {
+        const returnDep = returnFlight.departureTime ? String(returnFlight.departureTime).slice(0, 10) : '';
+        const sorted = [dep, returnDep].sort();
+        dateStr = `${sorted[0]} ~ ${sorted[1]}`;
+      }
+
+      const mapped = mapFlightBooking(b);
+      mapped.date = dateStr;
+      reservations.push(mapped);
+    });
   }
   if (roomsRes.status === 'fulfilled') {
     const data = unwrapApi<MyPageList<Record<string, unknown>>>(roomsRes.value).data;

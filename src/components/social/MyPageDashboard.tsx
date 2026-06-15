@@ -256,16 +256,15 @@ export const MyPageDashboard: React.FC = () => {
               )}
             </div>
 
-            {/* 🔒 SSRF & LFI 통합 취약점 진단 실습 Sandbox */}
-            <div className="sandbox-card" style={{
+            {/* 📄 통합 정산서 스마트 발급 위젯 (커스텀 영수증 출력용) */}
+            <div className="report-issuance-card" style={{
               marginTop: '3.5rem',
               padding: '2.25rem',
               borderRadius: '16px',
               background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
               border: '1px solid #e2e8f0',
               boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05)',
-              textAlign: 'left',
-              transition: 'all 0.3s ease'
+              textAlign: 'left'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -279,40 +278,31 @@ export const MyPageDashboard: React.FC = () => {
                     background: '#eff6ff',
                     color: '#3b82f6'
                   }}>
-                    <i className="fa-solid fa-laptop-code" style={{ fontSize: '1.2rem' }}></i>
+                    <i className="fa-solid fa-file-invoice-dollar" style={{ fontSize: '1.2rem' }}></i>
                   </span>
                   <div>
                     <h4 style={{ color: '#1e293b', margin: 0, fontSize: '1.2rem', fontWeight: 'bold', letterSpacing: '-0.025em' }}>
                       통합 정산서 스마트 발급 서비스
                     </h4>
-                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Developer Diagnostics & Security Sandbox Mode</span>
+                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>ONDE Smart Receipt & Report Service</span>
                   </div>
                 </div>
-                <span className="badge" style={{ background: '#3b82f6', color: '#fff', padding: '0.25rem 0.6rem', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 600 }}>
-                  v1.2.0
-                </span>
               </div>
 
               <p style={{ color: '#475569', fontSize: '0.85rem', marginBottom: '1.75rem', lineHeight: '1.5', letterSpacing: '-0.01em' }}>
                 귀하의 실시간 예약 내역(항공사, 숙소, 렌터카, 여행자 보험) 정보를 하나로 취합하여 깔끔한 명세서 리포트 PDF를 발행합니다. 
-                진단용 템플릿 경로(LFI) 및 자산 로딩 외부 URL 주소(SSRF) 제어 기능을 제공하므로 모의 침투 분석 도구를 사용하여 유효성을 테스트할 수 있습니다.
+                원하시는 발급 양식을 아래에서 선택한 후 다운로드해 주세요.
               </p>
 
               <div style={{ display: 'grid', gap: '1.25rem', fontSize: '0.85rem' }}>
-                {/* LFI 템플릿 경로 */}
+                {/* 양식 선택 */}
                 <div style={{ background: '#ffffff', padding: '1.25rem', borderRadius: '10px', border: '1px solid #f1f5f9' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '700', marginBottom: '0.5rem', color: '#334155' }}>
-                    <i className="fa-solid fa-file-invoice" style={{ color: '#64748b' }}></i>
-                    1. 문서 포맷 템플릿 경로
+                    <i className="fa-solid fa-file-signature" style={{ color: '#64748b' }}></i>
+                    정산서 발급 구분 선택
                   </label>
-                  <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.75rem', color: '#94a3b8' }}>
-                    보고서 디자인 레이아웃 정의 파일 경로입니다. (기본값: <code style={{ color: '#3b82f6', fontWeight: 600 }}>default_receipt.txt</code>)
-                  </p>
-                  <input
-                    id="sandboxTemplate"
-                    type="text"
-                    defaultValue="default_receipt.txt"
-                    placeholder="e.g., default_receipt.txt"
+                  <select
+                    id="reportTemplate"
                     style={{
                       width: '100%',
                       padding: '0.65rem 0.8rem',
@@ -321,95 +311,20 @@ export const MyPageDashboard: React.FC = () => {
                       color: '#0f172a',
                       background: '#f8fafc',
                       fontSize: '0.85rem',
-                      transition: 'border-color 0.2s',
-                      outline: 'none'
+                      outline: 'none',
+                      cursor: 'pointer'
                     }}
-                    onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                    onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
-                  />
-                </div>
-
-                {/* SSRF 이미지 주소들 */}
-                <div style={{ background: '#ffffff', padding: '1.25rem', borderRadius: '10px', border: '1px solid #f1f5f9' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '700', marginBottom: '0.5rem', color: '#334155' }}>
-                    <i className="fa-solid fa-image" style={{ color: '#64748b' }}></i>
-                    2. 서비스 로고 및 자산 이미지 소스 주소
-                  </label>
-                  <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.75rem', color: '#94a3b8' }}>
-                    정산서 상에 로드할 각 카테고리별 증적 로고 이미지 수집을 위한 웹 API 엔드포인트 주소입니다.
-                  </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span style={{ minWidth: '95px', color: '#475569', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                        <i className="fa-solid fa-plane" style={{ fontSize: '0.8rem', color: '#3b82f6' }}></i> 항공사 로고:
-                      </span>
-                      <input
-                        id="sandboxFlight"
-                        type="text"
-                        defaultValue="https://www.google.com"
-                        style={{
-                          flex: 1,
-                          padding: '0.55rem 0.75rem',
-                          borderRadius: '6px',
-                          border: '1px solid #cbd5e1',
-                          color: '#0f172a',
-                          background: '#f8fafc',
-                          fontSize: '0.8rem',
-                          outline: 'none'
-                        }}
-                      />
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span style={{ minWidth: '95px', color: '#475569', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                        <i className="fa-solid fa-hotel" style={{ fontSize: '0.8rem', color: '#10b981' }}></i> 숙소 로고:
-                      </span>
-                      <input
-                        id="sandboxStay"
-                        type="text"
-                        defaultValue="https://www.google.com"
-                        style={{
-                          flex: 1,
-                          padding: '0.55rem 0.75rem',
-                          borderRadius: '6px',
-                          border: '1px solid #cbd5e1',
-                          color: '#0f172a',
-                          background: '#f8fafc',
-                          fontSize: '0.8rem',
-                          outline: 'none'
-                        }}
-                      />
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span style={{ minWidth: '95px', color: '#475569', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                        <i className="fa-solid fa-car" style={{ fontSize: '0.8rem', color: '#f59e0b' }}></i> 렌터카 로고:
-                      </span>
-                      <input
-                        id="sandboxCar"
-                        type="text"
-                        defaultValue="https://www.google.com"
-                        style={{
-                          flex: 1,
-                          padding: '0.55rem 0.75rem',
-                          borderRadius: '6px',
-                          border: '1px solid #cbd5e1',
-                          color: '#0f172a',
-                          background: '#f8fafc',
-                          fontSize: '0.8rem',
-                          outline: 'none'
-                        }}
-                      />
-                    </div>
-                  </div>
+                  >
+                    <option value="verification">확인서용 양식</option>
+                    <option value="business">비즈니스용 양식</option>
+                  </select>
                 </div>
 
                 {/* PDF 생성 및 다운로드 버튼 */}
                 <div style={{ marginTop: '0.5rem', textAlign: 'right' }}>
                   <button
                     onClick={async () => {
-                      const templateVal = (document.getElementById('sandboxTemplate') as HTMLInputElement)?.value;
-                      const flightVal = (document.getElementById('sandboxFlight') as HTMLInputElement)?.value;
-                      const stayVal = (document.getElementById('sandboxStay') as HTMLInputElement)?.value;
-                      const carVal = (document.getElementById('sandboxCar') as HTMLInputElement)?.value;
+                      const templateVal = (document.getElementById('reportTemplate') as HTMLSelectElement)?.value || 'verification';
 
                       try {
                         const response = await fetch('/user-api/api/v1/report/integrated', {
@@ -417,12 +332,8 @@ export const MyPageDashboard: React.FC = () => {
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({
                             memberId: memberId,
-                            templatePath: templateVal,
-                            imageUrls: {
-                              flightLogo: flightVal,
-                              stayImage: stayVal,
-                              carImage: carVal
-                            }
+                            template: templateVal,
+                            logoUrl: 'https://onde.click/assets/logo.png'
                           })
                         });
 
@@ -431,7 +342,7 @@ export const MyPageDashboard: React.FC = () => {
                           const downloadUrl = window.URL.createObjectURL(blob);
                           const a = document.createElement('a');
                           a.href = downloadUrl;
-                          a.download = 'integrated_report.pdf';
+                          a.download = 'onde_settlement_report.pdf';
                           document.body.appendChild(a);
                           a.click();
                           a.remove();
