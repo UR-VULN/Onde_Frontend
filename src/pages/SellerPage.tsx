@@ -15,7 +15,7 @@ const SIDEBAR_ITEMS = [
   { id: 'stay',      icon: 'fa-solid fa-hotel',           label: '숙소 재고'          },
   { id: 'car',       icon: 'fa-solid fa-car',             label: '렌터카 재고'        },
   { id: 'flight',    icon: 'fa-solid fa-plane',           label: '항공 상품'          },
-  { id: 'stat',      icon: 'fa-solid fa-money-bill-wave', label: '매출 및 정산 대금'   },
+  { id: 'stat',      icon: 'fa-solid fa-money-bill-wave', label: '정산 대금 관리'   },
   { id: 'account',   icon: 'fa-solid fa-id-card',         label: '계정 및 계좌 설정'   },
 ];
 

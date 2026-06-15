@@ -924,6 +924,37 @@ export const finalize_settlement_api = async (
   return { success: res.success, message: res.message };
 };
 
+export const reject_settlement_api = async (
+  settlementId: number,
+  comment?: string
+): Promise<{ success: boolean; message: string }> => {
+  const raw = await adminAxios.post(`/api/v1/admin/settlements/${settlementId}/reject`, { comment: comment ?? '' });
+  const res = unwrapApi<unknown>(raw);
+  return { success: res.success, message: res.message };
+};
+
+export interface AdminSettlementDetailItemDto {
+  paymentId: number;
+  reservationId: number;
+  targetType: string;
+  productName: string;
+  amount: number;
+  paymentDate: string;
+}
+
+export interface AdminSettlementDetailResponseDto {
+  settlementId: number;
+  settlementDate: string;
+  details: AdminSettlementDetailItemDto[];
+}
+
+export const get_admin_settlement_detail_api = async (
+  settlementId: number
+): Promise<{ success: boolean; data: AdminSettlementDetailResponseDto | null; message: string }> => {
+  const raw = await adminAxios.get(`/api/v1/admin/settlements/${settlementId}/details`);
+  return unwrapApi<AdminSettlementDetailResponseDto | null>(raw);
+};
+
 // ── Admin Community API DTOs ──
 export interface AdminPostDto {
   postId: number;

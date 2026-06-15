@@ -4,7 +4,10 @@ import {
   get_admin_settlements_api,
   approve_first_settlement_api,
   finalize_settlement_api,
-  type AdminSettlementDto
+  reject_settlement_api,
+  type AdminSettlementDto,
+  get_admin_settlement_detail_api,
+  type AdminSettlementDetailResponseDto
 } from '@/api/adminApi';
 import { isSuperAdmin, isSellerAdmin } from '@/utils/adminPermissions';
 
@@ -13,6 +16,29 @@ export const AdminSettlementPanel: React.FC = () => {
   const [settlements, setSettlements] = useState<AdminSettlementDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('');
+
+  const [detailData, setDetailData] = useState<AdminSettlementDetailResponseDto | null>(null);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  const handle_view_details = async (settlementId: number) => {
+    setIsDetailLoading(true);
+    setIsDetailModalOpen(true);
+    try {
+      const res = await get_admin_settlement_detail_api(settlementId);
+      if (res.success && res.data) {
+        setDetailData(res.data);
+      } else {
+        addToast(res.message || '상세 내역을 가져오지 못했습니다.', 'warning');
+        setIsDetailModalOpen(false);
+      }
+    } catch (err: any) {
+      addToast(err?.error?.message || '상세 내역 조회 중 오류가 발생했습니다.', 'warning');
+      setIsDetailModalOpen(false);
+    } finally {
+      setIsDetailLoading(false);
+    }
+  };
 
   const loadSettlements = async () => {
     setLoading(true);
@@ -59,6 +85,26 @@ export const AdminSettlementPanel: React.FC = () => {
       }
     } catch (err: any) {
       addToast(err?.error?.message || '최종 승인 중 오류 발생', 'warning');
+    }
+  };
+
+  const handleReject = async (id: number) => {
+    const reason = window.prompt('정산 반려 사유를 입력해주세요:');
+    if (reason === null) return;
+    if (!reason.trim()) {
+      addToast('반려 사유를 입력해야 합니다.', 'warning');
+      return;
+    }
+    try {
+      const res = await reject_settlement_api(id, reason);
+      if (res.success) {
+        addToast('정산 반려 처리가 완료되었습니다.', 'success');
+        loadSettlements();
+      } else {
+        addToast(res.message || '반려 처리 실패', 'warning');
+      }
+    } catch (err: any) {
+      addToast(err?.error?.message || '반려 처리 중 오류 발생', 'warning');
     }
   };
 
@@ -125,7 +171,13 @@ export const AdminSettlementPanel: React.FC = () => {
           <tbody>
             {settlements.length > 0 ? (
               settlements.map((item) => (
-                <tr key={item.settlementId}>
+                <tr 
+                  key={item.settlementId} 
+                  onClick={() => handle_view_details(item.settlementId)}
+                  style={{ cursor: 'pointer', transition: 'background-color 0.2s' }}
+                  className="hover:bg-slate-100"
+                  title="클릭하여 정산 상세 예약을 조회합니다"
+                >
                   <td className="font-bold">#{item.settlementId}</td>
                   <td>{item.settlementMonth}</td>
                   <td>{item.sellerName || `ID: ${item.sellerId}`}</td>
@@ -143,48 +195,92 @@ export const AdminSettlementPanel: React.FC = () => {
                       {getStatusLabel(item.status)}
                     </span>
                   </td>
-                  <td className="text-right">
-                    {item.status === 'REQUESTED' && isSeller && (
-                      <button
-                        onClick={() => handleApproveFirst(item.settlementId)}
-                        className="btn-primary"
-                        style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem', background: '#008a05', border: 'none' }}
-                      >
-                        정산 1차 승인
-                      </button>
-                    )}
-                    {item.status === 'APPROVED_1ST' && isSuper && (
-                      <button
-                        onClick={() => handleFinalize(item.settlementId)}
-                        className="btn-primary"
-                        style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem', background: '#0284c7', border: 'none' }}
-                      >
-                        정산 최종 승인
-                      </button>
-                    )}
-                    {item.status === 'REQUESTED' && isSuper && (
-                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                        <button
-                          onClick={() => handleApproveFirst(item.settlementId)}
-                          className="btn-secondary"
-                          style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem' }}
-                        >
-                          1차 승인
-                        </button>
-                        <button
-                          onClick={() => handleFinalize(item.settlementId)}
-                          className="btn-primary"
-                          style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem', background: '#0284c7', border: 'none' }}
-                          disabled
-                          title="1차 승인 후 최종 승인이 가능합니다."
-                        >
-                          최종 승인
-                        </button>
-                      </div>
-                    )}
-                    {item.status !== 'REQUESTED' && item.status !== 'APPROVED_1ST' && (
-                      <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>처리 완료</span>
-                    )}
+                   <td className="text-right" onClick={(e) => e.stopPropagation()}>
+                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', alignItems: 'center' }}>
+                      {item.status === 'REQUESTED' && isSeller && (
+                        <>
+                          <button
+                            onClick={() => handleApproveFirst(item.settlementId)}
+                            className="btn-primary"
+                            style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem', background: '#008a05', border: 'none' }}
+                          >
+                            정산 1차 승인
+                          </button>
+                          <button
+                            onClick={() => handleReject(item.settlementId)}
+                            className="btn-secondary"
+                            style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem', background: '#dc2626', color: '#fff', border: 'none' }}
+                          >
+                            반려
+                          </button>
+                        </>
+                      )}
+                      {item.status === 'APPROVED_1ST' && isSuper && (
+                        <>
+                          <button
+                            onClick={() => handleFinalize(item.settlementId)}
+                            className="btn-primary"
+                            style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem', background: '#0284c7', border: 'none' }}
+                          >
+                            정산 최종 승인
+                          </button>
+                          <button
+                            onClick={() => handleReject(item.settlementId)}
+                            className="btn-secondary"
+                            style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem', background: '#dc2626', color: '#fff', border: 'none' }}
+                          >
+                            반려
+                          </button>
+                        </>
+                      )}
+                      {item.status === 'REQUESTED' && isSuper && (
+                        <>
+                          <button
+                            onClick={() => handleApproveFirst(item.settlementId)}
+                            className="btn-secondary"
+                            style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem' }}
+                          >
+                            1차 승인
+                          </button>
+                          <button
+                            onClick={() => handleFinalize(item.settlementId)}
+                            className="btn-primary"
+                            style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem', background: '#0284c7', border: 'none' }}
+                            disabled
+                            title="1차 승인 후 최종 승인이 가능합니다."
+                          >
+                            최종 승인
+                          </button>
+                          <button
+                            onClick={() => handleReject(item.settlementId)}
+                            className="btn-secondary"
+                            style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem', background: '#dc2626', color: '#fff', border: 'none' }}
+                          >
+                            반려
+                          </button>
+                        </>
+                      )}
+                      {item.status !== 'REQUESTED' && item.status !== 'APPROVED_1ST' && (
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>처리 완료</span>
+                      )}
+                      {item.status === 'REQUESTED' && !isSeller && !isSuper && (
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>1차 승인 대기</span>
+                      )}
+                      {item.status === 'APPROVED_1ST' && !isSuper && (
+                        <>
+                          {isSeller && (
+                            <button
+                              onClick={() => handleReject(item.settlementId)}
+                              className="btn-secondary"
+                              style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem', background: '#dc2626', color: '#fff', border: 'none', marginRight: '0.5rem' }}
+                            >
+                              반려
+                            </button>
+                          )}
+                          <span style={{ color: '#008a05', fontSize: '0.8rem', fontWeight: 'bold' }}>최종 승인 대기</span>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))
@@ -198,6 +294,135 @@ export const AdminSettlementPanel: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Detail Modal */}
+      {isDetailModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.4)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 2000,
+          backdropFilter: 'blur(4px)',
+        }}>
+          <div style={{
+            backgroundColor: 'var(--bg-white)',
+            borderRadius: 'var(--radius-md)',
+            width: '90%',
+            maxWidth: '650px',
+            maxHeight: '80vh',
+            boxShadow: 'var(--shadow-lg)',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            border: '1px solid var(--border-color)',
+            animation: 'fadeIn 0.2s ease',
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              padding: '1.2rem 1.5rem',
+              borderBottom: '1px solid var(--border-color)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-dark)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <i className="fa-solid fa-list-check" style={{ color: 'var(--primary)' }}></i> 파트너 정산 세부 내역
+              </h3>
+              <button 
+                onClick={() => setIsDetailModalOpen(false)}
+                style={{ fontSize: '1.2rem', color: 'var(--text-muted)', cursor: 'pointer', border: 'none', background: 'none' }}
+              >
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1 }}>
+              {isDetailLoading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '3rem 0', gap: '1rem' }}>
+                  <i className="fa-solid fa-circle-notch fa-spin" style={{ fontSize: '2rem', color: 'var(--primary)' }}></i>
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 600 }}>상세 내역을 불러오는 중입니다...</span>
+                </div>
+              ) : detailData && detailData.details.length > 0 ? (
+                <div>
+                  <div style={{ marginBottom: '1.2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.8rem 1rem', background: 'var(--bg-light)', borderRadius: 'var(--radius-md)' }}>
+                    <div>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 700 }}>정산 기준일</span>
+                      <strong style={{ fontSize: '0.95rem', color: 'var(--text-dark)' }}>{detailData.settlementDate}</strong>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 700 }}>총 결제 건수</span>
+                      <strong style={{ fontSize: '0.95rem', color: 'var(--text-dark)' }}>{detailData.details.length} 건</strong>
+                    </div>
+                  </div>
+
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-dark)', fontWeight: 800, textAlign: 'left' }}>
+                        <th style={{ padding: '0.6rem 0.4rem' }}>예약 ID</th>
+                        <th style={{ padding: '0.6rem 0.4rem' }}>구분</th>
+                        <th style={{ padding: '0.6rem 0.4rem' }}>상품명</th>
+                        <th style={{ padding: '0.6rem 0.4rem', textAlign: 'right' }}>결제 금액</th>
+                        <th style={{ padding: '0.6rem 0.4rem', textAlign: 'right' }}>결제 일시</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {detailData.details.map((item) => (
+                        <tr key={item.paymentId} style={{ borderBottom: '1px solid var(--bg-light)', transition: 'background-color 0.2s' }}>
+                          <td style={{ padding: '0.8rem 0.4rem', fontWeight: 700 }}>{item.reservationId}</td>
+                          <td style={{ padding: '0.8rem 0.4rem' }}>
+                            <span style={{
+                              padding: '0.2rem 0.4rem',
+                              borderRadius: '4px',
+                              fontSize: '0.68rem',
+                              fontWeight: 800,
+                              backgroundColor: item.targetType === 'ROOM' ? 'rgba(0, 92, 230, 0.1)' : 'rgba(255, 90, 95, 0.1)',
+                              color: item.targetType === 'ROOM' ? 'var(--primary)' : 'var(--secondary)'
+                            }}>
+                              {item.targetType === 'ROOM' ? '숙소' : '렌터카'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '0.8rem 0.4rem', fontWeight: 600, color: 'var(--text-dark)' }}>{item.productName}</td>
+                          <td style={{ padding: '0.8rem 0.4rem', textAlign: 'right', fontWeight: 700, color: 'var(--text-dark)' }}>₩{item.amount.toLocaleString()}</td>
+                          <td style={{ padding: '0.8rem 0.4rem', textAlign: 'right', color: 'var(--text-muted)' }}>{new Date(item.paymentDate).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-muted)' }}>
+                  <i className="fa-solid fa-folder-open" style={{ fontSize: '2rem', marginBottom: '0.8rem', display: 'block' }}></i>
+                  <span style={{ fontWeight: 600 }}>정산 세부 내역이 존재하지 않습니다.</span>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{
+              padding: '1rem 1.5rem',
+              borderTop: '1px solid var(--border-color)',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              backgroundColor: 'var(--bg-light)',
+            }}>
+              <button
+                onClick={() => setIsDetailModalOpen(false)}
+                className="btn-secondary"
+                style={{ padding: '0.4rem 1.2rem', fontSize: '0.85rem' }}
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -29,7 +29,7 @@ export const SellerDashboardPanel: React.FC<{ onTabChange?: (tab: string) => voi
 
   const getStatusBadge = (status: string) => {
     const s = status.toUpperCase();
-    if (s === 'COMPLETED' || s === 'PAID' || s === 'APPROVED') {
+    if (s === 'COMPLETED' || s === 'PAID' || s === 'APPROVED' || s === 'CONFIRMED') {
       return (
         <span 
           className="status-badge" 
@@ -44,6 +44,24 @@ export const SellerDashboardPanel: React.FC<{ onTabChange?: (tab: string) => voi
           }}
         >
           확정 완료
+        </span>
+      );
+    }
+    if (s === 'RESERVED') {
+      return (
+        <span 
+          className="status-badge" 
+          style={{ 
+            backgroundColor: '#e8f4fd', 
+            color: '#1d8cf8', 
+            border: '1px solid #b3d7ff',
+            padding: '0.25rem 0.6rem',
+            borderRadius: '999px',
+            fontSize: '0.75rem',
+            fontWeight: 700 
+          }}
+        >
+          예약 대기
         </span>
       );
     }
@@ -346,7 +364,9 @@ export const SellerDashboardPanel: React.FC<{ onTabChange?: (tab: string) => voi
               </thead>
               <tbody>
                 {dashboardData?.recentReservations && dashboardData.recentReservations.length > 0 ? (
-                  dashboardData.recentReservations.map((res) => (
+                  dashboardData.recentReservations
+                    .filter((res) => res.status.toUpperCase() !== 'RESERVED')
+                    .map((res) => (
                     <tr key={`${res.targetType}-${res.id}`} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background-color 0.2s' }}>
                       <td style={{ padding: '1.1rem 1rem' }}>{getTargetBadge(res.targetType)}</td>
                       <td style={{ padding: '1.1rem 1rem', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-dark)' }}>{res.customerName}</td>
@@ -375,7 +395,7 @@ export const SellerDashboardPanel: React.FC<{ onTabChange?: (tab: string) => voi
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-dark)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <i className="fa-solid fa-wallet" style={{ color: '#eab308' }}></i> 정산 및 총 매출 정보
+              <i className="fa-solid fa-wallet" style={{ color: '#eab308' }}></i> 매출 정보
             </h4>
             
             <div style={{ backgroundColor: 'linear-gradient(135deg, var(--primary) 0%, #3b82f6 100%)', padding: '1.2rem', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#eff6ff' }}>

@@ -230,17 +230,22 @@ export const get_seller_sales_stat_api = async (): Promise<{
   const last = res.data.breakdown?.[res.data.breakdown.length - 1];
   const completedBookingsCount =
     res.data.breakdown?.reduce((sum, item) => sum + Number(item.bookingCount ?? 0), 0) ?? 0;
+  const totalSalesAmount = settlementsRes?.success
+    ? settlementsRes.data.settlements
+        .filter((s) => s.status === 'COMPLETED')
+        .reduce((sum, item) => sum + item.netAmount, 0)
+    : 0;
   const settlementPendingAmount =
     settlementsRes?.success
       ? settlementsRes.data.settlements
-          .filter((s) => s.status === 'PENDING')
+          .filter((s) => s.status === 'REQUESTED' || s.status === 'APPROVED_1ST')
           .reduce((sum, item) => sum + item.netAmount, 0)
       : 0;
   return {
     success: true,
     message: res.message,
     data: {
-      totalSalesAmount: res.data.totalRevenue,
+      totalSalesAmount,
       completedBookingsCount,
       settlementPendingAmount,
       commissionRate: PLATFORM_COMMISSION_RATE,
@@ -250,6 +255,7 @@ export const get_seller_sales_stat_api = async (): Promise<{
 };
 
 export interface SellerSettlementHistoryDto {
+  settlementId: number;
   settlementMonth: string;
   netAmount: number;
   status: string;
@@ -264,12 +270,35 @@ export const get_seller_settlement_history_api = async (): Promise<{
   const res = await get_seller_settlements_api();
   const mapped =
     res.data?.settlements.map((s) => ({
+      settlementId: s.settlementId,
       settlementMonth: s.settlementMonth,
       netAmount: s.netAmount,
       status: s.status,
       requestedAt: s.settlementMonth,
     })) ?? [];
   return { success: res.success, data: mapped, message: res.message };
+};
+
+export interface SettlementDetailItemDto {
+  paymentId: number;
+  reservationId: number;
+  targetType: string;
+  productName: string;
+  amount: number;
+  paymentDate: string;
+}
+
+export interface SettlementDetailResponseDto {
+  settlementId: number;
+  settlementDate: string;
+  details: SettlementDetailItemDto[];
+}
+
+export const get_seller_settlement_detail_api = async (
+  settlementId: number
+): Promise<{ success: boolean; data: SettlementDetailResponseDto | null; message: string }> => {
+  const raw = await sellerAxios.get(`/api/v1/seller/settlements/${settlementId}/details`);
+  return unwrapApi<SettlementDetailResponseDto | null>(raw);
 };
 
 export interface BusinessVerifyPayload {
