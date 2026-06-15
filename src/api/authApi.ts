@@ -23,6 +23,8 @@ export interface SignupRequest {
   role: 'USER' | 'SELLER';
   name?: string;
   phoneNumber?: string;
+  nickname?: string;
+  age?: number;
 }
 
 export interface SignupResponse {
@@ -30,8 +32,25 @@ export interface SignupResponse {
   email: string;
   name?: string;
   role: string;
+  nickname?: string;
+  age?: number;
   createdAt?: string;
 }
+
+export const check_nickname_api = async (
+  nickname: string
+): Promise<{ success: boolean; data: boolean; message: string }> => {
+  const raw = await userAxios.get('/api/v1/auth/check-nickname', { params: { nickname } });
+  return unwrapApi<boolean>(raw);
+};
+
+export const check_email_api = async (
+  email: string
+): Promise<{ success: boolean; data: boolean; message: string }> => {
+  const raw = await userAxios.get('/api/v1/auth/check-email', { params: { email } });
+  return unwrapApi<boolean>(raw);
+};
+
 
 export interface TokenRefreshResponse {
   accessToken: string;

@@ -159,13 +159,18 @@ export const useAuthForm = () => {
     password: string;
     passwordConfirm: string;
     role: 'cust' | 'sell' | 'adm';
+    name?: string;
+    phoneNumber?: string;
+    nickname?: string;
+    age?: number;
   }) => {
-    const { email, password, passwordConfirm, role } = payload;
+    const { email, password, passwordConfirm, role, name, phoneNumber, nickname, age } = payload;
 
     if (!email || !password || !passwordConfirm) {
       addToast('모든 항목을 입력해주세요.', 'warning');
       return;
     }
+
 
     if (!validateEmail(email)) return;
 
@@ -193,7 +198,12 @@ export const useAuthForm = () => {
         password,
         passwordConfirm,
         role: apiRole,
+        name,
+        phoneNumber,
+        nickname,
+        age,
       });
+
 
       if (role === 'sell') {
         signupSuccess(email, role);
