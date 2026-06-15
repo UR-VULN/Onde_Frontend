@@ -23,6 +23,9 @@ export const RequireRole: React.FC<RequireRoleProps> = ({ guard, children }) => 
   const location = useLocation();
 
   if (!isLoggedIn) {
+    if (guard === 'admin') {
+      return <Navigate to="/admin/login" replace state={{ from: location.pathname }} />;
+    }
     const redirectTo = consumePostLogoutRedirect();
     if (redirectTo) {
       return <Navigate to={redirectTo} replace />;

@@ -44,6 +44,11 @@ export const login_api = async (body: LoginRequest): Promise<LoginResponse> => {
   return unwrapApi<LoginResponse>(raw).data;
 };
 
+export const admin_login_api = async (body: LoginRequest): Promise<LoginResponse> => {
+  const raw = await userAxios.post('/api/v1/auth/admin/login', body);
+  return unwrapApi<LoginResponse>(raw).data;
+};
+
 export const signup_api = async (body: SignupRequest): Promise<string> => {
   const raw = await userAxios.post('/api/v1/auth/signup', body);
   const res = unwrapApi<SignupResponse>(raw);

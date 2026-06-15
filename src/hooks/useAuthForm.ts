@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login_api, signup_api } from '@/api/authApi';
+import { login_api, signup_api, admin_login_api } from '@/api/authApi';
 import { fetch_member_profile_api } from '@/api/userApi';
 import { USER_API_BASE } from '@/constants/apiConfig';
 import { DEFAULT_MEMBERSHIP_GRADE } from '@/constants/appConstants';
@@ -103,6 +103,57 @@ export const useAuthForm = () => {
     }
   };
 
+  const establishAdminSession = async (
+    email: string,
+    password: string,
+    options?: { successToast?: string }
+  ): Promise<boolean> => {
+    const data = await admin_login_api({ email, password });
+    if (!data?.accessToken) {
+      return false;
+    }
+
+    persistAuthSession({
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+      memberId: data.memberId,
+      role: data.role,
+      username: email,
+      expiresIn: data.expiresIn,
+    });
+
+    let profile = { mileage: 0, membershipGrade: 'ADMIN' };
+
+    finishLogin(email, data.role, data.memberId, profile, options);
+    return true;
+  };
+
+  const handleAdminLogin = async (email: string, password: string) => {
+    if (!email || !password) {
+      addToast('이메일과 비밀번호를 모두 입력해주세요.', 'warning');
+      return;
+    }
+
+    if (!validateEmail(email)) return;
+
+    setIsLoading(true);
+
+    try {
+      const ok = await establishAdminSession(email, password);
+      if (!ok) {
+        addToast('로그인에 실패했습니다.', 'warning');
+      }
+    } catch (err: unknown) {
+      const msg =
+        (err as { message?: string })?.message ||
+        (err as { error?: { message?: string } })?.error?.message ||
+        '이메일 또는 비밀번호가 올바르지 않습니다.';
+      addToast(msg, 'warning');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSignup = async (payload: {
     email: string;
     password: string;
@@ -182,6 +233,7 @@ export const useAuthForm = () => {
   return {
     isLoading,
     handleLogin,
+    handleAdminLogin,
     handleSignup,
     handleSocialLogin,
     validateEmail,

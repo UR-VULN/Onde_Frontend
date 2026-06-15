@@ -18,6 +18,7 @@ import { PaymentPage } from '@/pages/PaymentPage';
 import { PaymentCallbackPage } from '@/pages/PaymentCallbackPage';
 import { SellerPage } from '@/pages/SellerPage';
 import { AdminPage } from '@/pages/AdminPage';
+import { AdminLoginPage } from '@/pages/AdminLoginPage';
 import { ErrorPage } from '@/pages/ErrorPage';
 import { useTravelStore } from '@/store/useTravelStore';
 import { EmailSignupPage } from '@/pages/EmailSignupPage';
@@ -118,6 +119,7 @@ const App: React.FC = () => {
         />
 
         {/* 관리자 포탈 — URL + 역할 가드 */}
+        <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route
           path="/admin/settlement"
           element={

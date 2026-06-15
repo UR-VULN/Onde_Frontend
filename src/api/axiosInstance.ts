@@ -72,18 +72,26 @@ function isRefreshable401(config: { url?: string; _retry?: boolean } | undefined
 
 const finalizeResponseError = (error: {
   response?: { status?: number; data?: unknown };
-  config?: { skipErrorRedirect?: boolean };
+  config?: { url?: string; skipErrorRedirect?: boolean };
 }) => {
   console.error('[API ERROR INTERCEPTOR]:', error);
 
   const status = error.response?.status;
   const onErrorPage = isErrorPagePath(window.location.pathname);
+  const url = error.config?.url ?? '';
+  const isLoginRequest = url.includes('/api/v1/auth/login') || url.includes('/api/v1/auth/admin/login');
 
   const suppressErrorRedirect = hasPostLogoutRedirect();
 
   if (status && !onErrorPage && !error.config?.skipErrorRedirect && !suppressErrorRedirect) {
     if (status === 401) {
       clearAuthSession();
+      if (isLoginRequest) {
+        const errorData = error.response?.data;
+        return Promise.reject(
+          errorData || { success: false, error: { message: '이메일 또는 비밀번호가 올바르지 않습니다.' } }
+        );
+      }
     }
     if (status === 403) {
       useTravelStore.getState().addToast('해당 기능을 수행할 권한이 없습니다.', 'warning');
