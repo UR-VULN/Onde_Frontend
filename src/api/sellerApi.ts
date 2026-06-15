@@ -157,6 +157,41 @@ export const get_seller_dashboard_statistics_api = async (params?: {
   return unwrapApi<SellerDashboardStatisticsDto>(raw);
 };
 
+export interface RecentReservationDto {
+  id: number;
+  customerName: string;
+  targetType: 'STAY' | 'CAR' | 'FLIGHT';
+  productName: string;
+  schedule: string;
+  price: number;
+  status: string;
+}
+
+export interface SellerDashboardDto {
+  email: string;
+  accountStatus: string | null;
+  bankName: string | null;
+  accountNumber: string | null;
+  accommodationCount: number;
+  carCount: number;
+  flightRouteCount: number;
+  stayRevenue: number;
+  carRevenue: number;
+  flightRevenue: number;
+  totalRevenue: number;
+  recentReservations: RecentReservationDto[];
+}
+
+export const get_seller_dashboard_api = async (): Promise<{
+  success: boolean;
+  data: SellerDashboardDto;
+  message: string;
+}> => {
+  const raw = await sellerAxios.get('/api/v1/seller/dashboard');
+  return unwrapApi<SellerDashboardDto>(raw);
+};
+
+
 export interface SellerSalesStatDto {
   totalSalesAmount: number;
   completedBookingsCount: number;
