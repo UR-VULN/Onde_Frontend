@@ -1329,7 +1329,7 @@
             height: 3px;
             background: linear-gradient(to right, var(--primary), var(--secondary));
             transform-origin: left;
-            animation: toastProgress 4.5s linear forwards;
+            animation: toastProgress 1.5s linear forwards;
         }
 
         @keyframes toastProgress {

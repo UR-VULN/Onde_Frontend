@@ -139,7 +139,7 @@ export const useTravelStore = create<TravelState>((set) => ({
       const id = Math.random().toString();
       setTimeout(() => {
         useTravelStore.getState().removeToast(id);
-      }, 4500);
+      }, 1500);
       return { toastStack: [...state.toastStack, { id, message, type }] };
     }),
 
