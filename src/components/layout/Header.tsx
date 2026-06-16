@@ -9,6 +9,7 @@ export const Header: React.FC = () => {
   const {
     isLoggedIn,
     username,
+    name,
     logout,
     addToast,
     openAuthModal,
@@ -94,7 +95,7 @@ export const Header: React.FC = () => {
           {isLoggedIn ? (
             <div className="flex items-center gap-4">
               <span className="text-sm font-black text-slate-700">
-                👑 <span className="text-primary">{username ? username.split('@')[0] : '사용자'}</span> 님
+                👑 <span className="text-primary">{name || (username ? username.split('@')[0] : '사용자')}</span> 님
               </span>
 
               <button

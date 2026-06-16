@@ -37,6 +37,7 @@ export const MyPageDashboard: React.FC = () => {
   const {
     reservations,
     username,
+    name,
     memberId,
     mileage,
     membershipGrade,
@@ -58,7 +59,7 @@ export const MyPageDashboard: React.FC = () => {
     return r.category === activeFilter;
   });
 
-  const displayName = getDisplayName(username);
+  const displayName = name || getDisplayName(username);
   const accountEmail = getAccountEmail(username);
   const showGoldCrown = membershipGrade.toUpperCase().includes('GOLD');
 

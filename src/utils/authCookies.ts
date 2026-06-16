@@ -13,6 +13,8 @@ const NAMES = {
   MEMBER_ID: 'onde_member_id',
   ROLE: 'onde_member_role',
   USERNAME: 'onde_username',
+  NAME: 'onde_name',
+  NICKNAME: 'onde_nickname',
 } as const;
 
 const LEGACY_NAMES = {
@@ -68,6 +70,14 @@ export function getUsername(): string | null {
   return getCookie(NAMES.USERNAME);
 }
 
+export function getName(): string | null {
+  return getCookie(NAMES.NAME);
+}
+
+export function getNickname(): string | null {
+  return getCookie(NAMES.NICKNAME);
+}
+
 export function hasAuthSession(): boolean {
   // 🛡️ HttpOnly 쿠키는 JS에서 읽을 수 없으므로, 메타데이터 쿠키 존재 여부로 세션 확인
   return !!(getMemberId() && getMemberRole() && getUsername());
@@ -79,6 +89,8 @@ export interface PersistAuthPayload {
   memberId: number;
   role: string;
   username: string;
+  name?: string;
+  nickname?: string;
   expiresIn?: number;
 }
 
@@ -99,6 +111,8 @@ export function persistAuthSession(payload: PersistAuthPayload): void {
   setCookie(NAMES.MEMBER_ID, String(payload.memberId), META_MAX_AGE);
   setCookie(NAMES.ROLE, payload.role, META_MAX_AGE);
   setCookie(NAMES.USERNAME, payload.username, META_MAX_AGE);
+  setCookie(NAMES.NAME, payload.name ?? '', META_MAX_AGE);
+  setCookie(NAMES.NICKNAME, payload.nickname ?? '', META_MAX_AGE);
 }
 
 export function clearAllAuthCookies(): void {
@@ -116,6 +130,8 @@ export function restoreSessionFromCookies(): boolean {
   useTravelStore.setState({
     isLoggedIn: true,
     username: getUsername() ?? '',
+    name: getName() ?? '',
+    nickname: getNickname() ?? '',
     memberRole: getMemberRole(),
     memberId: getMemberId(),
   });

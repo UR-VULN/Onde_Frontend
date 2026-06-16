@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login_api, signup_api, admin_login_api } from '@/api/authApi';
-import { fetch_member_profile_api } from '@/api/userApi';
+import { fetch_member_profile_api, fetch_member_me_api } from '@/api/userApi';
 import { USER_API_BASE } from '@/constants/apiConfig';
 import { DEFAULT_MEMBERSHIP_GRADE } from '@/constants/appConstants';
 import { useTravelStore } from '@/store/useTravelStore';
@@ -32,9 +32,11 @@ export const useAuthForm = () => {
     apiRole: string,
     memberId: number,
     profile: { mileage: number; membershipGrade: string },
+    name: string,
+    nickname: string,
     options?: { successToast?: string; showWelcomePopup?: boolean }
   ) => {
-    login(email, apiRole, profile, memberId);
+    login(email, apiRole, profile, memberId, name, nickname);
     addToast(options?.successToast ?? '🔑 로그인이 완료되었습니다!', 'success');
     closeAuthModal();
     navigate(getDefaultPathForRole(apiRole), { replace: true });
@@ -63,6 +65,29 @@ export const useAuthForm = () => {
       expiresIn: data.expiresIn,
     });
 
+    let realName = '';
+    let realNickname = '';
+    try {
+      const meRes = await fetch_member_me_api();
+      if (meRes.success && meRes.data) {
+        realName = meRes.data.name || '';
+        realNickname = meRes.data.nickname || '';
+      }
+    } catch {
+      // ignore
+    }
+
+    persistAuthSession({
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+      memberId: data.memberId,
+      role: data.role,
+      username: email,
+      name: realName,
+      nickname: realNickname,
+      expiresIn: data.expiresIn,
+    });
+
     let profile = { mileage: 0, membershipGrade: DEFAULT_MEMBERSHIP_GRADE };
     try {
       const profileRes = await fetch_member_profile_api();
@@ -73,7 +98,7 @@ export const useAuthForm = () => {
       // 마일리지 API 실패 시 기본값 유지
     }
 
-    finishLogin(email, data.role, data.memberId, profile, options);
+    finishLogin(email, data.role, data.memberId, profile, realName, realNickname, options);
     return true;
   };
 
@@ -119,12 +144,14 @@ export const useAuthForm = () => {
       memberId: data.memberId,
       role: data.role,
       username: email,
+      name: '관리자',
+      nickname: 'Admin',
       expiresIn: data.expiresIn,
     });
 
     let profile = { mileage: 0, membershipGrade: 'ADMIN' };
 
-    finishLogin(email, data.role, data.memberId, profile, options);
+    finishLogin(email, data.role, data.memberId, profile, '관리자', 'Admin', options);
     return true;
   };
 

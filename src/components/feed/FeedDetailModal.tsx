@@ -25,7 +25,7 @@ export const FeedDetailModal: React.FC<FeedDetailModalProps> = ({
   onFeedUpdated,
   onFeedDeleted
 }) => {
-  const { isLoggedIn, username, addToast, openAuthModal } = useTravelStore();
+  const { isLoggedIn, username, nickname, addToast, openAuthModal } = useTravelStore();
 
   const [comments, setComments] = useState<CommentDto[]>([]);
   const [commentText, setCommentText] = useState('');
@@ -187,7 +187,7 @@ export const FeedDetailModal: React.FC<FeedDetailModalProps> = ({
     if (!name) return '';
     return name.includes('@') ? name.split('@')[0] : name;
   };
-  const isPostAuthor = username && getDisplayName(username) === feed.author;
+  const isPostAuthor = username && (nickname ? nickname === feed.author : getDisplayName(username) === feed.author);
 
   return (
     <div 
@@ -333,7 +333,7 @@ export const FeedDetailModal: React.FC<FeedDetailModalProps> = ({
                       </div>
                     ) : (
                       comments.map((c) => {
-                        const isCommentOwner = username && c.authorName === username;
+                        const isCommentOwner = username && (nickname ? c.authorName === nickname : c.authorName === username);
                         return (
                           <div key={c.commentId} className="bg-slate-50/70 p-3 rounded-2xl border border-slate-100 flex flex-col gap-1">
                             <div className="flex justify-between items-center">

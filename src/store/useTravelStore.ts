@@ -23,6 +23,8 @@ export interface ToastItem {
 interface TravelState {
   isLoggedIn: boolean;
   username: string;
+  name: string;
+  nickname: string;
   memberId: number | null;
   memberRole: string | null;
   mileage: number;
@@ -48,7 +50,9 @@ interface TravelState {
     username: string,
     apiRole: string,
     profile?: MemberProfileDto,
-    memberId?: number | null
+    memberId?: number | null,
+    name?: string,
+    nickname?: string
   ) => void;
   setMemberProfile: (profile: MemberProfileDto, walletBalance?: number) => void;
   logout: (options?: { redirectTo?: string }) => void;
@@ -80,6 +84,8 @@ interface TravelState {
 export const useTravelStore = create<TravelState>((set) => ({
   isLoggedIn: false,
   username: '',
+  name: '',
+  nickname: '',
   memberId: null,
   memberRole: null,
   mileage: 0,
@@ -95,10 +101,12 @@ export const useTravelStore = create<TravelState>((set) => ({
   isAuthModalOpen: false,
   authModalTab: 'login',
 
-  login: (username, apiRole, profile, memberId = null) =>
+  login: (username, apiRole, profile, memberId = null, name = '', nickname = '') =>
     set({
       isLoggedIn: true,
       username,
+      name,
+      nickname,
       memberId,
       memberRole: apiRole,
       mileage: profile?.mileage ?? 0,

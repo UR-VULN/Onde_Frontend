@@ -480,6 +480,20 @@ const OverrideModal: React.FC<OverrideModalProps> = ({ date, initialStock, initi
   const [stock, setStock] = useState(initialStock);
   const [price, setPrice] = useState(initialPrice);
 
+  const handleSave = () => {
+    const parsedStock = parseInt(String(stock), 10);
+    const parsedPrice = parseInt(String(price), 10);
+    if (isNaN(parsedStock) || parsedStock < 0) {
+      alert('올바른 재고 수량을 입력해주세요.');
+      return;
+    }
+    if (isNaN(parsedPrice) || parsedPrice < 0) {
+      alert('올바른 가격을 입력해주세요.');
+      return;
+    }
+    onSave(parsedStock, parsedPrice);
+  };
+
   return (
     <div className="modal-backdrop" style={{ display: 'flex' }}>
       <div className="app-modal" style={{ width: '420px' }}>
@@ -497,7 +511,10 @@ const OverrideModal: React.FC<OverrideModalProps> = ({ date, initialStock, initi
             min={0}
             max={30}
             value={stock}
-            onChange={(e) => setStock(Number(e.target.value))}
+            onChange={(e) => {
+              const val = parseInt(e.target.value, 10);
+              setStock(isNaN(val) ? 0 : val);
+            }}
             style={{ width: '100%' }}
           />
         </div>
@@ -505,13 +522,21 @@ const OverrideModal: React.FC<OverrideModalProps> = ({ date, initialStock, initi
           <label className="form-label">하루당 요금 (KRW)</label>
           <input
             type="number"
-            value={price}
-            onChange={(e) => setPrice(Number(e.target.value))}
+            value={isNaN(price) ? '' : price}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === '') {
+                setPrice(NaN);
+              } else {
+                const parsed = parseInt(val, 10);
+                if (!isNaN(parsed)) setPrice(parsed);
+              }
+            }}
             className="form-input"
           />
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
-          <button type="button" onClick={() => onSave(stock, price)} className="btn-primary" style={{ flex: 1 }}>
+          <button type="button" onClick={handleSave} className="btn-primary" style={{ flex: 1 }}>
             적용하기
           </button>
           <button type="button" onClick={onClose} className="btn-secondary" style={{ flex: 1 }}>
