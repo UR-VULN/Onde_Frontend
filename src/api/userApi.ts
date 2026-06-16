@@ -75,7 +75,7 @@ export const fetch_member_me_api = async (): Promise<{
   data: MemberMeDto;
   message: string;
 }> => {
-  const raw = await userAxios.get('/api/v1/members/me');
+  const raw = await userAxios.get('/api/v1/members/me/profile');
   return unwrapApi<MemberMeDto>(raw);
 };
 
