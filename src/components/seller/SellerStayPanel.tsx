@@ -10,6 +10,14 @@ import {
 } from '@/api/sellerApi';
 import { SellerMonthYearSelect } from '@/components/seller/SellerMonthYearSelect';
 import { getDefaultYearMonthValue, parseYearMonthValue } from '@/utils/calendarUtils';
+import { TRAVEL_DESTINATIONS } from '@/constants/travelDestinations';
+
+const STAY_LOCATION_OPTIONS = TRAVEL_DESTINATIONS.flatMap((c) =>
+  c.cities.map((city) => ({
+    label: `${city} (${c.label})`,
+    value: `${city}, ${c.value}`,
+  }))
+).sort((a, b) => a.label.localeCompare(b.label, 'ko'));
 
 export const SellerStayPanel: React.FC = () => {
   const { addToast } = useTravelStore();
@@ -29,10 +37,10 @@ export const SellerStayPanel: React.FC = () => {
     description: '',
     category: '호텔',
     location: '',
-    businessLicense: '',
+    businessLicense: 'LIC-00000',
     latitude: undefined,
     longitude: undefined,
-    rooms: [{ name: '스탠다드룸', capacity: 2, baseCapacity: 2, extraPersonFee: 30000 }],
+    rooms: [{ name: '', capacity: 2, baseCapacity: 2, extraPersonFee: 20000 }],
   });
 
   const reset_register_form = () => {
@@ -41,10 +49,10 @@ export const SellerStayPanel: React.FC = () => {
       description: '',
       category: '호텔',
       location: '',
-      businessLicense: '',
+      businessLicense: 'LIC-00000',
       latitude: undefined,
       longitude: undefined,
-      rooms: [{ name: '스탠다드룸', capacity: 2, baseCapacity: 2, extraPersonFee: 30000 }],
+      rooms: [{ name: '', capacity: 2, baseCapacity: 2, extraPersonFee: 20000 }],
     });
     setThumbnailFile(null);
     if (thumbnailPreview) {
@@ -372,13 +380,19 @@ export const SellerStayPanel: React.FC = () => {
 
               <div className="form-group">
                 <label className="form-label">위치 *</label>
-                <input
+                <select
                   className="form-input"
                   value={registerForm.location}
                   onChange={(e) => setRegisterForm((prev) => ({ ...prev, location: e.target.value }))}
-                  placeholder="예: 제주시 애월읍"
                   required
-                />
+                >
+                  <option value="">위치(도시)를 선택하세요</option>
+                  {STAY_LOCATION_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="grid-2" style={{ marginBottom: '1rem' }}>
@@ -451,50 +465,6 @@ export const SellerStayPanel: React.FC = () => {
                   onChange={(e) => setRegisterForm((prev) => ({ ...prev, description: e.target.value }))}
                   placeholder="숙소 특징과 편의시설을 입력해주세요."
                 />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">사업자등록번호</label>
-                <input
-                  className="form-input"
-                  value={registerForm.businessLicense}
-                  onChange={(e) => setRegisterForm((prev) => ({ ...prev, businessLicense: e.target.value }))}
-                  placeholder="000-00-00000"
-                />
-              </div>
-
-              <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
-                <h4 style={{ fontWeight: 800, marginBottom: '0.75rem', fontSize: '0.95rem' }}>대표 객실 정보</h4>
-                <div className="grid-2">
-                  <div className="form-group">
-                    <label className="form-label">객실명</label>
-                    <input
-                      className="form-input"
-                      value={registerForm.rooms[0]?.name ?? ''}
-                      onChange={(e) =>
-                        setRegisterForm((prev) => ({
-                          ...prev,
-                          rooms: [{ ...prev.rooms[0], name: e.target.value }],
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">기준 인원</label>
-                    <input
-                      type="number"
-                      min={1}
-                      className="form-input"
-                      value={registerForm.rooms[0]?.baseCapacity ?? 2}
-                      onChange={(e) =>
-                        setRegisterForm((prev) => ({
-                          ...prev,
-                          rooms: [{ ...prev.rooms[0], baseCapacity: Number(e.target.value), capacity: Number(e.target.value) }],
-                        }))
-                      }
-                    />
-                  </div>
-                </div>
               </div>
 
               <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '1rem' }}>

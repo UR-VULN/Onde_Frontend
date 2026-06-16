@@ -402,6 +402,8 @@ export interface SellerCarRegisterPayload {
   modelName: string;
   carType: string;
   dailyPrice: number;
+  location?: string;
+  thumbnailFile?: File | null;
 }
 
 export const register_seller_accommodation_api = async (
@@ -418,8 +420,8 @@ export const register_seller_accommodation_api = async (
     form.append('description', payload.description);
     form.append('category', payload.category);
     form.append('location', payload.location);
-    form.append('businessLicense', payload.businessLicense);
-    form.append('rooms', JSON.stringify(payload.rooms));
+    if (payload.businessLicense) form.append('businessLicense', payload.businessLicense);
+    if (payload.rooms) form.append('rooms', JSON.stringify(payload.rooms));
     if (payload.latitude != null) form.append('latitude', String(payload.latitude));
     if (payload.longitude != null) form.append('longitude', String(payload.longitude));
 
@@ -439,7 +441,24 @@ export const register_seller_accommodation_api = async (
 export const register_seller_car_api = async (
   payload: SellerCarRegisterPayload
 ): Promise<{ success: boolean; message: string; data: number | null }> => {
-  const raw = await sellerAxios.post('/api/v1/seller/cars', payload);
+  if (payload.thumbnailFile) {
+    const form = new FormData();
+    form.append('thumbnail', payload.thumbnailFile);
+    form.append('licensePlate', payload.licensePlate);
+    form.append('modelName', payload.modelName);
+    form.append('carType', payload.carType);
+    form.append('dailyPrice', String(payload.dailyPrice));
+    if (payload.location) form.append('location', payload.location);
+
+    const raw = await sellerAxios.post('/api/v1/seller/cars', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    const res = unwrapApi<number>(raw);
+    return { success: res.success, message: res.message, data: res.data ?? null };
+  }
+
+  const { thumbnailFile: _thumbnailFile, ...jsonPayload } = payload;
+  const raw = await sellerAxios.post('/api/v1/seller/cars', jsonPayload);
   const res = unwrapApi<number>(raw);
   return { success: res.success, message: res.message, data: res.data ?? null };
 };

@@ -11,6 +11,7 @@ import {
 } from '@/api/sellerApi';
 import { SellerMonthYearSelect } from '@/components/seller/SellerMonthYearSelect';
 import { getDefaultYearMonthValue, parseYearMonthValue } from '@/utils/calendarUtils';
+import { CAR_RENTAL_CITIES } from '@/constants/carRentalCities';
 import {
   distributeStockAcrossVehicles,
   fetchMergedCarGroupCalendar,
@@ -33,12 +34,30 @@ export const SellerCarPanel: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [registerSubmitting, setRegisterSubmitting] = useState(false);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [registerForm, setRegisterForm] = useState<SellerCarRegisterPayload>({
     licensePlate: '',
     modelName: '',
     carType: 'SUV',
     dailyPrice: 75000,
+    location: '제주',
   });
+
+  const reset_register_form = () => {
+    setRegisterForm({
+      licensePlate: '',
+      modelName: '',
+      carType: 'SUV',
+      dailyPrice: 75000,
+      location: '제주',
+    });
+    setThumbnailFile(null);
+    if (thumbnailPreview) {
+      URL.revokeObjectURL(thumbnailPreview);
+    }
+    setThumbnailPreview(null);
+  };
 
   const loadInventory = useCallback(async () => {
     setLoading(true);
@@ -72,6 +91,15 @@ export const SellerCarPanel: React.FC = () => {
     }
   }, [selectedGroup, year, month, loadCalendar]);
 
+  const handle_thumbnail_change = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    if (thumbnailPreview) {
+      URL.revokeObjectURL(thumbnailPreview);
+    }
+    setThumbnailFile(file);
+    setThumbnailPreview(file ? URL.createObjectURL(file) : null);
+  };
+
   const handle_register_submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!registerForm.licensePlate.trim() || !registerForm.modelName.trim()) {
@@ -81,11 +109,14 @@ export const SellerCarPanel: React.FC = () => {
 
     setRegisterSubmitting(true);
     try {
-      const res = await register_seller_car_api(registerForm);
+      const res = await register_seller_car_api({
+        ...registerForm,
+        thumbnailFile,
+      });
       if (res.success) {
         addToast(res.message || '렌터카 등록 신청이 완료되었습니다. 관리자 승인 후 노출됩니다.', 'success');
         setIsRegisterOpen(false);
-        setRegisterForm({ licensePlate: '', modelName: '', carType: 'SUV', dailyPrice: 75000 });
+        reset_register_form();
         await loadInventory();
         return;
       }
@@ -356,6 +387,22 @@ export const SellerCarPanel: React.FC = () => {
               </div>
 
               <div className="form-group">
+                <label className="form-label">위치 *</label>
+                <select
+                  className="form-input"
+                  value={registerForm.location}
+                  onChange={(e) => setRegisterForm((prev) => ({ ...prev, location: e.target.value }))}
+                  required
+                >
+                  {CAR_RENTAL_CITIES.map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
                 <label className="form-label">기본 일일 대여 요금 (원)</label>
                 <input
                   type="number"
@@ -365,6 +412,30 @@ export const SellerCarPanel: React.FC = () => {
                   value={registerForm.dailyPrice}
                   onChange={(e) => setRegisterForm((prev) => ({ ...prev, dailyPrice: Number(e.target.value) }))}
                 />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">대표 사진</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="form-input"
+                  onChange={handle_thumbnail_change}
+                />
+                {thumbnailPreview && (
+                  <img
+                    src={thumbnailPreview}
+                    alt="차량 미리보기"
+                    style={{
+                      marginTop: '0.75rem',
+                      width: '100%',
+                      maxHeight: '180px',
+                      objectFit: 'cover',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-color)',
+                    }}
+                  />
+                )}
               </div>
 
               <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
