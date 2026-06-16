@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
 import { fetch_member_me_api, type ProfileUpdatePayload } from '@/api/userApi';
 import { update_seller_profile_api } from '@/api/sellerApi';
+import { persistAuthSession, getAccessToken, getRefreshToken, getMemberId, getMemberRole, getUsername } from '@/utils/authCookies';
 
 export const SellerProfilePanel: React.FC = () => {
   const { addToast } = useTravelStore();
@@ -65,6 +66,21 @@ export const SellerProfilePanel: React.FC = () => {
       const res = await update_seller_profile_api(payload);
       if (res.success) {
         addToast('프로필 정보가 성공적으로 수정되었습니다.', 'success');
+        
+        // Update store state
+        useTravelStore.setState({ name: name.trim(), nickname: nickname.trim() });
+        
+        // Update cookies
+        persistAuthSession({
+          accessToken: getAccessToken() || '',
+          refreshToken: getRefreshToken() || '',
+          memberId: getMemberId() || 0,
+          role: getMemberRole() || '',
+          username: getUsername() || '',
+          name: name.trim(),
+          nickname: nickname.trim(),
+        });
+
         setPassword(''); // 저장 후 비밀번호 필드 초기화
       } else {
         addToast(res.message || '프로필 수정에 실패했습니다.', 'warning');
