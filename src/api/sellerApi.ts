@@ -535,3 +535,11 @@ export const register_seller_flight_api = async (
   const res = unwrapApi<unknown>(raw);
   return { success: res.success, message: res.message };
 };
+
+/** 판매자 개인 프로필 수정 (계정 정보) */
+export const update_seller_profile_api = async (
+  payload: any
+): Promise<{ success: boolean; data: any; message: string }> => {
+  const raw = await sellerAxios.patch('/api/v1/seller/profile', payload);
+  return unwrapApi<any>(raw);
+};

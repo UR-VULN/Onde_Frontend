@@ -5,10 +5,11 @@ import { SellerStayPanel } from '@/components/seller/SellerStayPanel';
 import { SellerCarPanel } from '@/components/seller/SellerCarPanel';
 import { SellerStatPanel } from '@/components/seller/SellerStatPanel';
 import { SellerAccountPanel } from '@/components/seller/SellerAccountPanel';
+import { SellerProfilePanel } from '@/components/seller/SellerProfilePanel';
 import { SellerSchedulePanel } from '@/components/flight/SellerSchedulePanel';
 import { BackOfficeLayout } from '@/components/layout/BackOfficeLayout';
 
-type SellerTab = 'dashboard' | 'stay' | 'car' | 'flight' | 'stat' | 'account';
+type SellerTab = 'dashboard' | 'stay' | 'car' | 'flight' | 'stat' | 'account' | 'profile';
 
 const SIDEBAR_ITEMS = [
   { id: 'dashboard', icon: 'fa-solid fa-chart-line',      label: '종합 대시보드'      },
@@ -17,6 +18,7 @@ const SIDEBAR_ITEMS = [
   { id: 'flight',    icon: 'fa-solid fa-plane',           label: '항공 상품'          },
   { id: 'stat',      icon: 'fa-solid fa-money-bill-wave', label: '정산 대금 관리'   },
   { id: 'account',   icon: 'fa-solid fa-id-card',         label: '계정 및 계좌 설정'   },
+  { id: 'profile',   icon: 'fa-solid fa-user-gear',       label: '프로필 관리 및 설정' },
 ];
 
 export const SellerPage: React.FC = () => {
@@ -31,6 +33,7 @@ export const SellerPage: React.FC = () => {
       case 'flight':    return <SellerSchedulePanel />;
       case 'stat':      return <SellerStatPanel />;
       case 'account':   return <SellerAccountPanel />;
+      case 'profile':   return <SellerProfilePanel />;
       default:          return <SellerDashboardPanel onTabChange={(tab) => setActiveTab(tab as SellerTab)} />;
     }
   };
