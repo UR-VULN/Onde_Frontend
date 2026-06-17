@@ -21,6 +21,7 @@ export interface AccommodationDto {
   thumbnailUrl: string;
   minPrice: number;
   availableRooms?: number;
+  description?: string;
 }
 
 export interface AccommodationSearchResponse {
@@ -70,6 +71,7 @@ interface BackendAccommodationItem {
   thumbnailUrl: string;
   minPrice: number;
   availableRooms?: number;
+  description?: string;
 }
 
 function mapBackendItem(item: BackendAccommodationItem): AccommodationDto {
@@ -83,6 +85,7 @@ function mapBackendItem(item: BackendAccommodationItem): AccommodationDto {
     thumbnailUrl,
     minPrice: item.minPrice ?? 0,
     availableRooms: item.availableRooms,
+    description: item.description,
   };
 }
 
@@ -119,7 +122,7 @@ function mapAccommodationToStayDto(item: AccommodationDto): StayDto {
     location: item.location,
     city,
     country,
-    description: item.name,
+    description: item.description || item.name,
     ...(imageUrl ? { imageUrl } : {}),
     ...(item.minPrice > 0 ? { pricePerNight: item.minPrice } : {}),
     tags: [item.category],

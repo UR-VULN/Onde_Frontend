@@ -37,7 +37,7 @@ export const formatDate = (dateStr: string) => {
     if (parts.length === 3) {
       return `${parts[0]}. ${parts[1]}. ${parts[2]}`;
     }
-  } catch (e) {
+  } catch {
     // fallback
   }
   return dateStr;

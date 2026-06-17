@@ -149,7 +149,7 @@ export const useAuthForm = () => {
       expiresIn: data.expiresIn,
     });
 
-    let profile = { mileage: 0, membershipGrade: 'ADMIN' };
+    const profile = { mileage: 0, membershipGrade: 'ADMIN' };
 
     finishLogin(email, data.role, data.memberId, profile, '관리자', 'Admin', options);
     return true;

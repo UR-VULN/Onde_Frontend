@@ -398,6 +398,23 @@ export const StayDetailModal: React.FC<StayDetailModalProps> = ({
         {/* ── Scrollable Body ── */}
         <div style={{ overflowY: 'auto', flex: 1, paddingRight: '0.4rem', marginBottom: '0.8rem' }}>
 
+          {/* Description */}
+          {stay.description && (
+            <div style={{
+              fontSize: '0.82rem',
+              color: '#4a4a4a',
+              lineHeight: 1.55,
+              marginBottom: '1rem',
+              padding: '0.85rem 1rem',
+              background: '#f8f9fa',
+              borderRadius: '12px',
+              border: '1px solid #e9ecef',
+              whiteSpace: 'pre-wrap',
+            }}>
+              {stay.description}
+            </div>
+          )}
+
           {/* Date Banner */}
           <div style={{
             background: 'linear-gradient(135deg, rgba(0,92,230,0.04) 0%, rgba(255,90,95,0.04) 100%)',

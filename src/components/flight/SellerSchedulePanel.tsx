@@ -31,7 +31,7 @@ export const SellerSchedulePanel: React.FC = () => {
       'LHR', 'NRT', 'PUS', 'PVG', 'SIN', 'SYD', 'TAE', 'TPE'
     ];
     const dbAirports = routes.flatMap((r) => {
-      const parts = r.name.split(/[➡️\- >]+/);
+      const parts = r.name.split(/➡️|[- >]+/);
       return [parts[0]?.trim(), parts[1]?.trim()].filter(Boolean);
     });
     return Array.from(new Set([...defaultAirports, ...dbAirports])).sort();
@@ -120,7 +120,7 @@ export const SellerSchedulePanel: React.FC = () => {
     if (selectedRouteId && routes.length > 0) {
       const activeRoute = routes.find(r => r.propertyId === selectedRouteId);
       if (activeRoute) {
-        const parts = activeRoute.name.split(/[➡️\- >]+/);
+        const parts = activeRoute.name.split(/➡️|[- >]+/);
         if (parts.length >= 2) {
           const departure = parts[0].trim();
           const arrival = parts[1].trim();

@@ -50,8 +50,17 @@ const OAuth2RedirectHandler: React.FC = () => {
   return <div className="flex h-screen items-center justify-center">로그인 처리 중입니다...</div>;
 };
 
+const isAdminDomain = (host: string, pathname: string) => {
+  if (host === 'localhost' || host === '127.0.0.1') {
+    return pathname.startsWith('/admin');
+  }
+  return host.startsWith('admin.') || host.includes('admin');
+};
+
 const App: React.FC = () => {
   const { pathname } = useLocation();
+  const host = window.location.hostname;
+  const isHoldingAdmin = isAdminDomain(host, pathname);
 
   if (isErrorPagePath(pathname)) {
     return (
@@ -65,6 +74,46 @@ const App: React.FC = () => {
     );
   }
 
+  // 관리자 전용 도메인 (또는 로컬 개발 환경에서 /admin 접근 시)
+  if (isHoldingAdmin) {
+    return (
+      <>
+        <Routes>
+          {/* 어드민 도메인의 루트(/) 접속 시 관리자 페이지로 이동 (비로그인 시 /admin/login으로 자동 리다이렉트) */}
+          <Route
+            path="/"
+            element={
+              <RequireRole guard="admin">
+                <AdminPage />
+              </RequireRole>
+            }
+          />
+          <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route
+            path="/admin/settlement"
+            element={
+              <RequireRole guard="admin">
+                <AdminPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <RequireRole guard="admin">
+                <AdminPage />
+              </RequireRole>
+            }
+          />
+          {ERROR_ROUTES}
+          <Route path="*" element={<Navigate to="/404" replace />} />
+        </Routes>
+        <AppOverlays />
+      </>
+    );
+  }
+
+  // 일반 도메인 (사용자 및 판매자)
   return (
     <>
       <Routes>
@@ -118,27 +167,9 @@ const App: React.FC = () => {
           }
         />
 
-        {/* 관리자 포탈 — URL + 역할 가드 */}
-        <Route path="/admin/login" element={<AdminLoginPage />} />
-        <Route
-          path="/admin/settlement"
-          element={
-            <RequireRole guard="admin">
-              <AdminPage />
-            </RequireRole>
-          }
-        />
-        <Route
-          path="/admin"
-          element={
-            <RequireRole guard="admin">
-              <AdminPage />
-            </RequireRole>
-          }
-        />
-
         {ERROR_ROUTES}
 
+        {/* 일반 도메인에서는 관리자 라우트가 차단되어 404로 이동하게 됨 */}
         <Route path="*" element={<Navigate to="/404" replace />} />
       </Routes>
 
