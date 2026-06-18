@@ -23,6 +23,25 @@ export const AdminLoginPage: React.FC = () => {
     handleAdminLogin(email, password);
   };
 
+  const handleGoToMain = () => {
+    // 세션 및 쿠키를 깨끗하게 비워서 일반 메인 홈 진입 시 다시 어드민으로 리다이렉트되는 현상을 방지
+    const { logout } = useTravelStore.getState();
+    logout();
+
+    const host = window.location.hostname;
+    const protocol = window.location.protocol;
+    const port = window.location.port ? `:${window.location.port}` : '';
+
+    // 서브도메인이 admin.으로 시작하는 경우 (배포 환경)
+    if (host.startsWith('admin.')) {
+      const mainHost = host.replace(/^admin\./, '');
+      window.location.href = `${protocol}//${mainHost}${port}`;
+    } else {
+      // 일반 도메인이거나 로컬 개발 환경인 경우
+      window.location.href = '/';
+    }
+  };
+
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-[#f7f9fa] font-main relative">
       {/* Background Accents to add depth without clutter */}
@@ -114,7 +133,7 @@ export const AdminLoginPage: React.FC = () => {
         <div className="text-center mt-6">
           <button
             type="button"
-            onClick={() => navigate('/')}
+            onClick={handleGoToMain}
             className="text-xs font-black text-slate-400 hover:text-slate-600 transition-colors"
           >
             <i className="fa-solid fa-arrow-left mr-1.5"></i> 일반 서비스 메인 홈으로
