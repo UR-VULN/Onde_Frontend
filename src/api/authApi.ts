@@ -59,13 +59,42 @@ export interface TokenRefreshResponse {
 }
 
 export const login_api = async (body: LoginRequest): Promise<LoginResponse> => {
-  const raw = await userAxios.post('/api/v1/auth/login', body);
-  return unwrapApi<LoginResponse>(raw).data;
+  const response = await fetch('/user-api/api/v1/auth/login', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', 
+    body: JSON.stringify(body),
+  });
+
+  const data = await response.json();
+
+  // 상태 코드가 200번대(정상)가 아닐 경우 백엔드가 준 에러 원본 객체를 그대로 던짐
+  if (!response.ok) {
+    throw data;
+  }
+
+  return data.data;
 };
 
 export const admin_login_api = async (body: LoginRequest): Promise<LoginResponse> => {
-  const raw = await userAxios.post('/api/v1/auth/admin/login', body);
-  return unwrapApi<LoginResponse>(raw).data;
+  const response = await fetch('/user-api/api/v1/auth/admin/login', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(body),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw data;
+  }
+
+  return data.data;
 };
 
 export const signup_api = async (body: SignupRequest): Promise<string> => {

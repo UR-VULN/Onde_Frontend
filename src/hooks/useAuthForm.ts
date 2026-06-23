@@ -52,13 +52,11 @@ export const useAuthForm = () => {
     options?: { successToast?: string; showWelcomePopup?: boolean }
   ): Promise<boolean> => {
     const data = await login_api({ email, password });
-    if (!data?.accessToken) {
+    if (!data || !data.memberId) {
       return false;
     }
 
     persistAuthSession({
-      accessToken: data.accessToken,
-      refreshToken: data.refreshToken,
       memberId: data.memberId,
       role: data.role,
       username: email,
@@ -78,8 +76,6 @@ export const useAuthForm = () => {
     }
 
     persistAuthSession({
-      accessToken: data.accessToken,
-      refreshToken: data.refreshToken,
       memberId: data.memberId,
       role: data.role,
       username: email,
@@ -118,9 +114,12 @@ export const useAuthForm = () => {
         addToast('로그인에 실패했습니다.', 'warning');
       }
     } catch (err: unknown) {
+      const errorObj = err as any;
       const msg =
-        (err as { message?: string })?.message ||
-        (err as { error?: { message?: string } })?.error?.message ||
+        errorObj?.error?.systemMessage ||                 // 0순위: fetch로 받은 순수 JSON 에러 원본 
+        errorObj?.response?.data?.error?.systemMessage || // 1순위: Axios 에러 형태 대응
+        errorObj?.response?.data?.message ||              // 2순위: 백엔드 기본 메시지
+        errorObj?.message ||                              // 3순위: 네트워크 에러 등
         '이메일 또는 비밀번호가 올바르지 않습니다.';
       addToast(msg, 'warning');
     } finally {
@@ -134,13 +133,12 @@ export const useAuthForm = () => {
     options?: { successToast?: string }
   ): Promise<boolean> => {
     const data = await admin_login_api({ email, password });
-    if (!data?.accessToken) {
+    
+    if (!data || !data.memberId) {
       return false;
     }
 
     persistAuthSession({
-      accessToken: data.accessToken,
-      refreshToken: data.refreshToken,
       memberId: data.memberId,
       role: data.role,
       username: email,
@@ -171,9 +169,12 @@ export const useAuthForm = () => {
         addToast('로그인에 실패했습니다.', 'warning');
       }
     } catch (err: unknown) {
+      const errorObj = err as any;
       const msg =
-        (err as { message?: string })?.message ||
-        (err as { error?: { message?: string } })?.error?.message ||
+        errorObj?.error?.systemMessage ||
+        errorObj?.response?.data?.error?.systemMessage ||
+        errorObj?.response?.data?.message ||
+        errorObj?.message ||
         '이메일 또는 비밀번호가 올바르지 않습니다.';
       addToast(msg, 'warning');
     } finally {
