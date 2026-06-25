@@ -52,13 +52,13 @@ export const useAuthForm = () => {
     options?: { successToast?: string; showWelcomePopup?: boolean }
   ): Promise<boolean> => {
     const data = await login_api({ email, password });
-    if (!data?.accessToken) {
+    if (!data?.memberId) {
       return false;
     }
 
     persistAuthSession({
-      accessToken: data.accessToken,
-      refreshToken: data.refreshToken,
+      accessToken: data.accessToken || '',
+      refreshToken: data.refreshToken || '',
       memberId: data.memberId,
       role: data.role,
       username: email,
@@ -78,8 +78,8 @@ export const useAuthForm = () => {
     }
 
     persistAuthSession({
-      accessToken: data.accessToken,
-      refreshToken: data.refreshToken,
+      accessToken: data.accessToken || '',
+      refreshToken: data.refreshToken || '',
       memberId: data.memberId,
       role: data.role,
       username: email,
@@ -134,13 +134,13 @@ export const useAuthForm = () => {
     options?: { successToast?: string }
   ): Promise<boolean> => {
     const data = await admin_login_api({ email, password });
-    if (!data?.accessToken) {
+    if (!data?.memberId) {
       return false;
     }
 
     persistAuthSession({
-      accessToken: data.accessToken,
-      refreshToken: data.refreshToken,
+      accessToken: data.accessToken || '',
+      refreshToken: data.refreshToken || '',
       memberId: data.memberId,
       role: data.role,
       username: email,

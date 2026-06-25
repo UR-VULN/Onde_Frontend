@@ -121,11 +121,19 @@ export const useTravelStore = create<TravelState>((set) => ({
       membershipGrade: profile.membershipGrade,
     }),
 
-  logout: (options) => {
+  logout: async (options) => {
     const redirectTo = options?.redirectTo;
     if (redirectTo) {
       setPostLogoutRedirect(redirectTo);
     }
+    
+    try {
+      const { logout_api } = await import('@/api/authApi');
+      await logout_api();
+    } catch (err) {
+      console.warn('Server logout failed:', err);
+    }
+
     clearAllAuthCookies();
     set({
       isLoggedIn: false,
@@ -141,6 +149,7 @@ export const useTravelStore = create<TravelState>((set) => ({
       window.location.replace(redirectTo);
     }
   },
+
 
   addToast: (message, type = 'success') =>
     set((state) => {

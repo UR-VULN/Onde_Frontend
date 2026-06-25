@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
 import { fetch_member_me_api, type ProfileUpdatePayload } from '@/api/userApi';
 import { update_seller_profile_api } from '@/api/sellerApi';
-import { persistAuthSession, getAccessToken, getRefreshToken, getMemberId, getMemberRole, getUsername } from '@/utils/authCookies';
+import { persistAuthSession, getMemberId, getMemberRole, getUsername } from '@/utils/authCookies';
+
 
 export const SellerProfilePanel: React.FC = () => {
   const { addToast } = useTravelStore();
@@ -72,14 +73,13 @@ export const SellerProfilePanel: React.FC = () => {
         
         // Update cookies
         persistAuthSession({
-          accessToken: getAccessToken() || '',
-          refreshToken: getRefreshToken() || '',
           memberId: getMemberId() || 0,
           role: getMemberRole() || '',
           username: getUsername() || '',
           name: name.trim(),
           nickname: nickname.trim(),
         });
+
 
         setPassword(''); // 저장 후 비밀번호 필드 초기화
       } else {

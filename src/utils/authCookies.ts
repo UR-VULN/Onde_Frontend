@@ -1,15 +1,13 @@
 /**
- * 인증 정보 쿠키 저장소
+ * 인증 정보 저장소 (Session Storage 활용)
  *
- * - 로그인 응답 JWT를 쿠키에 저장 후 Bearer 헤더로 전송
- * - 실서버 권장: Spring이 HttpOnly + Secure Set-Cookie → axios `withCredentials: true`만 사용
- *   (HttpOnly는 JS에서 읽을 수 없으므로 프론트 setAccessToken은 제거)
+ * - 중요 토큰(JWT)은 Spring 백엔드가 발급하는 HttpOnly + Secure 쿠키에만 의존하며,
+ *   axios `withCredentials: true` 설정을 통해 자동으로 전송되므로 JS 레벨에서 다루지 않습니다.
+ * - UI 및 회원 인증 확인용 비민감 메타데이터(memberId, role 등)는 sessionStorage를 통해 관리합니다.
  */
 import { useTravelStore } from '@/store/useTravelStore';
 
-const NAMES = {
-  ACCESS: 'onde_access_token',
-  REFRESH: 'onde_refresh_token',
+const STORAGE_KEYS = {
   MEMBER_ID: 'onde_member_id',
   ROLE: 'onde_member_role',
   USERNAME: 'onde_username',
@@ -17,75 +15,44 @@ const NAMES = {
   NICKNAME: 'onde_nickname',
 } as const;
 
-const LEGACY_NAMES = {
-  ACCESS: 'accessToken',
-  REFRESH: 'refreshToken',
-} as const;
-
-const DEFAULT_ACCESS_MAX_AGE = 60 * 60 * 24 * 7; // 7일
-const REFRESH_MAX_AGE = 60 * 60 * 24 * 30; // 30일
-const META_MAX_AGE = 60 * 60 * 24 * 30;
-
-function cookieFlags(maxAge?: number): string {
-  const parts = ['path=/', 'SameSite=Lax'];
-  if (maxAge != null) parts.push(`max-age=${maxAge}`);
-  if (import.meta.env.PROD && window.location.protocol === 'https:') parts.push('Secure');
-  return parts.join('; ');
-}
-
-function setCookie(name: string, value: string, maxAge?: number): void {
-  document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; ${cookieFlags(maxAge)}`;
-}
-
-function getCookie(name: string): string | null {
-  const escaped = encodeURIComponent(name).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const match = document.cookie.match(new RegExp(`(?:^|; )${escaped}=([^;]*)`));
-  return match ? decodeURIComponent(match[1]) : null;
-}
-
-function deleteCookie(name: string): void {
-  document.cookie = `${encodeURIComponent(name)}=; path=/; max-age=0; SameSite=Lax`;
-}
-
 export function getAccessToken(): string | null {
-  return getCookie(NAMES.ACCESS) ?? getCookie(LEGACY_NAMES.ACCESS);
+  return null; // HttpOnly 쿠키는 JS에서 읽을 수 없습니다.
 }
 
 export function getRefreshToken(): string | null {
-  return getCookie(NAMES.REFRESH) ?? getCookie(LEGACY_NAMES.REFRESH);
+  return null; // HttpOnly 쿠키는 JS에서 읽을 수 없습니다.
 }
 
 export function getMemberId(): number | null {
-  const raw = getCookie(NAMES.MEMBER_ID);
+  const raw = sessionStorage.getItem(STORAGE_KEYS.MEMBER_ID);
   if (!raw) return null;
   const id = Number(raw);
   return Number.isFinite(id) ? id : null;
 }
 
 export function getMemberRole(): string | null {
-  return getCookie(NAMES.ROLE);
+  return sessionStorage.getItem(STORAGE_KEYS.ROLE);
 }
 
 export function getUsername(): string | null {
-  return getCookie(NAMES.USERNAME);
+  return sessionStorage.getItem(STORAGE_KEYS.USERNAME);
 }
 
 export function getName(): string | null {
-  return getCookie(NAMES.NAME);
+  return sessionStorage.getItem(STORAGE_KEYS.NAME);
 }
 
 export function getNickname(): string | null {
-  return getCookie(NAMES.NICKNAME);
+  return sessionStorage.getItem(STORAGE_KEYS.NICKNAME);
 }
 
 export function hasAuthSession(): boolean {
-  // 🛡️ HttpOnly 쿠키는 JS에서 읽을 수 없으므로, 메타데이터 쿠키 존재 여부로 세션 확인
   return !!(getMemberId() && getMemberRole() && getUsername());
 }
 
 export interface PersistAuthPayload {
-  accessToken: string;
-  refreshToken: string;
+  accessToken?: string;
+  refreshToken?: string;
   memberId: number;
   role: string;
   username: string;
@@ -94,30 +61,28 @@ export interface PersistAuthPayload {
   expiresIn?: number;
 }
 
-/** 로그인 성공 시 쿠키 + 스토어 동기화 */
-export function updateAccessToken(accessToken: string, expiresIn?: number): void {
-  const accessMaxAge = expiresIn && expiresIn > 0 ? expiresIn : DEFAULT_ACCESS_MAX_AGE;
-  deleteCookie(LEGACY_NAMES.ACCESS);
-  setCookie(NAMES.ACCESS, accessToken, accessMaxAge);
+export function updateAccessToken(_accessToken: string, _expiresIn?: number): void {
+  // Access Token은 백엔드에서 HttpOnly Set-Cookie 헤더로 갱신되므로 프론트엔드 직접 저장은 불필요합니다.
 }
 
-export function persistAuthSession(payload: PersistAuthPayload): void {
-  const accessMaxAge = payload.expiresIn && payload.expiresIn > 0 ? payload.expiresIn : DEFAULT_ACCESS_MAX_AGE;
 
-  deleteCookie(LEGACY_NAMES.ACCESS);
-  deleteCookie(LEGACY_NAMES.REFRESH);
-  setCookie(NAMES.ACCESS, payload.accessToken, accessMaxAge);
-  setCookie(NAMES.REFRESH, payload.refreshToken, REFRESH_MAX_AGE);
-  setCookie(NAMES.MEMBER_ID, String(payload.memberId), META_MAX_AGE);
-  setCookie(NAMES.ROLE, payload.role, META_MAX_AGE);
-  setCookie(NAMES.USERNAME, payload.username, META_MAX_AGE);
-  setCookie(NAMES.NAME, payload.name ?? '', META_MAX_AGE);
-  setCookie(NAMES.NICKNAME, payload.nickname ?? '', META_MAX_AGE);
+export function persistAuthSession(payload: PersistAuthPayload): void {
+  sessionStorage.setItem(STORAGE_KEYS.MEMBER_ID, String(payload.memberId));
+  sessionStorage.setItem(STORAGE_KEYS.ROLE, payload.role);
+  sessionStorage.setItem(STORAGE_KEYS.USERNAME, payload.username);
+  sessionStorage.setItem(STORAGE_KEYS.NAME, payload.name ?? '');
+  sessionStorage.setItem(STORAGE_KEYS.NICKNAME, payload.nickname ?? '');
 }
 
 export function clearAllAuthCookies(): void {
-  (Object.values(NAMES) as string[]).forEach(deleteCookie);
-  (Object.values(LEGACY_NAMES) as string[]).forEach(deleteCookie);
+  // 브라우저 자바스크립트로 구웠던 레거시 쿠키를 정리합니다.
+  const legacyCookies = ['onde_access_token', 'onde_refresh_token', 'accessToken', 'refreshToken', 'onde_member_id', 'onde_member_role', 'onde_username', 'onde_name', 'onde_nickname'];
+  legacyCookies.forEach(name => {
+    document.cookie = `${encodeURIComponent(name)}=; path=/; max-age=0; SameSite=Lax`;
+  });
+  
+  // sessionStorage 클리어
+  Object.values(STORAGE_KEYS).forEach(key => sessionStorage.removeItem(key));
 }
 
 /** 앱 부팅 시 동기 복구 (RequireAuth 레이스 방지) */
@@ -139,31 +104,20 @@ export function restoreSessionFromCookies(): boolean {
   return true;
 }
 
-/** 예전 localStorage 토큰 → 쿠키 1회 이전 */
+/** 예전 localStorage 토큰 → sessionStorage 이전 */
 export function migrateLegacyLocalStorageAuth(): void {
-  const legacyToken = localStorage.getItem('onde_auth_token');
-  if (!legacyToken || getAccessToken()) return;
-
-  const refresh = localStorage.getItem('onde_refresh_token') ?? '';
   const memberId = localStorage.getItem('onde_member_id');
   const role = localStorage.getItem('onde_member_role');
   const username = localStorage.getItem('onde_username');
 
   if (memberId && role && username) {
     persistAuthSession({
-      accessToken: legacyToken,
-      refreshToken: refresh,
       memberId: Number(memberId),
       role,
       username,
     });
-  } else {
-    setCookie(NAMES.ACCESS, legacyToken, DEFAULT_ACCESS_MAX_AGE);
-    if (refresh) setCookie(NAMES.REFRESH, refresh, REFRESH_MAX_AGE);
-    if (memberId) setCookie(NAMES.MEMBER_ID, memberId, META_MAX_AGE);
-    if (role) setCookie(NAMES.ROLE, role, META_MAX_AGE);
-    if (username) setCookie(NAMES.USERNAME, username, META_MAX_AGE);
   }
+
 
   localStorage.removeItem('onde_auth_token');
   localStorage.removeItem('onde_refresh_token');
@@ -171,3 +125,4 @@ export function migrateLegacyLocalStorageAuth(): void {
   localStorage.removeItem('onde_member_role');
   localStorage.removeItem('onde_username');
 }
+

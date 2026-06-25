@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
 import { fetch_member_me_api, update_member_profile_api, type ProfileUpdatePayload } from '@/api/userApi';
-import { persistAuthSession, getAccessToken, getRefreshToken, getMemberId, getMemberRole, getUsername } from '@/utils/authCookies';
+import { persistAuthSession, getMemberId, getMemberRole, getUsername } from '@/utils/authCookies';
+
 
 interface ProfileEditFormProps {
   onCancel: () => void;
@@ -75,14 +76,13 @@ export const ProfileEditForm: React.FC<ProfileEditFormProps> = ({ onCancel }) =>
         
         // Update cookies
         persistAuthSession({
-          accessToken: getAccessToken() || '',
-          refreshToken: getRefreshToken() || '',
           memberId: getMemberId() || 0,
           role: getMemberRole() || '',
           username: getUsername() || '',
           name: name.trim(),
           nickname: nickname.trim(),
         });
+
 
         onCancel();
       } else {

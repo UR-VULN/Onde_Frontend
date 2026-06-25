@@ -94,3 +94,8 @@ export const verify_email_code_api = async (
   const raw = await userAxios.post('/api/v1/auth/email/verify', { email, code });
   return unwrapApi<Record<string, string>>(raw).data;
 };
+
+export const logout_api = async (): Promise<void> => {
+  await userAxios.post('/api/v1/auth/logout');
+};
+
