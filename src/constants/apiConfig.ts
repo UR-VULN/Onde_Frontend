@@ -8,4 +8,4 @@ export const ADMIN_API_BASE =
 
 /** S3/MinIO 이미지 저장소 엔드포인트 */
 export const STORAGE_BASE_URL =
-  (import.meta.env.VITE_S3_ENDPOINT || 'http://localhost:9000/onde-local').replace(/\/$/, '');
+  (import.meta.env.VITE_S3_ENDPOINT || '').replace(/\/$/, '');

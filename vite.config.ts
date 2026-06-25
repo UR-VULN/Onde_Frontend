@@ -24,5 +24,22 @@ export default defineConfig({
       usePolling: true,
       interval: 100
     }
+  },
+  build: {
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+      mangle: {
+        eval: true,
+        toplevel: true
+      },
+      format: {
+        comments: false
+      }
+    }
   }
 })
+
