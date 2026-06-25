@@ -168,14 +168,8 @@ export const useAuthForm = () => {
     try {
       const ok = await establishAdminSession(email, password);
       if (!ok) {
-        addToast('로그인에 실패했습니다.', 'warning');
+        throw new Error('로그인에 실패했습니다.'); 
       }
-    } catch (err: unknown) {
-      const msg =
-        (err as { message?: string })?.message ||
-        (err as { error?: { message?: string } })?.error?.message ||
-        '이메일 또는 비밀번호가 올바르지 않습니다.';
-      addToast(msg, 'warning');
     } finally {
       setIsLoading(false);
     }

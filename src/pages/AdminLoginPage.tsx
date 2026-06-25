@@ -7,20 +7,42 @@ import { isAdminRole } from '@/utils/memberRole';
 export const AdminLoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const { isLoading, handleAdminLogin } = useAuthForm();
   const { isLoggedIn, memberRole } = useTravelStore();
   const navigate = useNavigate();
 
-  // If already logged in as admin, redirect to admin main page
   useEffect(() => {
     if (isLoggedIn && isAdminRole(memberRole)) {
       navigate('/admin', { replace: true });
     }
   }, [isLoggedIn, memberRole, navigate]);
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    handleAdminLogin(email, password);
+    setErrorMsg(null);
+
+    try {
+        await handleAdminLogin(email, password);
+    } catch (err: any) {
+      console.error("화면으로 도착한 원본 에러:", err);
+
+      // Axios 원본 객체에서 상태 코드와 메시지를 안전하게 추출
+      const status = err?.response?.status || err?.status;
+      const serverMessage = err?.response?.data?.message || err?.message || '';
+
+      // 상태 코드(403, 401)를 최우선으로 검사하고, 만약 코드가 없으면 메시지 단어로 유추합니다.
+      if (status === 403 || serverMessage.includes("잠겼")) {
+        setErrorMsg("비밀번호 5회 오류로 계정이 30분간 잠겼습니다.");
+          
+      // 백엔드가 "인증에 실패하였습니다"라고 보내더라도 401이면 무조건 아래 문구를 띄움
+      } else if (status === 401 || serverMessage.includes("틀렸") || serverMessage.includes("실패")) {
+        setErrorMsg("이메일 또는 비밀번호가 틀렸습니다.");
+          
+      } else {
+        setErrorMsg("로그인 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+      }
+    }
   };
 
   return (
@@ -48,6 +70,12 @@ export const AdminLoginPage: React.FC = () => {
               온데 백오피스 서비스 보호 구역입니다.
             </p>
           </div>
+
+          {errorMsg && (
+            <div className="bg-red-50 text-red-600 text-xs font-bold px-4 py-3 rounded-xl mb-5 text-center border border-red-100">
+              {errorMsg}
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={onSubmit} className="space-y-5" noValidate>

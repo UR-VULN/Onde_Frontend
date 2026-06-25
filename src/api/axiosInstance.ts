@@ -2,7 +2,14 @@ import axios from 'axios';
 import { refresh_token_api } from '@/api/authApi';
 import { ADMIN_API_BASE, USER_API_BASE } from '@/constants/apiConfig';
 import { clearAuthSession, hasPostLogoutRedirect } from '@/utils/authSession';
-import { getAccessToken, getMemberId, updateAccessToken } from '@/utils/authCookies';
+import { 
+  getAccessToken, 
+  getRefreshToken, 
+  persistAuthSession, 
+  getMemberId, 
+  getMemberRole, 
+  getUsername 
+} from '@/utils/authCookies';
 import { isBackofficePath, isErrorPagePath, redirectByHttpStatus } from '@/utils/errorNavigation';
 import { useTravelStore } from '@/store/useTravelStore';
 
@@ -70,10 +77,7 @@ function isRefreshable401(config: { url?: string; _retry?: boolean } | undefined
   return !url.includes('/api/v1/auth/refresh') && !url.includes('/api/v1/auth/login');
 }
 
-const finalizeResponseError = (error: {
-  response?: { status?: number; data?: unknown };
-  config?: { url?: string; skipErrorRedirect?: boolean };
-}) => {
+const finalizeResponseError = (error: any) => {
   console.error('[API ERROR INTERCEPTOR]:', error);
 
   const status = error.response?.status;
@@ -83,17 +87,17 @@ const finalizeResponseError = (error: {
 
   const suppressErrorRedirect = hasPostLogoutRedirect();
 
+  // 로그인 요청일 경우: 객체를 훼손하지 않고 원본(error) 그대로 화면으로 던짐
+  if (isLoginRequest) {
+    if (status === 401) clearAuthSession();
+    return Promise.reject(error); 
+  }
+
+  // 로그인 이외의 일반적인 API 호출 시 발생하는 에러 처리
   if (status && !onErrorPage && !error.config?.skipErrorRedirect && !suppressErrorRedirect) {
     if (status === 401) {
       clearAuthSession();
-      if (isLoginRequest) {
-        const errorData = error.response?.data;
-        return Promise.reject(
-          errorData || { success: false, error: { message: '이메일 또는 비밀번호가 올바르지 않습니다.' } }
-        );
-      }
-    }
-    if (status === 403) {
+    } else if (status === 403) {
       useTravelStore.getState().addToast('해당 기능을 수행할 권한이 없습니다.', 'warning');
       if (!isBackofficePath(window.location.pathname)) {
         redirectByHttpStatus(status);
@@ -110,14 +114,11 @@ const finalizeResponseError = (error: {
 };
 
 const createAuthAwareErrorHandler = (instance: typeof userAxios) => {
-  return async (error: {
-    response?: { status?: number; data?: unknown };
-    config?: { url?: string; _retry?: boolean; headers: Record<string, string>; skipErrorRedirect?: boolean };
-  }) => {
+  return async (error: any) => {
     const status = error.response?.status;
     const config = error.config;
 
-    if (status === 401 && isRefreshable401(config) && getMemberId()) {
+    if (status === 401 && isRefreshable401(config) && getAccessToken()) {
       if (isRefreshing) {
         const token = await waitForRefresh();
         if (token && config) {
@@ -132,7 +133,13 @@ const createAuthAwareErrorHandler = (instance: typeof userAxios) => {
       try {
         const res = await refresh_token_api();
         if (res?.accessToken) {
-          updateAccessToken(res.accessToken, res.expiresIn);
+          persistAuthSession({ 
+            accessToken: res.accessToken, 
+            refreshToken: getRefreshToken() || '',
+            memberId: getMemberId() ?? 0,
+            role: getMemberRole() ?? '',
+            username: getUsername() ?? ''
+          });
           flushRefreshWaiters(res.accessToken);
           if (config) {
             config.headers.Authorization = `Bearer ${res.accessToken}`;
