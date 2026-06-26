@@ -54,7 +54,7 @@ const isAdminDomain = (host: string, pathname: string) => {
   if (host === 'localhost' || host === '127.0.0.1') {
     return pathname.startsWith('/admin');
   }
-  return host.startsWith('admin.') || host.includes('admin');
+  return host.startsWith('rookies.') || host.startsWith('admin.') || host.includes('admin');
 };
 
 const App: React.FC = () => {

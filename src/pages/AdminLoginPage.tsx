@@ -32,9 +32,9 @@ export const AdminLoginPage: React.FC = () => {
     const protocol = window.location.protocol;
     const port = window.location.port ? `:${window.location.port}` : '';
 
-    // 서브도메인이 admin.으로 시작하는 경우 (배포 환경)
-    if (host.startsWith('admin.')) {
-      const mainHost = host.replace(/^admin\./, '');
+    // 서브도메인이 rookies.로 시작하는 경우 (배포 환경)
+    if (host.startsWith('rookies.')) {
+      const mainHost = host.replace(/^rookies\./, '');
       window.location.href = `${protocol}//${mainHost}${port}`;
     } else {
       // 일반 도메인이거나 로컬 개발 환경인 경우
