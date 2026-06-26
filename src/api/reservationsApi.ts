@@ -106,16 +106,19 @@ function mapInsurancePolicy(item: Record<string, unknown>): MemberReservationDto
   };
 }
 
-export const fetch_my_reservations_api = async (): Promise<{
+export const fetch_my_reservations_api = async (options?: {
+  skipErrorRedirect?: boolean;
+}): Promise<{
   success: boolean;
   data: MemberReservationsResponse;
   message: string;
 }> => {
+  const requestOptions = { skipErrorRedirect: options?.skipErrorRedirect };
   const [flightsRes, roomsRes, carsRes, insRes] = await Promise.allSettled([
-    userAxios.get('/api/v1/members/me/reservations/flights'),
-    userAxios.get('/api/v1/members/me/reservations/rooms'),
-    userAxios.get('/api/v1/members/me/reservations/cars'),
-    userAxios.get('/api/v1/members/me/insurances'),
+    userAxios.get('/api/v1/members/me/reservations/flights', requestOptions),
+    userAxios.get('/api/v1/members/me/reservations/rooms', requestOptions),
+    userAxios.get('/api/v1/members/me/reservations/cars', requestOptions),
+    userAxios.get('/api/v1/members/me/insurances', requestOptions),
   ]);
 
   const reservations: MemberReservationDto[] = [];

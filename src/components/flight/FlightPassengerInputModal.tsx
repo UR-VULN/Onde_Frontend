@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { book_flight_reservation_api } from '@/api/flightApi';
 import { buildPaymentCheckout } from '@/utils/paymentCheckout';
 import { useTravelStore } from '@/store/useTravelStore';
+import { extractApiErrorMessage } from '@/utils/apiResponse';
 
 function format_time(isoString?: string) {
   if (!isoString) return '';
@@ -156,11 +157,7 @@ export const FlightPassengerInputModal: React.FC<FlightPassengerInputModalProps>
       onClose();
       navigate('/payment', { state: checkoutState });
     } catch (err: unknown) {
-      const msg =
-        (err as { message?: string })?.message ||
-        (err as { error?: { message?: string } })?.error?.message ||
-        '항공 예약 중 오류가 발생했습니다.';
-      addToast(msg, 'warning');
+      addToast(extractApiErrorMessage(err, '항공 예약 중 오류가 발생했습니다.'), 'warning');
     } finally {
       setIsSubmitting(false);
     }

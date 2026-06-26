@@ -4,19 +4,13 @@ import { prepare_payment_api, validate_payment_api } from '@/api/paymentApi';
 import { confirm_flight_payment_api } from '@/api/flightApi';
 import { MileageUsagePanel } from '@/components/common/MileageUsagePanel';
 import { useTravelStore } from '@/store/useTravelStore';
-import type { PaymentCheckoutState } from '@/types/payment';
+import type { PaymentCheckoutState, PaymentStep } from '@/types/payment';
 import { calcPgAmount } from '@/utils/paymentCheckout';
 
-type PaymentStep = 'checkout' | 'processing' | 'success';
+import { extractApiErrorMessage } from '@/utils/apiResponse';
 
 function resolvePaymentErrorMessage(err: unknown): string {
-  const apiErr = err as {
-    error?: { message?: string; systemMessage?: string };
-    message?: string;
-  };
-  const apiMsg = apiErr?.error?.message ?? apiErr?.error?.systemMessage;
-  const directMsg = apiErr?.message ?? (err as Error)?.message;
-  return apiMsg || directMsg || '결제 처리 중 오류가 발생했습니다.';
+  return extractApiErrorMessage(err, '결제 처리 중 오류가 발생했습니다.');
 }
 
 function resolvePaymentToastType(message: string): 'warning' | 'info' {

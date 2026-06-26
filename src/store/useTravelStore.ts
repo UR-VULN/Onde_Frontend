@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { MemberProfileDto } from '@/api/userApi';
-import { clearAllAuthCookies } from '@/utils/authCookies';
+import { purgeLegacyAuthStorage } from '@/utils/authCookies';
 import { setPostLogoutRedirect } from '@/utils/authSession';
 
 export interface MyPageReservation {
@@ -126,7 +126,7 @@ export const useTravelStore = create<TravelState>((set) => ({
     if (redirectTo) {
       setPostLogoutRedirect(redirectTo);
     }
-    clearAllAuthCookies();
+    purgeLegacyAuthStorage();
     set({
       isLoggedIn: false,
       username: '',

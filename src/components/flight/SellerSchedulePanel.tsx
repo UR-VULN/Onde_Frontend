@@ -13,6 +13,7 @@ import type {
 } from '@/api/flightApi';
 import { SellerMonthYearSelect } from '@/components/seller/SellerMonthYearSelect';
 import { formatYearMonthValue, getDefaultYearMonthValue, parseYearMonthValue } from '@/utils/calendarUtils';
+import { extractApiErrorMessage } from '@/utils/apiResponse';
 
 export const SellerSchedulePanel: React.FC = () => {
   const { addToast } = useTravelStore();
@@ -158,8 +159,8 @@ export const SellerSchedulePanel: React.FC = () => {
         setIsBatchOpen(false);
         fetchSchedules();
       }
-    } catch (err: any) {
-      addToast(err?.error?.message || "스케줄 일괄 등록 도중 오류가 발생했습니다.", "warning");
+    } catch (err: unknown) {
+      addToast(extractApiErrorMessage(err, '스케줄 일괄 등록 도중 오류가 발생했습니다.'), 'warning');
     }
   };
 
@@ -184,8 +185,8 @@ export const SellerSchedulePanel: React.FC = () => {
         setIsOverrideOpen(false);
         fetchSchedules();
       }
-    } catch (err: any) {
-      addToast(err?.error?.message || "가격/좌석 변경 제어 권한 검증에 실패했습니다.", "warning");
+    } catch (err: unknown) {
+      addToast(extractApiErrorMessage(err, '가격/좌석 변경 제어 권한 검증에 실패했습니다.'), 'warning');
     }
   };
 

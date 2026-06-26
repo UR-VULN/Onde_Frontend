@@ -3,7 +3,7 @@ import { Outlet, useLocation, Navigate } from 'react-router-dom';
 import { Header } from './Header';
 import { Footer } from './Footer';
 import { useTravelStore } from '@/store/useTravelStore';
-import { isSellerRole, isAdminRole } from '@/utils/memberRole';
+import { isSellerRole, isAdminRole, getDefaultPathForRole } from '@/utils/memberRole';
 
 // Import local assets for Hero section background images
 import stayBg from '@/assets/stay.avif';
@@ -37,7 +37,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       return <Navigate to="/seller" replace />;
     }
     if (isAdminRole(memberRole)) {
-      return <Navigate to="/admin" replace />;
+      return <Navigate to={getDefaultPathForRole(memberRole ?? '')} replace />;
     }
   }
 

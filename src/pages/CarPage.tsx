@@ -4,6 +4,7 @@ import { CarRecommendationList } from '@/components/car/CarRecommendationList';
 import { search_cars_api, type CarDto } from '@/api/carApi';
 import { useTravelStore } from '@/store/useTravelStore';
 import { todayStr, addDaysStr } from '@/utils/calendarUtils';
+import { extractApiErrorMessage } from '@/utils/apiResponse';
 
 const defaultSearch = (): CarSearchParams => ({
   pickupSpot: '제주',
@@ -40,10 +41,7 @@ export const CarPage: React.FC = () => {
         }
       } catch (err: unknown) {
         setCars([]);
-        const msg =
-          (err as { message?: string })?.message ||
-          (err as { error?: { message?: string } })?.error?.message ||
-          '렌터카 검색 중 오류가 발생했습니다.';
+        const msg = extractApiErrorMessage(err, '렌터카 검색 중 오류가 발생했습니다.');
         if (showToast) addToast(msg, 'warning');
       } finally {
         setLoading(false);

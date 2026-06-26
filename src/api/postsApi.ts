@@ -90,10 +90,10 @@ export const like_post_api = async (
 export interface CommentDto {
   commentId: number;
   postId: number;
-  memberId: number;
   authorName: string;
   content: string;
   isSecret: boolean;
+  isMine?: boolean;
   createdAt: string;
 }
 

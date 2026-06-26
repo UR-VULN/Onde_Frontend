@@ -3,6 +3,7 @@ import { useTravelStore } from '@/store/useTravelStore';
 import { ComingSoonBlock } from '@/components/common/ComingSoonBlock';
 import { deploy_property_marker_api } from '@/api/adminApi';
 import { canDeployLbsMarkers } from '@/utils/adminPermissions';
+import { extractApiErrorMessage } from '@/utils/apiResponse';
 
 export const AdminLBSPanel: React.FC = () => {
   const { addToast, memberRole } = useTravelStore();
@@ -30,11 +31,7 @@ export const AdminLBSPanel: React.FC = () => {
         addToast(res.message || '마커 배포에 실패했습니다.', 'warning');
       }
     } catch (err: unknown) {
-      const msg =
-        (err as { message?: string })?.message ||
-        (err as { error?: { message?: string } })?.error?.message ||
-        '마커 배포 중 오류가 발생했습니다.';
-      addToast(msg, 'warning');
+      addToast(extractApiErrorMessage(err, '마커 배포 중 오류가 발생했습니다.'), 'warning');
     }
   };
 

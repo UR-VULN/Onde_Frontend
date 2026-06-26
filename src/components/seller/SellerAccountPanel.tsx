@@ -6,6 +6,7 @@ import {
   get_seller_settlement_account_api,
 } from '@/api/sellerApi';
 import { KOREAN_BANKS } from '@/constants/appConstants';
+import { extractApiErrorMessage } from '@/utils/apiResponse';
 
 export const SellerAccountPanel: React.FC = () => {
   const { addToast } = useTravelStore();
@@ -91,7 +92,7 @@ export const SellerAccountPanel: React.FC = () => {
       }
     } catch (err: any) {
       setIsBusinessVerified(false);
-      addToast(err?.error?.message || '사업자 진위 확인 중 오류가 발생했습니다.', 'warning');
+      addToast(extractApiErrorMessage(err, '사업자 진위 확인 중 오류가 발생했습니다.'), 'warning');
     } finally {
       setIsVerifying(false);
     }
@@ -129,7 +130,7 @@ export const SellerAccountPanel: React.FC = () => {
         addToast(res.message || '업체 프로필 정보 저장에 실패했습니다.', 'warning');
       }
     } catch (err: any) {
-      addToast(err?.error?.message || '업체 프로필 정보 저장에 실패했습니다.', 'warning');
+      addToast(extractApiErrorMessage(err, '업체 프로필 정보 저장에 실패했습니다.'), 'warning');
     } finally {
       setIsSaving(false);
     }

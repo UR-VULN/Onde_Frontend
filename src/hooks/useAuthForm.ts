@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login_api, signup_api, admin_login_api } from '@/api/authApi';
-import { fetch_member_profile_api, fetch_member_me_api } from '@/api/userApi';
+import { fetch_member_identity_api, fetch_member_profile_api, fetch_member_me_api } from '@/api/userApi';
 import { USER_API_BASE } from '@/constants/apiConfig';
 import { DEFAULT_MEMBERSHIP_GRADE } from '@/constants/appConstants';
 import { useTravelStore } from '@/store/useTravelStore';
-import { persistAuthSession } from '@/utils/authCookies';
 import { getDefaultPathForRole } from '@/utils/memberRole';
+import { extractApiErrorMessage } from '@/utils/apiResponse';
+import { validatePassword } from '@/utils/passwordPolicy';
+
+const LOGIN_CREDENTIALS_INVALID_MESSAGE = '이메일 또는 비밀번호가 올바르지 않습니다.';
 
 export const useAuthForm = () => {
   const navigate = useNavigate();
@@ -27,6 +30,18 @@ export const useAuthForm = () => {
     return true;
   };
 
+  const validateLoginCredentials = (email: string, password: string) => {
+    if (!email || !password) {
+      addToast(LOGIN_CREDENTIALS_INVALID_MESSAGE, 'warning');
+      return false;
+    }
+    if (!emailRegex.test(email)) {
+      addToast(LOGIN_CREDENTIALS_INVALID_MESSAGE, 'warning');
+      return false;
+    }
+    return true;
+  };
+
   const finishLogin = (
     email: string,
     apiRole: string,
@@ -34,16 +49,24 @@ export const useAuthForm = () => {
     profile: { mileage: number; membershipGrade: string },
     name: string,
     nickname: string,
-    options?: { successToast?: string; showWelcomePopup?: boolean }
+    options?: { successToast?: string; showWelcomePopup?: boolean; passwordChangeRequired?: boolean }
   ) => {
-    login(email, apiRole, profile, memberId, name, nickname);
-    addToast(options?.successToast ?? '🔑 로그인이 완료되었습니다!', 'success');
     closeAuthModal();
-    navigate(getDefaultPathForRole(apiRole), { replace: true });
+    const targetPath = getDefaultPathForRole(apiRole);
+    navigate(targetPath, { replace: true });
 
-    if (options?.showWelcomePopup) {
-      setTimeout(() => useTravelStore.getState().openWelcomePopup(), 450);
-    }
+    window.setTimeout(() => {
+      login(email, apiRole, profile, memberId, name, nickname);
+      if (options?.passwordChangeRequired) {
+        addToast('비밀번호 사용 기간이 만료되었습니다. 프로필에서 비밀번호를 변경해 주세요.', 'warning');
+      } else {
+        addToast(options?.successToast ?? '🔑 로그인이 완료되었습니다!', 'success');
+      }
+
+      if (options?.showWelcomePopup) {
+        setTimeout(() => useTravelStore.getState().openWelcomePopup(), 450);
+      }
+    }, 0);
   };
 
   const establishSession = async (
@@ -52,23 +75,29 @@ export const useAuthForm = () => {
     options?: { successToast?: string; showWelcomePopup?: boolean }
   ): Promise<boolean> => {
     const data = await login_api({ email, password });
-    if (!data?.accessToken) {
+    if (!data?.role) {
       return false;
     }
 
-    persistAuthSession({
-      accessToken: data.accessToken,
-      refreshToken: data.refreshToken,
-      memberId: data.memberId,
-      role: data.role,
-      username: email,
-      expiresIn: data.expiresIn,
-    });
+    const sessionOptions = { skipErrorRedirect: true as const };
+
+    let memberId = 0;
+    try {
+      const identityRes = await fetch_member_identity_api();
+      if (identityRes.success && identityRes.data?.memberId) {
+        memberId = identityRes.data.memberId;
+      }
+    } catch {
+      return false;
+    }
+    if (!memberId) {
+      return false;
+    }
 
     let realName = '';
     let realNickname = '';
     try {
-      const meRes = await fetch_member_me_api();
+      const meRes = await fetch_member_me_api(sessionOptions);
       if (meRes.success && meRes.data) {
         realName = meRes.data.name || '';
         realNickname = meRes.data.nickname || '';
@@ -77,20 +106,9 @@ export const useAuthForm = () => {
       // ignore
     }
 
-    persistAuthSession({
-      accessToken: data.accessToken,
-      refreshToken: data.refreshToken,
-      memberId: data.memberId,
-      role: data.role,
-      username: email,
-      name: realName,
-      nickname: realNickname,
-      expiresIn: data.expiresIn,
-    });
-
     let profile = { mileage: 0, membershipGrade: DEFAULT_MEMBERSHIP_GRADE };
     try {
-      const profileRes = await fetch_member_profile_api();
+      const profileRes = await fetch_member_profile_api(sessionOptions);
       if (profileRes.success && profileRes.data) {
         profile = profileRes.data;
       }
@@ -98,31 +116,39 @@ export const useAuthForm = () => {
       // 마일리지 API 실패 시 기본값 유지
     }
 
-    finishLogin(email, data.role, data.memberId, profile, realName, realNickname, options);
+    finishLogin(email, data.role, memberId, profile, realName, realNickname, {
+      ...options,
+      passwordChangeRequired: data.passwordChangeRequired,
+    });
     return true;
   };
 
   const handleLogin = async (email: string, password: string) => {
-    if (!email || !password) {
-      addToast('이메일과 비밀번호를 모두 입력해주세요.', 'warning');
-      return;
-    }
-
-    if (!validateEmail(email)) return;
+    if (!validateLoginCredentials(email, password)) return;
 
     setIsLoading(true);
 
     try {
       const ok = await establishSession(email, password);
       if (!ok) {
-        addToast('로그인에 실패했습니다.', 'warning');
+        addToast(LOGIN_CREDENTIALS_INVALID_MESSAGE, 'warning');
       }
     } catch (err: unknown) {
-      const msg =
-        (err as { message?: string })?.message ||
-        (err as { error?: { message?: string } })?.error?.message ||
-        '이메일 또는 비밀번호가 올바르지 않습니다.';
-      addToast(msg, 'warning');
+      const status =
+        err != null && typeof err === 'object' && 'status' in err
+          ? Number((err as { status?: number }).status)
+          : undefined;
+      if (status === 423) {
+        addToast(
+          extractApiErrorMessage(
+            err,
+            '로그인 시도 횟수를 초과했습니다. 잠시 후 다시 시도해 주세요.',
+          ),
+          'warning',
+        );
+      } else {
+        addToast(LOGIN_CREDENTIALS_INVALID_MESSAGE, 'warning');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -134,48 +160,58 @@ export const useAuthForm = () => {
     options?: { successToast?: string }
   ): Promise<boolean> => {
     const data = await admin_login_api({ email, password });
-    if (!data?.accessToken) {
+    if (!data?.role) {
       return false;
     }
 
-    persistAuthSession({
-      accessToken: data.accessToken,
-      refreshToken: data.refreshToken,
-      memberId: data.memberId,
-      role: data.role,
-      username: email,
-      name: '관리자',
-      nickname: 'Admin',
-      expiresIn: data.expiresIn,
-    });
+    let memberId = 0;
+    try {
+      const identityRes = await fetch_member_identity_api();
+      if (identityRes.success && identityRes.data?.memberId) {
+        memberId = identityRes.data.memberId;
+      }
+    } catch {
+      return false;
+    }
+    if (!memberId) {
+      return false;
+    }
 
     const profile = { mileage: 0, membershipGrade: 'ADMIN' };
 
-    finishLogin(email, data.role, data.memberId, profile, '관리자', 'Admin', options);
+    finishLogin(email, data.role, memberId, profile, '관리자', 'Admin', {
+      ...options,
+      passwordChangeRequired: data.passwordChangeRequired,
+    });
     return true;
   };
 
   const handleAdminLogin = async (email: string, password: string) => {
-    if (!email || !password) {
-      addToast('이메일과 비밀번호를 모두 입력해주세요.', 'warning');
-      return;
-    }
-
-    if (!validateEmail(email)) return;
+    if (!validateLoginCredentials(email, password)) return;
 
     setIsLoading(true);
 
     try {
       const ok = await establishAdminSession(email, password);
       if (!ok) {
-        addToast('로그인에 실패했습니다.', 'warning');
+        addToast(LOGIN_CREDENTIALS_INVALID_MESSAGE, 'warning');
       }
     } catch (err: unknown) {
-      const msg =
-        (err as { message?: string })?.message ||
-        (err as { error?: { message?: string } })?.error?.message ||
-        '이메일 또는 비밀번호가 올바르지 않습니다.';
-      addToast(msg, 'warning');
+      const status =
+        err != null && typeof err === 'object' && 'status' in err
+          ? Number((err as { status?: number }).status)
+          : undefined;
+      if (status === 423) {
+        addToast(
+          extractApiErrorMessage(
+            err,
+            '로그인 시도 횟수를 초과했습니다. 잠시 후 다시 시도해 주세요.',
+          ),
+          'warning',
+        );
+      } else {
+        addToast(LOGIN_CREDENTIALS_INVALID_MESSAGE, 'warning');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -201,13 +237,9 @@ export const useAuthForm = () => {
 
     if (!validateEmail(email)) return;
 
-    if (password.length < 8) {
-      addToast('비밀번호는 8자 이상이어야 합니다.', 'warning');
-      return;
-    }
-
-    if (password.length > 20) {
-      addToast('비밀번호는 최대 20자까지 가능합니다.', 'warning');
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      addToast(passwordError, 'warning');
       return;
     }
 
@@ -252,11 +284,7 @@ export const useAuthForm = () => {
         openAuthModal('login');
       }
     } catch (err: unknown) {
-      const msg =
-        (err as { message?: string })?.message ||
-        (err as { error?: { message?: string } })?.error?.message ||
-        '회원가입에 실패했습니다.';
-      addToast(msg, 'warning');
+      addToast(extractApiErrorMessage(err, '회원가입에 실패했습니다.'), 'warning');
     } finally {
       setIsLoading(false);
     }

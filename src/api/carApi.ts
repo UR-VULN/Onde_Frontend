@@ -1,7 +1,6 @@
 import { userAxios } from '@/api/axiosInstance';
 import { STORAGE_BASE_URL } from '@/constants/apiConfig';
 import { unwrapApi } from '@/utils/apiResponse';
-import { getMemberId } from '@/utils/authCookies';
 
 export interface CarSearchParams {
   location?: string;
@@ -158,7 +157,6 @@ export const get_car_detail_api = async (
 };
 
 export interface CarReservationPayload {
-  memberId?: number;
   carId: number;
   startDate: string;
   endDate: string;
@@ -174,16 +172,7 @@ export interface CarReservationResponse {
 export const book_car_api = async (
   payload: CarReservationPayload
 ): Promise<{ success: boolean; data: CarReservationResponse & { totalPrice: number }; message: string }> => {
-  const memberId = payload.memberId ?? getMemberId();
-  if (!memberId) {
-    return {
-      success: false,
-      message: '로그인이 필요합니다.',
-      data: { reservationId: 0, status: '', message: '', totalPrice: 0 },
-    };
-  }
   const raw = await userAxios.post('/api/v1/accommodations/reservations/cars', {
-    memberId,
     carId: payload.carId,
     startDate: payload.startDate,
     endDate: payload.endDate,

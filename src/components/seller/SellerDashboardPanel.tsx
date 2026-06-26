@@ -2,9 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
 import { get_seller_dashboard_api } from '@/api/sellerApi';
 import type { SellerDashboardDto } from '@/api/sellerApi';
+import { RevealableMaskedText } from '@/components/common/RevealableMaskedText';
+import { useSellerDashboardReveal } from '@/hooks/useSellerDashboardReveal';
+import { extractApiErrorMessage } from '@/utils/apiResponse';
 
 export const SellerDashboardPanel: React.FC<{ onTabChange?: (tab: string) => void }> = ({ onTabChange }) => {
   const { addToast } = useTravelStore();
+  const { revealField } = useSellerDashboardReveal();
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<SellerDashboardDto | null>(null);
 
@@ -16,8 +20,8 @@ export const SellerDashboardPanel: React.FC<{ onTabChange?: (tab: string) => voi
       } else {
         addToast(res.message || '대시보드 데이터를 가져오는데 실패했습니다.', 'warning');
       }
-    } catch (err: any) {
-      addToast(err?.error?.message || '대시보드 데이터를 가져오는 중 오류가 발생했습니다.', 'warning');
+    } catch (err: unknown) {
+      addToast(extractApiErrorMessage(err, '대시보드 데이터를 가져오는 중 오류가 발생했습니다.'), 'warning');
     } finally {
       setLoading(false);
     }
@@ -411,7 +415,16 @@ export const SellerDashboardPanel: React.FC<{ onTabChange?: (tab: string) => voi
               <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
                 로그인 계정 ID
               </div>
-              <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--text-dark)' }}>{dashboardData?.email}</div>
+              <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--text-dark)' }}>
+                {dashboardData?.email ? (
+                  <RevealableMaskedText
+                    maskedValue={dashboardData.email}
+                    getPlaintext={(password) => revealField('email', password)}
+                  />
+                ) : (
+                  '—'
+                )}
+              </div>
             </div>
 
             <div style={{ backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
@@ -433,7 +446,12 @@ export const SellerDashboardPanel: React.FC<{ onTabChange?: (tab: string) => voi
                     >
                       승인 완료
                     </span>
-                    <span style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-dark)' }}>{dashboardData.bankName}</span>
+                    <span style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-dark)' }}>
+                      <RevealableMaskedText
+                        maskedValue={dashboardData.bankName}
+                        getPlaintext={(password) => revealField('bankName', password)}
+                      />
+                    </span>
                   </>
                 ) : (
                   <>
@@ -455,7 +473,10 @@ export const SellerDashboardPanel: React.FC<{ onTabChange?: (tab: string) => voi
               </div>
               {dashboardData?.accountNumber && (
                 <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'monospace', letterSpacing: '0.3px' }}>
-                  {dashboardData.accountNumber}
+                  <RevealableMaskedText
+                    maskedValue={dashboardData.accountNumber}
+                    getPlaintext={(password) => revealField('accountNumber', password)}
+                  />
                 </div>
               )}
             </div>

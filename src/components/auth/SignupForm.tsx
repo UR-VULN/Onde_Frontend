@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useAuthForm } from '@/hooks/useAuthForm';
 import { check_nickname_api, check_email_api } from '@/api/authApi';
 import { useTravelStore } from '@/store/useTravelStore';
+import { PASSWORD_POLICY_HINT } from '@/utils/passwordPolicy';
+import { extractApiErrorMessage } from '@/utils/apiResponse';
 
 export const SignupForm: React.FC = () => {
   const { isLoading, handleSignup, validateEmail } = useAuthForm();
@@ -49,8 +51,8 @@ export const SignupForm: React.FC = () => {
       } else {
         addToast(res.message || '이메일 중복 확인 실패', 'warning');
       }
-    } catch (err: any) {
-      addToast(err?.error?.message || '이메일 중복 확인 중 오류가 발생했습니다.', 'warning');
+    } catch (err: unknown) {
+      addToast(extractApiErrorMessage(err, '이메일 중복 확인 중 오류가 발생했습니다.'), 'warning');
     } finally {
       setIsCheckingEmail(false);
     }
@@ -84,8 +86,8 @@ export const SignupForm: React.FC = () => {
       } else {
         addToast(res.message || '닉네임 중복 확인 실패', 'warning');
       }
-    } catch (err: any) {
-      addToast(err?.error?.message || '닉네임 중복 확인 중 오류가 발생했습니다.', 'warning');
+    } catch (err: unknown) {
+      addToast(extractApiErrorMessage(err, '닉네임 중복 확인 중 오류가 발생했습니다.'), 'warning');
     } finally {
       setIsCheckingNickname(false);
     }
@@ -306,12 +308,12 @@ export const SignupForm: React.FC = () => {
         <input
           type="password"
           className="form-input"
-          placeholder="영문, 숫자 혼합 8자리 이상"
+          placeholder={PASSWORD_POLICY_HINT}
           value={signupPassword}
           onChange={(e) => setSignupPassword(e.target.value)}
           required
           disabled={isLoading}
-          maxLength={20}
+          maxLength={128}
           style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--border-color)', borderRadius: '6px' }}
         />
       </div>
@@ -326,7 +328,7 @@ export const SignupForm: React.FC = () => {
           onChange={(e) => setSignupPasswordConfirm(e.target.value)}
           required
           disabled={isLoading}
-          maxLength={20}
+          maxLength={128}
           style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--border-color)', borderRadius: '6px' }}
         />
       </div>

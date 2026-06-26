@@ -1,4 +1,5 @@
 import { getDefaultPathForRole, readStoredMemberRole } from '@/utils/memberRole';
+import { isAdminBackofficePath } from '@/constants/adminPortal';
 
 const ERROR_PATHS = ['/401', '/403', '/404', '/500', '/503'] as const;
 
@@ -6,13 +7,16 @@ export type AppErrorPath = (typeof ERROR_PATHS)[number];
 
 const ERROR_RETURN_KEY = 'onde_error_return_to';
 
-const BACKOFFICE_PATH_PREFIXES = ['/seller', '/admin'] as const;
+const BACKOFFICE_PATH_PREFIXES = ['/seller'] as const;
 
 export function isErrorPagePath(pathname: string): boolean {
   return ERROR_PATHS.includes(pathname as AppErrorPath);
 }
 
 export function isBackofficePath(pathname: string): boolean {
+  if (isAdminBackofficePath(pathname)) {
+    return true;
+  }
   return BACKOFFICE_PATH_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
@@ -66,7 +70,7 @@ export function redirectByHttpStatus(status: number): void {
     case 403:
       redirectToErrorPage('/403');
       break;
-    case 404:                       // ✅ 추가: 404 응답 시 에러 페이지로 이동
+    case 404:
       redirectToErrorPage('/404');
       break;
     case 500:

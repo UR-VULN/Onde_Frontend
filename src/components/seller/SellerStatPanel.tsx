@@ -9,6 +9,7 @@ import {
 import type { SellerSettlementHistoryDto, SettlementDetailResponseDto } from '@/api/sellerApi';
 import { get_seller_dashboard_statistics_api } from '@/api/sellerApi';
 import { DAYS_OF_WEEK } from '@/constants/shared';
+import { extractApiErrorMessage } from '@/utils/apiResponse';
 
 export const SellerStatPanel: React.FC = () => {
   const { addToast } = useTravelStore();
@@ -35,7 +36,7 @@ export const SellerStatPanel: React.FC = () => {
         setIsDetailModalOpen(false);
       }
     } catch (err: any) {
-      addToast(err?.error?.message || '상세 내역 조회 중 오류가 발생했습니다.', 'warning');
+      addToast(extractApiErrorMessage(err, '상세 내역 조회 중 오류가 발생했습니다.'), 'warning');
       setIsDetailModalOpen(false);
     } finally {
       setIsDetailLoading(false);
@@ -85,7 +86,7 @@ export const SellerStatPanel: React.FC = () => {
         addToast(res.message || '정산 신청에 실패했습니다.', 'warning');
       }
     } catch (err: any) {
-      addToast(err?.error?.message || '정산 신청 중 오류가 발생했습니다.', 'warning');
+      addToast(extractApiErrorMessage(err, '정산 신청 중 오류가 발생했습니다.'), 'warning');
     } finally {
       setIsRequesting(false);
     }

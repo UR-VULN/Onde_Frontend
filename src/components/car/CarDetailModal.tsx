@@ -14,6 +14,7 @@ import {
   resolveValidStayRange,
 } from '@/utils/calendarUtils';
 import { useTravelStore } from '@/store/useTravelStore';
+import { extractApiErrorMessage } from '@/utils/apiResponse';
 
 import { ListingThumbnail } from '@/components/common/ListingThumbnail';
 import { hasDisplayImage, hasDisplayPrice } from '@/utils/listingDisplay';
@@ -353,11 +354,7 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
         }),
       });
     } catch (err: unknown) {
-      const msg =
-        (err as { message?: string })?.message ||
-        (err as { error?: { message?: string } })?.error?.message ||
-        '렌터카 예약 중 오류가 발생했습니다.';
-      addToast(msg, 'warning');
+      addToast(extractApiErrorMessage(err, '렌터카 예약 중 오류가 발생했습니다.'), 'warning');
     } finally {
       setBooking(false);
     }

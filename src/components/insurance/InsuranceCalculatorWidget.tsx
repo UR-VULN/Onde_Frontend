@@ -7,6 +7,7 @@ import { InsuranceCalculatorForm } from './InsuranceCalculatorForm';
 import { InsuranceCoverageGrid } from './InsuranceCoverageGrid';
 import { calculate_premium_api, apply_insurance_policy_api } from '@/api/insuranceApi';
 import { buildPaymentCheckout } from '@/utils/paymentCheckout';
+import { extractApiErrorMessage } from '@/utils/apiResponse';
 import type { InsuranceQuotePanelStatus } from '@/components/insurance/insuranceQuoteTypes';
 
 function getQuoteInputIssue(
@@ -24,10 +25,7 @@ function getQuoteInputIssue(
 }
 
 function resolveApiErrorMessage(err: unknown): string {
-  const msg =
-    (err as { message?: string })?.message ||
-    (err as { error?: { message?: string } })?.error?.message ||
-    '';
+  const msg = extractApiErrorMessage(err, '');
   if (/네트워크|연결|timeout|ECONNREFUSED|fetch/i.test(msg)) {
     return '서버에 연결할 수 없습니다';
   }
@@ -191,11 +189,7 @@ export const InsuranceCalculatorWidget: React.FC = () => {
           }),
         });
       } catch (err: unknown) {
-        const msg =
-          (err as { message?: string })?.message ||
-          (err as { error?: { message?: string } })?.error?.message ||
-          '가입 처리 중 오류가 발생했습니다.';
-        addToast(msg, 'warning');
+        addToast(extractApiErrorMessage(err, '가입 처리 중 오류가 발생했습니다.'), 'warning');
       }
     }, {
       title: '보험에 가입하시겠습니까?',

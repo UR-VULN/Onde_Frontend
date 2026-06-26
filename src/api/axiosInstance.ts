@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { refresh_token_api } from '@/api/authApi';
 import { ADMIN_API_BASE, USER_API_BASE } from '@/constants/apiConfig';
-import { clearAuthSession, hasPostLogoutRedirect } from '@/utils/authSession';
-import { getAccessToken, getMemberId, updateAccessToken } from '@/utils/authCookies';
+import { hasPostLogoutRedirect, performLogout } from '@/utils/authSession';
+import { toClientSafeErrorPayload } from '@/utils/apiResponse';
 import { isBackofficePath, isErrorPagePath, redirectByHttpStatus } from '@/utils/errorNavigation';
 import { useTravelStore } from '@/store/useTravelStore';
 
@@ -35,39 +35,29 @@ export const adminAxios = axios.create({
   ...axiosDefaults,
 });
 
-const injectToken = (config: any) => {
-  const url = config.url ?? '';
-  if (url.includes('/api/v1/auth/refresh')) {
-    return config;
-  }
-  const token = getAccessToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-};
-
-userAxios.interceptors.request.use(injectToken, (error) => Promise.reject(error));
-adminAxios.interceptors.request.use(injectToken, (error) => Promise.reject(error));
-
 let isRefreshing = false;
-let refreshWaiters: Array<(token: string | null) => void> = [];
+let refreshWaiters: Array<(success: boolean) => void> = [];
 
-function waitForRefresh(): Promise<string | null> {
+function waitForRefresh(): Promise<boolean> {
   return new Promise((resolve) => {
     refreshWaiters.push(resolve);
   });
 }
 
-function flushRefreshWaiters(token: string | null) {
-  refreshWaiters.forEach((cb) => cb(token));
+function flushRefreshWaiters(success: boolean) {
+  refreshWaiters.forEach((cb) => cb(success));
   refreshWaiters = [];
 }
 
 function isRefreshable401(config: { url?: string; _retry?: boolean } | undefined): boolean {
   if (!config || config._retry) return false;
   const url = config.url ?? '';
-  return !url.includes('/api/v1/auth/refresh') && !url.includes('/api/v1/auth/login');
+  return (
+    !url.includes('/api/v1/auth/refresh') &&
+    !url.includes('/api/v1/auth/login') &&
+    !url.includes('/api/v1/auth/admin/login') &&
+    !url.includes('/api/v1/auth/logout')
+  );
 }
 
 const finalizeResponseError = (error: {
@@ -79,19 +69,34 @@ const finalizeResponseError = (error: {
   const status = error.response?.status;
   const onErrorPage = isErrorPagePath(window.location.pathname);
   const url = error.config?.url ?? '';
-  const isLoginRequest = url.includes('/api/v1/auth/login') || url.includes('/api/v1/auth/admin/login');
+  const isAuthRequest =
+    url.includes('/api/v1/auth/login') ||
+    url.includes('/api/v1/auth/admin/login') ||
+    url.includes('/api/v1/auth/signup');
 
   const suppressErrorRedirect = hasPostLogoutRedirect();
 
   if (status && !onErrorPage && !error.config?.skipErrorRedirect && !suppressErrorRedirect) {
+    if ((status === 401 || status === 403) && isAuthRequest) {
+      const errorData = error.response?.data;
+      const fallback =
+        status === 403
+          ? '접근이 제한된 계정입니다. 고객센터로 문의해 주세요.'
+          : '이메일 또는 비밀번호가 올바르지 않습니다.';
+      return Promise.reject(toClientSafeErrorPayload(errorData, status, fallback));
+    }
+    if (status === 423 && isAuthRequest) {
+      const errorData = error.response?.data;
+      return Promise.reject(
+        toClientSafeErrorPayload(
+          errorData,
+          423,
+          '로그인 시도 횟수를 초과했습니다. 잠시 후 다시 시도해 주세요.',
+        ),
+      );
+    }
     if (status === 401) {
-      clearAuthSession();
-      if (isLoginRequest) {
-        const errorData = error.response?.data;
-        return Promise.reject(
-          errorData || { success: false, error: { message: '이메일 또는 비밀번호가 올바르지 않습니다.' } }
-        );
-      }
+      void performLogout();
     }
     if (status === 403) {
       useTravelStore.getState().addToast('해당 기능을 수행할 권한이 없습니다.', 'warning');
@@ -104,9 +109,11 @@ const finalizeResponseError = (error: {
   }
 
   const errorData = error.response?.data;
-  return Promise.reject(
-    errorData || { success: false, error: { message: '네트워크 연결 오류가 발생했습니다.' } }
-  );
+  const fallback =
+    status && status >= 500
+      ? '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+      : '요청을 처리할 수 없습니다. 잠시 후 다시 시도해 주세요.';
+  return Promise.reject(toClientSafeErrorPayload(errorData, status, fallback));
 };
 
 const createAuthAwareErrorHandler = (instance: typeof userAxios) => {
@@ -117,11 +124,10 @@ const createAuthAwareErrorHandler = (instance: typeof userAxios) => {
     const status = error.response?.status;
     const config = error.config;
 
-    if (status === 401 && isRefreshable401(config) && getMemberId()) {
+    if (status === 401 && isRefreshable401(config)) {
       if (isRefreshing) {
-        const token = await waitForRefresh();
-        if (token && config) {
-          config.headers.Authorization = `Bearer ${token}`;
+        const refreshed = await waitForRefresh();
+        if (refreshed && config) {
           config._retry = true;
           return instance.request(config);
         }
@@ -130,19 +136,14 @@ const createAuthAwareErrorHandler = (instance: typeof userAxios) => {
 
       isRefreshing = true;
       try {
-        const res = await refresh_token_api();
-        if (res?.accessToken) {
-          updateAccessToken(res.accessToken, res.expiresIn);
-          flushRefreshWaiters(res.accessToken);
-          if (config) {
-            config.headers.Authorization = `Bearer ${res.accessToken}`;
-            config._retry = true;
-            return instance.request(config);
-          }
+        await refresh_token_api();
+        flushRefreshWaiters(true);
+        if (config) {
+          config._retry = true;
+          return instance.request(config);
         }
-        flushRefreshWaiters(null);
       } catch {
-        flushRefreshWaiters(null);
+        flushRefreshWaiters(false);
       } finally {
         isRefreshing = false;
       }

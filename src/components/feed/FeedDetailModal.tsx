@@ -333,7 +333,7 @@ export const FeedDetailModal: React.FC<FeedDetailModalProps> = ({
                       </div>
                     ) : (
                       comments.map((c) => {
-                        const isCommentOwner = username && (nickname ? c.authorName === nickname : c.authorName === username);
+                        const isCommentOwner = c.isMine === true;
                         return (
                           <div key={c.commentId} className="bg-slate-50/70 p-3 rounded-2xl border border-slate-100 flex flex-col gap-1">
                             <div className="flex justify-between items-center">

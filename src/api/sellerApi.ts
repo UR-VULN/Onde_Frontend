@@ -1,5 +1,5 @@
 import { sellerAxios } from '@/api/axiosInstance';
-import { unwrapApi } from '@/utils/apiResponse';
+import { unwrapApi, extractApiErrorMessage } from '@/utils/apiResponse';
 
 const PLATFORM_COMMISSION_RATE = 0.03;
 
@@ -127,7 +127,7 @@ export const request_monthly_settlement_api = async (): Promise<{
       const res = unwrapApi<{ settlementId: number; status: string }>(raw);
       return { success: res.success, message: res.message };
     } catch (err: any) {
-      return { success: false, message: err?.error?.message || '실시간 정산 신청 중 오류가 발생했습니다.' };
+      return { success: false, message: extractApiErrorMessage(err, '실시간 정산 신청 중 오류가 발생했습니다.') };
     }
   }
   const res = await request_settlement_api(pending.settlementId);

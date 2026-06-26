@@ -1,5 +1,6 @@
 import type { PostDto, BackendPostType } from '@/api/postsApi';
 import { STORAGE_BASE_URL } from '@/constants/apiConfig';
+import { DEFAULT_FEED_PLACEHOLDER_IMG } from '@/constants/appConstants';
 
 export interface FeedItem {
   id: string;
@@ -31,6 +32,9 @@ function toFeedCategory(type: string): FeedItem['category'] {
 
 export function cleanImageUrl(url: string): string {
   let imgUrl = url || '';
+  if (!imgUrl) {
+    return DEFAULT_FEED_PLACEHOLDER_IMG;
+  }
   if (imgUrl && !imgUrl.startsWith('http://') && !imgUrl.startsWith('https://')) {
     if (imgUrl.includes('/')) {
       const firstSegment = imgUrl.split('/')[0];

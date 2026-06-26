@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
 import { fetch_member_me_api, update_member_profile_api, type ProfileUpdatePayload } from '@/api/userApi';
-import { persistAuthSession, getAccessToken, getRefreshToken, getMemberId, getMemberRole, getUsername } from '@/utils/authCookies';
+import { validatePassword, PASSWORD_POLICY_HINT } from '@/utils/passwordPolicy';
+import { RevealableMaskedField, RevealableMaskedText } from '@/components/common/RevealableMaskedText';
+import { extractApiErrorMessage } from '@/utils/apiResponse';
+import { useMemberProfileReveal } from '@/hooks/useMemberProfileReveal';
 
 interface ProfileEditFormProps {
   onCancel: () => void;
@@ -9,10 +12,13 @@ interface ProfileEditFormProps {
 
 export const ProfileEditForm: React.FC<ProfileEditFormProps> = ({ onCancel }) => {
   const { addToast } = useTravelStore();
+  const { revealField } = useMemberProfileReveal();
 
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [maskedEmail, setMaskedEmail] = useState('');
+  const [maskedName, setMaskedName] = useState('');
+  const [maskedPhone, setMaskedPhone] = useState('');
+  const [newName, setNewName] = useState('');
+  const [newPhone, setNewPhone] = useState('');
   const [nickname, setNickname] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -23,9 +29,9 @@ export const ProfileEditForm: React.FC<ProfileEditFormProps> = ({ onCancel }) =>
       try {
         const res = await fetch_member_me_api();
         if (res.success && res.data) {
-          setEmail(res.data.email);
-          setName(res.data.name || '');
-          setPhone(res.data.phoneNumber || '');
+          setMaskedEmail(res.data.email);
+          setMaskedName(res.data.name || '');
+          setMaskedPhone(res.data.phoneNumber || '');
           setNickname(res.data.nickname || '');
         }
       } catch{
@@ -38,15 +44,13 @@ export const ProfileEditForm: React.FC<ProfileEditFormProps> = ({ onCancel }) =>
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // 유효성 검사
-    if (!name.trim() || !phone.trim() || !nickname.trim()) {
-      addToast('모든 필수 정보를 입력해 주세요.', 'warning');
+    if (!nickname.trim()) {
+      addToast('닉네임을 입력해 주세요.', 'warning');
       return;
     }
 
-    // 전화번호 형식 자동 보정 (하이픈 포함 여부 체크)
-    let formattedPhone = phone.trim();
-    if (!formattedPhone.includes('-')) {
+    let formattedPhone = newPhone.trim();
+    if (formattedPhone && !formattedPhone.includes('-')) {
       if (formattedPhone.length === 11) {
         formattedPhone = formattedPhone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
       } else if (formattedPhone.length === 10) {
@@ -55,13 +59,23 @@ export const ProfileEditForm: React.FC<ProfileEditFormProps> = ({ onCancel }) =>
     }
 
     const payload: ProfileUpdatePayload = {
-      name: name.trim(),
-      phoneNumber: formattedPhone,
       nickname: nickname.trim(),
     };
 
+    if (newName.trim()) {
+      payload.name = newName.trim();
+    }
+    if (formattedPhone) {
+      payload.phoneNumber = formattedPhone;
+    }
+
     if (password.trim()) {
-      payload.password = password;
+      const passwordError = validatePassword(password.trim());
+      if (passwordError) {
+        addToast(passwordError, 'warning');
+        return;
+      }
+      payload.newPassword = password.trim();
     }
 
     setIsLoading(true);
@@ -71,25 +85,18 @@ export const ProfileEditForm: React.FC<ProfileEditFormProps> = ({ onCancel }) =>
         addToast('프로필 정보가 성공적으로 수정되었습니다.', 'success');
         
         // Update store state
-        useTravelStore.setState({ name: name.trim(), nickname: nickname.trim() });
-        
-        // Update cookies
-        persistAuthSession({
-          accessToken: getAccessToken() || '',
-          refreshToken: getRefreshToken() || '',
-          memberId: getMemberId() || 0,
-          role: getMemberRole() || '',
-          username: getUsername() || '',
-          name: name.trim(),
-          nickname: nickname.trim(),
-        });
+        if (newName.trim()) {
+          useTravelStore.setState({ name: newName.trim(), nickname: nickname.trim() });
+        } else {
+          useTravelStore.setState({ nickname: nickname.trim() });
+        }
 
         onCancel();
       } else {
         addToast(res.message || '프로필 수정에 실패했습니다.', 'warning');
       }
-    } catch {
-      addToast('서버 통신 중 오류가 발생했습니다.', 'warning');
+    } catch (err: unknown) {
+      addToast(extractApiErrorMessage(err, '서버 통신 중 오류가 발생했습니다.'), 'warning');
     } finally {
       setIsLoading(false);
     }
@@ -121,39 +128,35 @@ export const ProfileEditForm: React.FC<ProfileEditFormProps> = ({ onCancel }) =>
               <i className="fa-solid fa-envelope" style={{ fontSize: '0.8rem', opacity: 0.6 }}></i>
               이메일 계정
             </label>
-            <input
-              type="email"
-              className="form-input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={{ 
-                width: '100%', 
-                padding: '0.8rem 1rem', 
-                border: '1px solid #e2e8f0', 
-                borderRadius: '10px', 
-                background: '#f1f5f9',
-                fontSize: '0.95rem',
-                color: '#64748b',
-                outline: 'none'
-              }}
+            <RevealableMaskedField
+              maskedValue={maskedEmail}
+              getPlaintext={(password) => revealField('email', password)}
               placeholder="example@travel.com"
-              readOnly
             />
-            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>* 이메일 계정은 변경이 불가능합니다.</span>
+            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>* 이메일 계정은 변경이 불가능합니다. (클릭하면 전체 표시)</span>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-            {/* 이름 */}
             <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
               <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                 <i className="fa-solid fa-signature" style={{ fontSize: '0.8rem', opacity: 0.6 }}></i>
                 이름
               </label>
+              {maskedName && (
+                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                  현재:{' '}
+                  <RevealableMaskedText
+                    maskedValue={maskedName}
+                    getPlaintext={(password) => revealField('name', password)}
+                    showIcon={false}
+                  />
+                </span>
+              )}
               <input
                 type="text"
                 className="form-input"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
                 style={{ 
                   width: '100%', 
                   padding: '0.8rem 1rem', 
@@ -162,22 +165,30 @@ export const ProfileEditForm: React.FC<ProfileEditFormProps> = ({ onCancel }) =>
                   fontSize: '0.95rem',
                   outline: 'none'
                 }}
-                placeholder="실명을 입력해 주세요"
-                required
+                placeholder="변경할 이름 (선택)"
               />
             </div>
 
-            {/* 전화번호 */}
             <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
               <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                 <i className="fa-solid fa-phone" style={{ fontSize: '0.8rem', opacity: 0.6 }}></i>
                 전화번호
               </label>
+              {maskedPhone && (
+                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                  현재:{' '}
+                  <RevealableMaskedText
+                    maskedValue={maskedPhone}
+                    getPlaintext={(password) => revealField('phoneNumber', password)}
+                    showIcon={false}
+                  />
+                </span>
+              )}
               <input
                 type="tel"
                 className="form-input"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                value={newPhone}
+                onChange={(e) => setNewPhone(e.target.value)}
                 style={{ 
                   width: '100%', 
                   padding: '0.8rem 1rem', 
@@ -186,8 +197,7 @@ export const ProfileEditForm: React.FC<ProfileEditFormProps> = ({ onCancel }) =>
                   fontSize: '0.95rem',
                   outline: 'none'
                 }}
-                placeholder="010-0000-0000"
-                required
+                placeholder="변경할 연락처 (선택)"
               />
             </div>
           </div>
@@ -237,7 +247,9 @@ export const ProfileEditForm: React.FC<ProfileEditFormProps> = ({ onCancel }) =>
               }}
               placeholder="새 비밀번호를 입력해 주세요 (변경 시에만 입력)"
             />
-            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>* 비밀번호를 변경하지 않으려면 공란으로 두세요.</span>
+            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+              * 비밀번호를 변경하지 않으려면 공란으로 두세요. ({PASSWORD_POLICY_HINT})
+            </span>
           </div>
 
           {/* 버튼 영역 */}

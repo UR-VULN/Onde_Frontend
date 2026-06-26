@@ -9,6 +9,7 @@ import { useFlightStore } from '@/store/useFlightStore';
 import { useTravelStore } from '@/store/useTravelStore';
 import { build_flight_search_payload, count_flights_in_results } from '@/utils/flightSearchPayload';
 import { todayStr, addDaysStr } from '@/utils/calendarUtils';
+import { extractApiErrorMessage } from '@/utils/apiResponse';
 
 const defaultSearch = (): FlightSearchParams => ({
   tripType: 'RT',
@@ -56,10 +57,7 @@ export const FlightPage: React.FC = () => {
       } catch (err: unknown) {
         setResults(null);
         set_search_results(null);
-        const msg =
-          (err as { message?: string })?.message ||
-          (err as { error?: { message?: string } })?.error?.message ||
-          '항공편 검색 중 오류가 발생했습니다.';
+        const msg = extractApiErrorMessage(err, '항공편 검색 중 오류가 발생했습니다.');
         if (showToast) addToast(msg, 'warning');
       } finally {
         setLoading(false);

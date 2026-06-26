@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTravelStore } from '@/store/useTravelStore';
-import { fetch_member_profile_api, fetch_member_mileage_history_api } from '@/api/userApi';
+import { fetch_member_profile_api, fetch_member_mileage_history_api, fetch_member_me_api } from '@/api/userApi';
 import type { MileageLogDto } from '@/api/userApi';
 import { fetch_my_reservations_api, mapReservationDtoToMyPage, cancel_member_reservation_api } from '@/api/reservationsApi';
+import { performLogout } from '@/utils/authSession';
 import { WalletPanel } from '@/components/common/WalletPanel';
 import { ProfileEditForm } from './ProfileEditForm';
+import { RevealableMaskedText } from '@/components/common/RevealableMaskedText';
+import { useMemberProfileReveal } from '@/hooks/useMemberProfileReveal';
+import { maskEmail, maskName } from '@/utils/personalDataMask';
+import { extractApiErrorMessage } from '@/utils/apiResponse';
 
 type ReservationFilter = 'all' | 'stay' | 'flight' | 'car' | 'ins';
 
@@ -17,15 +21,6 @@ const FILTER_TABS: { id: ReservationFilter; label: string }[] = [
   { id: 'ins', label: '🛡️ 여행자 보험' },
 ];
 
-function getDisplayName(username: string): string {
-  if (!username) return '사용자';
-  if (username.includes('@')) {
-    const local = username.split('@')[0];
-    return local || username;
-  }
-  return username;
-}
-
 function getAccountEmail(username: string): string {
   if (!username) return 'user@example.com';
   if (username.includes('@')) return username;
@@ -33,34 +28,54 @@ function getAccountEmail(username: string): string {
 }
 
 export const MyPageDashboard: React.FC = () => {
-  const navigate = useNavigate();
   const {
     reservations,
     username,
     name,
-    memberId,
+    nickname,
     mileage,
     membershipGrade,
     isLoggedIn,
     setMemberProfile,
     setReservations,
     cancelReservation,
-    logout,
     addToast,
     openConfirmPopup,
   } = useTravelStore();
 
   const [activeFilter, setActiveFilter] = useState<ReservationFilter>('all');
   const [mileageLogs, setMileageLogs] = useState<MileageLogDto[]>([]);
-  const [isProfileEditMode, setIsProfileEditMode] = useState(false);
+  const [maskedProfileEmail, setMaskedProfileEmail] = useState('');
+  const [maskedProfileName, setMaskedProfileName] = useState('');
+  const { revealField } = useMemberProfileReveal();
 
   const filteredReservations = reservations.filter((r) => {
     if (activeFilter === 'all') return true;
     return r.category === activeFilter;
   });
 
-  const displayName = name || getDisplayName(username);
-  const accountEmail = getAccountEmail(username);
+  const [isProfileEditMode, setIsProfileEditMode] = useState(false);
+
+  const fallbackMaskedEmail = maskEmail(getAccountEmail(username));
+  const displayMaskedEmail = maskedProfileEmail || fallbackMaskedEmail;
+  const greetingLabel = nickname ? (
+    nickname
+  ) : maskedProfileName ? (
+    <RevealableMaskedText
+      maskedValue={maskedProfileName}
+      getPlaintext={(password) => revealField('name', password)}
+    />
+  ) : name ? (
+    <RevealableMaskedText
+      maskedValue={maskName(name)}
+      getPlaintext={(password) => revealField('name', password)}
+    />
+  ) : (
+    <RevealableMaskedText
+      maskedValue={displayMaskedEmail}
+      getPlaintext={(password) => revealField('email', password)}
+    />
+  );
   const showGoldCrown = membershipGrade.toUpperCase().includes('GOLD');
 
   useEffect(() => {
@@ -70,13 +85,18 @@ export const MyPageDashboard: React.FC = () => {
 
     Promise.all([
       fetch_member_profile_api(),
+      fetch_member_me_api(),
       fetch_my_reservations_api(),
       fetch_member_mileage_history_api(0, 5),
     ])
-      .then(([profileRes, reservationsRes, historyRes]) => {
+      .then(([profileRes, meRes, reservationsRes, historyRes]) => {
         if (cancelled) return;
         if (profileRes.success && profileRes.data) {
           setMemberProfile(profileRes.data);
+        }
+        if (meRes.success && meRes.data) {
+          setMaskedProfileEmail(meRes.data.email);
+          setMaskedProfileName(meRes.data.name || '');
         }
         if (reservationsRes.success && reservationsRes.data?.reservations) {
           setReservations(reservationsRes.data.reservations.map(mapReservationDtoToMyPage));
@@ -117,7 +137,7 @@ export const MyPageDashboard: React.FC = () => {
             <div>
               <span className="mypage-membership-badge">ONDE MEMBERSHIP</span>
               <h3 className="mypage-greeting">
-                {displayName}
+                {greetingLabel}
                 <span className="mypage-greeting-sub">님, 반갑습니다! 🌟</span>
               </h3>
             </div>
@@ -158,7 +178,12 @@ export const MyPageDashboard: React.FC = () => {
                 <span className="mypage-field-label" style={{ textTransform: 'none' }}>
                   이메일 계정
                 </span>
-                <span className="mypage-contact-value">{accountEmail}</span>
+                <span className="mypage-contact-value">
+                  <RevealableMaskedText
+                    maskedValue={displayMaskedEmail}
+                    getPlaintext={(password) => revealField('email', password)}
+                  />
+                </span>
               </div>
             </div>
 
@@ -195,11 +220,9 @@ export const MyPageDashboard: React.FC = () => {
                 type="button"
                 className="btn-secondary logout-btn"
                 onClick={() => {
-                  navigate('/', { replace: true });
-                  setTimeout(() => {
-                    logout();
+                  void performLogout({ redirectTo: '/' }).then(() => {
                     addToast('안전하게 로그아웃되었습니다.', 'info');
-                  }, 50);
+                  });
                 }}
               >
                 <i className="fa-solid fa-arrow-right-from-bracket"></i> 로그아웃
@@ -365,10 +388,9 @@ export const MyPageDashboard: React.FC = () => {
                             const response = await fetch('/user-api/api/v1/report/integrated', {
                               method: 'POST',
                               headers: { 'Content-Type': 'application/json' },
+                              credentials: 'include',
                               body: JSON.stringify({
-                                memberId: memberId,
-                                template: templateVal,
-                                logoUrl: 'https://onde.click/assets/logo.png'
+                                template: templateVal
                               })
                             });
 
@@ -385,8 +407,11 @@ export const MyPageDashboard: React.FC = () => {
                             } else {
                               addToast('정산서 발급 과정 중 서버 내부 오류가 발생했습니다.', 'warning');
                             }
-                          } catch (err: any) {
-                            addToast('서버 연결 중 네트워크 연결 실패: ' + err.message, 'warning');
+                          } catch (err: unknown) {
+                            addToast(
+                              extractApiErrorMessage(err, '정산서 발급 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'),
+                              'warning',
+                            );
                           }
                         }}
                         style={{

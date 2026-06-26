@@ -1,8 +1,8 @@
 import { adminAxios } from '@/api/axiosInstance';
 
-import { unwrapApi, unwrapPage } from '@/utils/apiResponse';
+import { unwrapApi, unwrapPage, extractApiErrorMessage } from '@/utils/apiResponse';
 
-import { getMemberId, getMemberRole } from '@/utils/authCookies';
+import { readStoredMemberId, readStoredMemberRole } from '@/utils/memberRole';
 import {
   canReadDashboardCharts,
   canReadDashboardOperational,
@@ -418,7 +418,7 @@ export const get_admin_dashboard_api = async (
 
 ): Promise<{ success: boolean; data: AdminDashboardDto; message: string }> => {
 
-  const role = getMemberRole();
+  const role = readStoredMemberRole();
   const canReadSummary = canReadDashboardSummary(role);
   const canReadOperational = canReadDashboardOperational(role);
   const canReadCharts = canReadDashboardCharts(role);
@@ -659,11 +659,7 @@ export const patch_admin_member_role_api = async (
 
   } catch (err: unknown) {
 
-    const msg =
-
-      (err as { error?: { message?: string } })?.error?.message ?? '권한 변경에 실패했습니다.';
-
-    return { success: false, message: msg };
+    return { success: false, message: extractApiErrorMessage(err, '권한 변경에 실패했습니다.') };
 
   }
 
@@ -693,11 +689,7 @@ export const blacklist_admin_member_api = async (
 
   } catch (err: unknown) {
 
-    const msg =
-
-      (err as { error?: { message?: string } })?.error?.message ?? '블랙리스트 처리에 실패했습니다.';
-
-    return { success: false, message: msg };
+    return { success: false, message: extractApiErrorMessage(err, '블랙리스트 처리에 실패했습니다.') };
 
   }
 
@@ -755,11 +747,7 @@ export const patch_admin_member_status_api = async (
 
   } catch (err: unknown) {
 
-    const msg =
-
-      (err as { error?: { message?: string } })?.error?.message ?? '상태 변경에 실패했습니다.';
-
-    return { success: false, message: msg };
+    return { success: false, message: extractApiErrorMessage(err, '상태 변경에 실패했습니다.') };
 
   }
 
@@ -809,7 +797,7 @@ export const deploy_property_marker_api = async (
 
 ): Promise<{ success: boolean; message: string }> => {
 
-  const adminId = getMemberId();
+  const adminId = readStoredMemberId();
 
   const raw = await adminAxios.post('/api/v1/admin/markers', payload, {
     headers: adminId ? { 'X-Admin-Id': String(adminId) } : undefined,

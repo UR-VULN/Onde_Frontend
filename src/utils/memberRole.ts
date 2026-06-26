@@ -7,7 +7,20 @@ export type ApiMemberRole =
   | 'SUPER_ADMIN'
   | string;
 
-export { getMemberRole as readStoredMemberRole, getUsername as readStoredUsername } from '@/utils/authCookies';
+import { useTravelStore } from '@/store/useTravelStore';
+import { getAdminHomePath } from '@/constants/adminPortal';
+
+export function readStoredMemberRole(): string | null {
+  return useTravelStore.getState().memberRole;
+}
+
+export function readStoredUsername(): string {
+  return useTravelStore.getState().username;
+}
+
+export function readStoredMemberId(): number | null {
+  return useTravelStore.getState().memberId;
+}
 
 const SELLER_ROLES = new Set(['SELLER', 'ROLE_SELLER']);
 
@@ -44,6 +57,6 @@ export function isUserRole(role: string | null | undefined): boolean {
 
 export function getDefaultPathForRole(role: string): string {
   if (isSellerRole(role)) return '/seller';
-  if (isAdminRole(role)) return '/admin';
+  if (isAdminRole(role)) return getAdminHomePath();
   return '/';
 }

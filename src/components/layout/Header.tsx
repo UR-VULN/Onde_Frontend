@@ -1,6 +1,10 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTravelStore } from '@/store/useTravelStore';
+import { RevealableMaskedText } from '@/components/common/RevealableMaskedText';
+import { useMemberProfileReveal } from '@/hooks/useMemberProfileReveal';
+import { maskEmail, maskName } from '@/utils/personalDataMask';
+import { performLogout } from '@/utils/authSession';
 
 export const Header: React.FC = () => {
   const navigate = useNavigate();
@@ -10,10 +14,12 @@ export const Header: React.FC = () => {
     isLoggedIn,
     username,
     name,
-    logout,
+    nickname,
     addToast,
     openAuthModal,
   } = useTravelStore();
+
+  const { revealField } = useMemberProfileReveal();
 
   // Active check by current URL pathname
   const isActive = (path: string) => {
@@ -22,12 +28,28 @@ export const Header: React.FC = () => {
   };
 
   const handleLogout = () => {
-    navigate('/', { replace: true });
-    setTimeout(() => {
-      logout();
+    void performLogout({ redirectTo: '/' }).then(() => {
       addToast('안전하게 로그아웃되었습니다.', 'info');
-    }, 50);
+    });
   };
+
+  const headerDisplayName = nickname ? (
+    nickname
+  ) : name ? (
+    <RevealableMaskedText
+      maskedValue={maskName(name)}
+      getPlaintext={(password) => revealField('name', password)}
+      showIcon={false}
+    />
+  ) : username ? (
+    <RevealableMaskedText
+      maskedValue={maskEmail(username)}
+      getPlaintext={(password) => revealField('email', password)}
+      showIcon={false}
+    />
+  ) : (
+    '사용자'
+  );
 
   return (
     <header className="header select-none">
@@ -95,7 +117,7 @@ export const Header: React.FC = () => {
           {isLoggedIn ? (
             <div className="flex items-center gap-4">
               <span className="text-sm font-black text-slate-700">
-                👑 <span className="text-primary">{name || (username ? username.split('@')[0] : '사용자')}</span> 님
+                👑 <span className="text-primary">{headerDisplayName}</span> 님
               </span>
 
               <button

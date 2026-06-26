@@ -13,6 +13,7 @@ import type {
   AdminBookingDto
 } from '@/api/adminApi';
 import { canApproveProducts, canExportBookingCsv } from '@/utils/adminPermissions';
+import { extractApiErrorMessage } from '@/utils/apiResponse';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -107,9 +108,7 @@ export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approv
         addToast(res.message || '예약 목록 조회에 실패했습니다.', 'warning');
       }
     } catch (err: unknown) {
-      const msg =
-        (err as { error?: { message?: string } })?.error?.message ?? '예약 목록을 불러오지 못했습니다.';
-      addToast(msg, 'warning');
+      addToast(extractApiErrorMessage(err, '예약 목록을 불러오지 못했습니다.'), 'warning');
     }
   };
 
@@ -152,8 +151,8 @@ export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approv
         addToast('성공적으로 승인 완료되었습니다. 일반 고객용 서비스 노출이 즉각 활성화됩니다.', 'success');
         fetchAllPendingApprovals();
       }
-    } catch (err: any) {
-      addToast(err?.error?.message || '승인 처리 중 오류 발생', 'warning');
+    } catch (err: unknown) {
+      addToast(extractApiErrorMessage(err, '승인 처리 중 오류 발생'), 'warning');
     }
   };
 
@@ -190,8 +189,8 @@ export const AdminHQPanel: React.FC<AdminHQPanelProps> = ({ defaultTab = 'approv
         setRejectReason('');
         fetchAllPendingApprovals();
       }
-    } catch (err: any) {
-      addToast(err?.error?.message || '반려 처리 중 오류 발생', 'warning');
+    } catch (err: unknown) {
+      addToast(extractApiErrorMessage(err, '반려 처리 중 오류 발생'), 'warning');
     }
   };
 

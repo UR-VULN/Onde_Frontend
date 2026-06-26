@@ -1,5 +1,7 @@
 export type PaymentReservationType = 'ROOM' | 'FLIGHT' | 'CAR' | 'INSURANCE';
 
+export type PaymentStep = 'checkout' | 'processing' | 'success';
+
 /** 예약 모달 → 결제 페이지로 전달하는 주문 스냅샷 */
 export interface PaymentCheckoutState {
   reservationType: PaymentReservationType;

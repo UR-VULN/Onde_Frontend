@@ -1,22 +1,27 @@
 import { userAxios } from '@/api/axiosInstance';
 import { unwrapApi } from '@/utils/apiResponse';
 
-/** GET /api/v1/members/me */
-export interface MemberMeDto {
+/** GET /api/v1/members/me — 인증 식별자 (memberId, role) */
+export interface MemberIdentityDto {
   memberId: number;
   email: string;
-  name: string;
-  phoneNumber: string;
-  nickname: string;
   role: string;
   status: string;
 }
 
-export interface ProfileUpdatePayload {
+/** GET /api/v1/members/me/profile — 프로필 표시용 */
+export interface MemberMeDto {
+  email: string;
   name: string;
   phoneNumber: string;
   nickname: string;
-  password?: string;
+}
+
+export interface ProfileUpdatePayload {
+  name?: string;
+  phoneNumber?: string;
+  nickname: string;
+  newPassword?: string;
 }
 
 /** GET /api/v1/members/me/mileage */
@@ -70,21 +75,38 @@ export const charge_wallet_api = async (amount: number): Promise<{ success: bool
   }
 };
 
-export const fetch_member_me_api = async (): Promise<{
+export const fetch_member_identity_api = async (): Promise<{
+  success: boolean;
+  data: MemberIdentityDto;
+  message: string;
+}> => {
+  const raw = await userAxios.get('/api/v1/members/me', { skipErrorRedirect: true });
+  return unwrapApi<MemberIdentityDto>(raw);
+};
+
+export const fetch_member_me_api = async (options?: {
+  skipErrorRedirect?: boolean;
+}): Promise<{
   success: boolean;
   data: MemberMeDto;
   message: string;
 }> => {
-  const raw = await userAxios.get('/api/v1/members/me/profile');
+  const raw = await userAxios.get('/api/v1/members/me/profile', {
+    skipErrorRedirect: options?.skipErrorRedirect,
+  });
   return unwrapApi<MemberMeDto>(raw);
 };
 
-export const fetch_member_mileage_api = async (): Promise<{
+export const fetch_member_mileage_api = async (options?: {
+  skipErrorRedirect?: boolean;
+}): Promise<{
   success: boolean;
   data: MileageSummaryDto;
   message: string;
 }> => {
-  const raw = await userAxios.get('/api/v1/members/me/mileage');
+  const raw = await userAxios.get('/api/v1/members/me/mileage', {
+    skipErrorRedirect: options?.skipErrorRedirect,
+  });
   return unwrapApi<MileageSummaryDto>(raw);
 };
 
@@ -119,14 +141,17 @@ export const fetch_member_mileage_history_api = async (
 };
 
 /** 마이페이지: 마일리지 요약 → UI 프로필 DTO */
-export const fetch_member_profile_api = async (): Promise<{
+export const fetch_member_profile_api = async (options?: {
+  skipErrorRedirect?: boolean;
+}): Promise<{
   success: boolean;
   data: MemberProfileDto;
   message: string;
 }> => {
+  const axiosOpts = { skipErrorRedirect: options?.skipErrorRedirect };
   const [res, walletRes] = await Promise.all([
-    fetch_member_mileage_api(),
-    fetch_wallet_balance_api()
+    fetch_member_mileage_api(axiosOpts),
+    fetch_wallet_balance_api(),
   ]);
   
   if (!res.success || !res.data) {

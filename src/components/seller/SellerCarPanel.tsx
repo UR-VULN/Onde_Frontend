@@ -11,6 +11,7 @@ import {
 } from '@/api/sellerApi';
 import { SellerMonthYearSelect } from '@/components/seller/SellerMonthYearSelect';
 import { getDefaultYearMonthValue, parseYearMonthValue } from '@/utils/calendarUtils';
+import { extractApiErrorMessage } from '@/utils/apiResponse';
 import { CAR_RENTAL_CITIES } from '@/constants/carRentalCities';
 import {
   distributeStockAcrossVehicles,
@@ -122,12 +123,7 @@ export const SellerCarPanel: React.FC = () => {
       }
       addToast(res.message || '렌터카 등록에 실패했습니다.', 'warning');
     } catch (err: unknown) {
-      const msg =
-        (err as { error?: { systemMessage?: string; message?: string } })?.error?.systemMessage ||
-        (err as { error?: { message?: string } })?.error?.message ||
-        (err as { message?: string })?.message ||
-        '렌터카 등록 중 오류가 발생했습니다.';
-      addToast(msg, 'warning');
+      addToast(extractApiErrorMessage(err, '렌터카 등록 중 오류가 발생했습니다.'), 'warning');
     } finally {
       setRegisterSubmitting(false);
     }
@@ -159,11 +155,10 @@ export const SellerCarPanel: React.FC = () => {
       }
       addToast(results.find((r) => !r.success)?.message || `${day}일 설정 반영에 실패했습니다.`, 'warning');
     } catch (err: unknown) {
-      const msg =
-        (err as { message?: string })?.message ||
-        (err as { error?: { message?: string } })?.error?.message ||
-        `${day}일 설정을 반영하는 도중 오류가 발생했습니다.`;
-      addToast(msg, 'warning');
+      addToast(
+        extractApiErrorMessage(err, `${day}일 설정을 반영하는 도중 오류가 발생했습니다.`),
+        'warning',
+      );
     }
   };
 

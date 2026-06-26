@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { logoutToHome } from '@/utils/authSession';
+import { RevealableMaskedText } from '@/components/common/RevealableMaskedText';
+import { useMemberProfileReveal } from '@/hooks/useMemberProfileReveal';
+import { maskEmail } from '@/utils/personalDataMask';
+import { getAdminHomePath } from '@/constants/adminPortal';
 
 interface SidebarItem {
   id: string;
@@ -30,6 +34,16 @@ export const BackOfficeLayout: React.FC<BackOfficeLayoutProps> = ({
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
+  const { revealField } = useMemberProfileReveal();
+  const displayAccount = username ? (
+    <RevealableMaskedText
+      maskedValue={maskEmail(username)}
+      getPlaintext={(password) => revealField('email', password)}
+      showIcon={false}
+    />
+  ) : (
+    username
+  );
 
   return (
     <div className="min-h-screen bg-[#f7f9fa] flex flex-col font-main">
@@ -47,11 +61,11 @@ export const BackOfficeLayout: React.FC<BackOfficeLayoutProps> = ({
 
             <div
               className="logo select-none cursor-pointer"
-              onClick={() => navigate(portalType === 'sell' ? '/seller' : '/admin', { replace: true })}
+              onClick={() => navigate(portalType === 'sell' ? '/seller' : getAdminHomePath(), { replace: true })}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') navigate(portalType === 'sell' ? '/seller' : '/admin', { replace: true });
+                if (e.key === 'Enter' || e.key === ' ') navigate(portalType === 'sell' ? '/seller' : getAdminHomePath(), { replace: true });
               }}
             >
 
@@ -72,7 +86,7 @@ export const BackOfficeLayout: React.FC<BackOfficeLayoutProps> = ({
                   {portalType === 'sell' ? '판매자' : '관리자'} 접속 계정
                 </span>
                 <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-dark)' }}>
-                  {username}
+                  {displayAccount}
                 </span>
               </div>
             )}

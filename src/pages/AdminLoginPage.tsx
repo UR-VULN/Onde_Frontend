@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthForm } from '@/hooks/useAuthForm';
 import { useTravelStore } from '@/store/useTravelStore';
 import { isAdminRole } from '@/utils/memberRole';
+import { getAdminHomePath, resolveMainSiteUrl } from '@/constants/adminPortal';
+import { performLogout } from '@/utils/authSession';
 
 export const AdminLoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -14,7 +16,7 @@ export const AdminLoginPage: React.FC = () => {
   // If already logged in as admin, redirect to admin main page
   useEffect(() => {
     if (isLoggedIn && isAdminRole(memberRole)) {
-      navigate('/admin', { replace: true });
+      navigate(getAdminHomePath(), { replace: true });
     }
   }, [isLoggedIn, memberRole, navigate]);
 
@@ -24,22 +26,8 @@ export const AdminLoginPage: React.FC = () => {
   };
 
   const handleGoToMain = () => {
-    // 세션 및 쿠키를 깨끗하게 비워서 일반 메인 홈 진입 시 다시 어드민으로 리다이렉트되는 현상을 방지
-    const { logout } = useTravelStore.getState();
-    logout();
-
-    const host = window.location.hostname;
-    const protocol = window.location.protocol;
-    const port = window.location.port ? `:${window.location.port}` : '';
-
-    // 서브도메인이 admin.으로 시작하는 경우 (배포 환경)
-    if (host.startsWith('admin.')) {
-      const mainHost = host.replace(/^admin\./, '');
-      window.location.href = `${protocol}//${mainHost}${port}`;
-    } else {
-      // 일반 도메인이거나 로컬 개발 환경인 경우
-      window.location.href = '/';
-    }
+    void performLogout();
+    window.location.href = resolveMainSiteUrl();
   };
 
   return (

@@ -6,7 +6,7 @@ import error404 from '@/assets/404.png';
 import error500 from '@/assets/500.png';
 import error503 from '@/assets/503.png';
 import { useTravelStore } from '@/store/useTravelStore';
-import { restoreSessionFromCookies } from '@/utils/authCookies';
+import { restoreSessionFromServer } from '@/utils/authSession';
 import { resolveErrorHomePath } from '@/utils/errorNavigation';
 
 export type ErrorType = '401' | '403' | '404' | '500' | '503';
@@ -40,7 +40,7 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({ errorCode }) => {
   const lockedError = errorCode ?? null;
 
   useEffect(() => {
-    restoreSessionFromCookies();
+    void restoreSessionFromServer();
   }, []);
 
   const handleGoHome = () => {

@@ -4,6 +4,7 @@ import { StayRecommendationList } from '@/components/stay/StayRecommendationList
 import { search_stays_api, type StayDto } from '@/api/stayApi';
 import { useTravelStore } from '@/store/useTravelStore';
 import { todayStr, addDaysStr } from '@/utils/calendarUtils';
+import { extractApiErrorMessage } from '@/utils/apiResponse';
 
 const defaultSearch = (): StaySearchParams => ({
   destination: '',
@@ -50,10 +51,7 @@ export const StayPage: React.FC = () => {
       } catch (err: unknown) {
         setStays([]);
         setHasMore(false);
-        const msg =
-          (err as { message?: string })?.message ||
-          (err as { error?: { message?: string } })?.error?.message ||
-          '숙소 검색 중 오류가 발생했습니다.';
+        const msg = extractApiErrorMessage(err, '숙소 검색 중 오류가 발생했습니다.');
         if (showToast) addToast(msg, 'warning');
       } finally {
         setLoading(false);

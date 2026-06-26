@@ -10,6 +10,7 @@ import {
   type AdminSettlementDetailResponseDto
 } from '@/api/adminApi';
 import { isSuperAdmin, isSellerAdmin } from '@/utils/adminPermissions';
+import { extractApiErrorMessage } from '@/utils/apiResponse';
 
 export const AdminSettlementPanel: React.FC = () => {
   const { addToast, memberRole } = useTravelStore();
@@ -33,7 +34,7 @@ export const AdminSettlementPanel: React.FC = () => {
         setIsDetailModalOpen(false);
       }
     } catch (err: any) {
-      addToast(err?.error?.message || '상세 내역 조회 중 오류가 발생했습니다.', 'warning');
+      addToast(extractApiErrorMessage(err, '상세 내역 조회 중 오류가 발생했습니다.'), 'warning');
       setIsDetailModalOpen(false);
     } finally {
       setIsDetailLoading(false);
@@ -50,7 +51,7 @@ export const AdminSettlementPanel: React.FC = () => {
         addToast(res.message || '정산 목록 조회 실패', 'warning');
       }
     } catch (err: any) {
-      addToast(err?.error?.message || '정산 목록 조회 중 오류가 발생했습니다.', 'warning');
+      addToast(extractApiErrorMessage(err, '정산 목록 조회 중 오류가 발생했습니다.'), 'warning');
     } finally {
       setLoading(false);
     }
@@ -70,7 +71,7 @@ export const AdminSettlementPanel: React.FC = () => {
         addToast(res.message || '1차 승인 실패', 'warning');
       }
     } catch (err: any) {
-      addToast(err?.error?.message || '1차 승인 중 오류 발생', 'warning');
+      addToast(extractApiErrorMessage(err, '1차 승인 중 오류 발생'), 'warning');
     }
   };
 
@@ -84,7 +85,7 @@ export const AdminSettlementPanel: React.FC = () => {
         addToast(res.message || '최종 승인 실패', 'warning');
       }
     } catch (err: any) {
-      addToast(err?.error?.message || '최종 승인 중 오류 발생', 'warning');
+      addToast(extractApiErrorMessage(err, '최종 승인 중 오류 발생'), 'warning');
     }
   };
 
@@ -104,7 +105,7 @@ export const AdminSettlementPanel: React.FC = () => {
         addToast(res.message || '반려 처리 실패', 'warning');
       }
     } catch (err: any) {
-      addToast(err?.error?.message || '반려 처리 중 오류 발생', 'warning');
+      addToast(extractApiErrorMessage(err, '반려 처리 중 오류 발생'), 'warning');
     }
   };
 

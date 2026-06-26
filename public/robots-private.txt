@@ -1,0 +1,3 @@
+# Admin / private origin (e.g. rookies.onde.click) — full crawl deny
+User-agent: *
+Disallow: /

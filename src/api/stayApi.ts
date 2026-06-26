@@ -2,7 +2,6 @@ import { userAxios } from '@/api/axiosInstance';
 import { STORAGE_BASE_URL } from '@/constants/apiConfig';
 import type { MapStayItem } from '@/types/mapStay';
 import { unwrapApi } from '@/utils/apiResponse';
-import { getMemberId } from '@/utils/authCookies';
 
 export interface AccommodationSearchParams {
   region?: string;
@@ -190,7 +189,6 @@ export const get_stay_detail_api = async (
 };
 
 export interface RoomReservationPayload {
-  memberId?: number;
   roomId: number;
   checkInDate: string;
   checkOutDate: string;
@@ -206,16 +204,7 @@ export interface RoomReservationResponse {
 export const book_room_api = async (
   payload: RoomReservationPayload
 ): Promise<{ success: boolean; data: RoomReservationResponse; message: string }> => {
-  const memberId = payload.memberId ?? getMemberId();
-  if (!memberId) {
-    return {
-      success: false,
-      message: '로그인이 필요합니다.',
-      data: { reservationId: 0, status: '', message: '' },
-    };
-  }
   const raw = await userAxios.post('/api/v1/accommodations/reservations/rooms', {
-    memberId,
     roomId: payload.roomId,
     checkInDate: payload.checkInDate,
     checkOutDate: payload.checkOutDate,

@@ -10,6 +10,7 @@ import {
 } from '@/api/sellerApi';
 import { SellerMonthYearSelect } from '@/components/seller/SellerMonthYearSelect';
 import { getDefaultYearMonthValue, parseYearMonthValue } from '@/utils/calendarUtils';
+import { extractApiErrorMessage } from '@/utils/apiResponse';
 import { TRAVEL_DESTINATIONS } from '@/constants/travelDestinations';
 
 const STAY_LOCATION_OPTIONS = TRAVEL_DESTINATIONS.flatMap((c) =>
@@ -149,12 +150,7 @@ export const SellerStayPanel: React.FC = () => {
       }
       addToast(res.message || '숙소 등록에 실패했습니다.', 'warning');
     } catch (err: unknown) {
-      const msg =
-        (err as { error?: { systemMessage?: string; message?: string } })?.error?.systemMessage ||
-        (err as { error?: { message?: string } })?.error?.message ||
-        (err as { message?: string })?.message ||
-        '숙소 등록 중 오류가 발생했습니다.';
-      addToast(msg, 'warning');
+      addToast(extractApiErrorMessage(err, '숙소 등록 중 오류가 발생했습니다.'), 'warning');
     } finally {
       setRegisterSubmitting(false);
     }
@@ -178,11 +174,10 @@ export const SellerStayPanel: React.FC = () => {
       }
       addToast(res.message || `${day}일 설정 반영에 실패했습니다.`, 'warning');
     } catch (err: unknown) {
-      const msg =
-        (err as { message?: string })?.message ||
-        (err as { error?: { message?: string } })?.error?.message ||
-        `${day}일 설정을 반영하는 도중 오류가 발생했습니다.`;
-      addToast(msg, 'warning');
+      addToast(
+        extractApiErrorMessage(err, `${day}일 설정을 반영하는 도중 오류가 발생했습니다.`),
+        'warning',
+      );
     }
   };
 

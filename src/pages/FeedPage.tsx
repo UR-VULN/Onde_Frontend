@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTravelStore } from '@/store/useTravelStore';
 import { postDtoToFeedItem, feedCategoryToPostType, cleanImageUrl, type FeedItem } from '@/types/feed';
 import { create_post_api, fetch_posts_api } from '@/api/postsApi';
+import { extractApiErrorMessage } from '@/utils/apiResponse';
 
 // Modular Subcomponents
 import { FeedHeader } from '@/components/feed/FeedHeader';
@@ -88,11 +89,7 @@ export const FeedPage: React.FC = () => {
       setFeeds([newFeed, ...feeds]);
       addToast('여행 후기가 등록되었습니다!', 'success');
     } catch (err: unknown) {
-      const msg =
-        (err as { message?: string })?.message ||
-        (err as { error?: { message?: string } })?.error?.message ||
-        '후기 등록에 실패했습니다.';
-      addToast(msg, 'warning');
+      addToast(extractApiErrorMessage(err, '후기 등록에 실패했습니다.'), 'warning');
     }
     setIsWriteModalOpen(false);
   };
