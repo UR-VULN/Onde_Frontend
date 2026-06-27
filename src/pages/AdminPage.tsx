@@ -7,9 +7,10 @@ import { AdminUserPanel } from '@/components/admin/AdminUserPanel';
 import { AdminLBSPanel } from '@/components/admin/AdminLBSPanel';
 import { AdminSettlementPanel } from '@/components/admin/AdminSettlementPanel';
 import { AdminCommunityPanel } from '@/components/admin/AdminCommunityPanel';
+import { AdminPasswordPanel } from '@/components/admin/AdminPasswordPanel';
 import { BackOfficeLayout } from '@/components/layout/BackOfficeLayout';
 
-type AdminTab = 'stat' | 'approve' | 'book' | 'user' | 'lbs' | 'settlement' | 'community';
+type AdminTab = 'stat' | 'approve' | 'book' | 'user' | 'lbs' | 'settlement' | 'community' | 'password';
 
 const ALL_SIDEBAR_ITEMS: { id: AdminTabId; icon: string; label: string }[] = [
   { id: 'stat',       icon: 'fa-solid fa-chart-line',          label: '종합 대시보드'           },
@@ -19,6 +20,7 @@ const ALL_SIDEBAR_ITEMS: { id: AdminTabId; icon: string; label: string }[] = [
   { id: 'community',  icon: 'fa-solid fa-square-rss',          label: '여행기(커뮤니티) 관리'    },
   { id: 'lbs',        icon: 'fa-solid fa-location-crosshairs', label: 'LBS 마커 및 알림 에디터'  },
   { id: 'settlement', icon: 'fa-solid fa-file-invoice-dollar',  label: '정산 승인 관리'           },
+  { id: 'password',   icon: 'fa-solid fa-key',                 label: '비밀번호 변경'            },
 ];
 
 export const AdminPage: React.FC = () => {
@@ -42,6 +44,7 @@ export const AdminPage: React.FC = () => {
       case 'community':  return <AdminCommunityPanel />;
       case 'lbs':        return <AdminLBSPanel />;
       case 'settlement': return <AdminSettlementPanel />;
+      case 'password':   return <AdminPasswordPanel />;
       default:           return <AdminDashboardPanel />;
     }
   };

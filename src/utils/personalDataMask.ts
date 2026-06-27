@@ -55,3 +55,10 @@ export function maskBankName(bankName: string): string {
   if (trimmed.length <= 2) return `${trimmed.charAt(0)}*`;
   return `${trimmed.slice(0, 2)}***`;
 }
+
+export function maskNumericId(id: number | string): string {
+  const value = String(id);
+  if (!value) return '';
+  if (value.length <= 2) return '*'.repeat(value.length);
+  return `${value.charAt(0)}${'*'.repeat(value.length - 2)}${value.charAt(value.length - 1)}`;
+}

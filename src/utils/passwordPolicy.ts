@@ -90,3 +90,6 @@ export function validatePassword(
 
 export const PASSWORD_POLICY_HINT =
   '영문·숫자·특수문자 중 3가지 이상 조합 시 8자 이상, 2가지 조합 시 10자 이상';
+
+export const ADMIN_PASSWORD_POLICY_HINT =
+  '영문 대·소문자, 숫자, 특수문자를 모두 포함하고 10자 이상';

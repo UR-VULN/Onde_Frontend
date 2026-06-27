@@ -531,6 +531,8 @@ export interface AdminMemberDto {
 
   id: number;
 
+  memberId: string;
+
   email: string;
 
   role: string;
@@ -584,7 +586,7 @@ export const get_admin_members_api = async (params?: {
   const res = unwrapApi<{
     members?: Array<{
       id?: number;
-      memberId?: number;
+      memberId?: number | string;
       email: string;
       name?: string;
       role: string;
@@ -596,7 +598,7 @@ export const get_admin_members_api = async (params?: {
 
   const page = unwrapPage<{
     id?: number;
-    memberId?: number;
+    memberId?: number | string;
     email: string;
     name?: string;
     role: string;
@@ -606,7 +608,9 @@ export const get_admin_members_api = async (params?: {
 
   const members: AdminMemberDto[] = page.items.map((m) => ({
 
-    id: Number(m.memberId ?? m.id ?? 0),
+    id: Number(m.id ?? 0),
+
+    memberId: String(m.memberId ?? ''),
 
     email: m.email,
 
@@ -860,7 +864,8 @@ export const deploy_mail_template_api = async (_payload: {
 
 
 export interface AdminSettlementDto {
-  settlementId: number;
+  id: number;
+  settlementId: string;
   settlementMonth: string;
   grossAmount: number;
   commission: number;
@@ -883,12 +888,20 @@ export const get_admin_settlements_api = async (
   size = 20
 ): Promise<{ success: boolean; data: AdminSettlementsResponse; message: string }> => {
   const raw = await adminAxios.get('/api/v1/admin/settlements', { params: { status, page, size } });
-  const res = unwrapApi<{ settlements: AdminSettlementDto[]; totalCount: number }>(raw);
+  const res = unwrapApi<{
+    settlements: Array<AdminSettlementDto & { id?: number; settlementId?: number | string }>;
+    totalCount: number;
+  }>(raw);
+  const settlements = (res.data?.settlements ?? []).map((item) => ({
+    ...item,
+    id: Number(item.id ?? 0),
+    settlementId: String(item.settlementId ?? ''),
+  }));
   return {
     success: res.success,
     message: res.message,
     data: {
-      settlements: res.data?.settlements ?? [],
+      settlements,
       totalCount: res.data?.totalCount ?? 0,
     },
   };
@@ -931,7 +944,7 @@ export interface AdminSettlementDetailItemDto {
 }
 
 export interface AdminSettlementDetailResponseDto {
-  settlementId: number;
+  settlementId: string;
   settlementDate: string;
   details: AdminSettlementDetailItemDto[];
 }
@@ -1057,4 +1070,17 @@ export const restore_admin_post_api = async (
   return { success: res.success, message: res.message };
 };
 
+export interface AdminPasswordChangeRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+/** PATCH /api/v1/admin/auth/password — 관리자 비밀번호 변경 */
+export const patch_admin_password_api = async (
+  body: AdminPasswordChangeRequest
+): Promise<{ success: boolean; message: string }> => {
+  const raw = await adminAxios.patch('/api/v1/admin/auth/password', body);
+  const res = unwrapApi<unknown>(raw);
+  return { success: res.success, message: res.message };
+};
 

@@ -6,6 +6,8 @@ import {
   patch_admin_member_status_api,
   type AdminMemberDto,
 } from '@/api/adminApi';
+import { RevealableMaskedText } from '@/components/common/RevealableMaskedText';
+import { useAdminMemberReveal } from '@/hooks/useAdminMemberReveal';
 import { ROLE_BADGE_CLASS } from '@/constants/appConstants';
 import { canManageMembers } from '@/utils/adminPermissions';
 
@@ -21,6 +23,7 @@ function isProtectedAdminRole(role: string): boolean {
 
 export const AdminUserPanel: React.FC = () => {
   const { addToast, openConfirmPopup, memberRole } = useTravelStore();
+  const { revealField } = useAdminMemberReveal();
   const canEditMembers = canManageMembers(memberRole);
   const [users, setUsers] = useState<AdminMemberDto[]>([]);
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -39,7 +42,9 @@ export const AdminUserPanel: React.FC = () => {
   const filteredUsers = users.filter(
     (u) =>
       (u.email || '').toLowerCase().includes(searchKeyword.toLowerCase()) ||
-      String(u.id).includes(searchKeyword)
+      (u.name || '').toLowerCase().includes(searchKeyword.toLowerCase()) ||
+      String(u.id).includes(searchKeyword) ||
+      (u.memberId || '').includes(searchKeyword)
   );
 
   const handle_role_change = (userId: number) => {
@@ -158,6 +163,7 @@ export const AdminUserPanel: React.FC = () => {
           <thead>
             <tr>
               <th>회원 ID</th>
+              <th>이름</th>
               <th>이메일</th>
               <th>권한(Role)</th>
               <th className="text-center">계정 상태</th>
@@ -168,8 +174,28 @@ export const AdminUserPanel: React.FC = () => {
           <tbody>
             {filteredUsers.map((user) => (
               <tr key={user.id}>
-                <td className="font-black">#{user.id}</td>
-                <td className="font-semibold">{user.email}</td>
+                <td className="font-black">
+                  <RevealableMaskedText
+                    maskedValue={user.memberId ? `#${user.memberId}` : `#${user.id}`}
+                    getPlaintext={(password) => revealField(user.id, 'memberId', password).then((v) => `#${v}`)}
+                  />
+                </td>
+                <td>
+                  {user.name ? (
+                    <RevealableMaskedText
+                      maskedValue={user.name}
+                      getPlaintext={(password) => revealField(user.id, 'name', password)}
+                    />
+                  ) : (
+                    '-'
+                  )}
+                </td>
+                <td className="font-semibold">
+                  <RevealableMaskedText
+                    maskedValue={user.email}
+                    getPlaintext={(password) => revealField(user.id, 'email', password)}
+                  />
+                </td>
                 <td>
                   <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border ${ROLE_BADGE_CLASS[user.role] ?? ''}`}>
                     {user.role}
@@ -231,7 +257,7 @@ export const AdminUserPanel: React.FC = () => {
             ))}
             {filteredUsers.length === 0 && (
               <tr>
-                <td colSpan={6} className="text-center py-16 text-slate-400 font-bold">
+                <td colSpan={7} className="text-center py-16 text-slate-400 font-bold">
                   검색 결과가 없습니다.
                 </td>
               </tr>

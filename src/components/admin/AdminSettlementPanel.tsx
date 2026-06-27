@@ -11,9 +11,12 @@ import {
 } from '@/api/adminApi';
 import { isSuperAdmin, isSellerAdmin } from '@/utils/adminPermissions';
 import { extractApiErrorMessage } from '@/utils/apiResponse';
+import { RevealableMaskedText } from '@/components/common/RevealableMaskedText';
+import { useAdminSettlementReveal } from '@/hooks/useAdminSettlementReveal';
 
 export const AdminSettlementPanel: React.FC = () => {
   const { addToast, memberRole } = useTravelStore();
+  const { revealField } = useAdminSettlementReveal();
   const [settlements, setSettlements] = useState<AdminSettlementDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('');
@@ -173,17 +176,55 @@ export const AdminSettlementPanel: React.FC = () => {
             {settlements.length > 0 ? (
               settlements.map((item) => (
                 <tr 
-                  key={item.settlementId} 
-                  onClick={() => handle_view_details(item.settlementId)}
+                  key={item.id} 
+                  onClick={() => handle_view_details(item.id)}
                   style={{ cursor: 'pointer', transition: 'background-color 0.2s' }}
                   className="hover:bg-slate-100"
                   title="클릭하여 정산 상세 예약을 조회합니다"
                 >
-                  <td className="font-bold">#{item.settlementId}</td>
+                  <td className="font-bold" onClick={(e) => e.stopPropagation()}>
+                    <RevealableMaskedText
+                      maskedValue={`#${item.settlementId}`}
+                      getPlaintext={(password) =>
+                        revealField(item.id, 'settlementId', password).then((v) => `#${v}`)
+                      }
+                    />
+                  </td>
                   <td>{item.settlementMonth}</td>
-                  <td>{item.sellerName || `ID: ${item.sellerId}`}</td>
-                  <td>
-                    {item.bankName ? `${item.bankName} (${item.accountNumber})` : '계좌 미등록'}
+                  <td onClick={(e) => e.stopPropagation()}>
+                    {item.sellerName ? (
+                      <RevealableMaskedText
+                        maskedValue={item.sellerName}
+                        getPlaintext={(password) => revealField(item.id, 'sellerName', password)}
+                      />
+                    ) : (
+                      `ID: ${item.sellerId ?? '-'}`
+                    )}
+                  </td>
+                  <td onClick={(e) => e.stopPropagation()}>
+                    {item.bankName || item.accountNumber ? (
+                      <>
+                        {item.bankName && (
+                          <RevealableMaskedText
+                            maskedValue={item.bankName}
+                            getPlaintext={(password) => revealField(item.id, 'bankName', password)}
+                          />
+                        )}
+                        {item.accountNumber && (
+                          <>
+                            {' '}
+                            (
+                            <RevealableMaskedText
+                              maskedValue={item.accountNumber}
+                              getPlaintext={(password) => revealField(item.id, 'accountNumber', password)}
+                            />
+                            )
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      '계좌 미등록'
+                    )}
                   </td>
                   <td className="font-bold">₩{item.grossAmount.toLocaleString()}</td>
                   <td style={{ color: 'var(--secondary)' }}>₩{item.commission.toLocaleString()}</td>
@@ -201,14 +242,14 @@ export const AdminSettlementPanel: React.FC = () => {
                       {item.status === 'REQUESTED' && isSeller && (
                         <>
                           <button
-                            onClick={() => handleApproveFirst(item.settlementId)}
+                            onClick={() => handleApproveFirst(item.id)}
                             className="btn-primary"
                             style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem', background: '#008a05', border: 'none' }}
                           >
                             정산 1차 승인
                           </button>
                           <button
-                            onClick={() => handleReject(item.settlementId)}
+                            onClick={() => handleReject(item.id)}
                             className="btn-secondary"
                             style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem', background: '#dc2626', color: '#fff', border: 'none' }}
                           >
@@ -219,14 +260,14 @@ export const AdminSettlementPanel: React.FC = () => {
                       {item.status === 'APPROVED_1ST' && isSuper && (
                         <>
                           <button
-                            onClick={() => handleFinalize(item.settlementId)}
+                            onClick={() => handleFinalize(item.id)}
                             className="btn-primary"
                             style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem', background: '#0284c7', border: 'none' }}
                           >
                             정산 최종 승인
                           </button>
                           <button
-                            onClick={() => handleReject(item.settlementId)}
+                            onClick={() => handleReject(item.id)}
                             className="btn-secondary"
                             style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem', background: '#dc2626', color: '#fff', border: 'none' }}
                           >
@@ -237,14 +278,14 @@ export const AdminSettlementPanel: React.FC = () => {
                       {item.status === 'REQUESTED' && isSuper && (
                         <>
                           <button
-                            onClick={() => handleApproveFirst(item.settlementId)}
+                            onClick={() => handleApproveFirst(item.id)}
                             className="btn-secondary"
                             style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem' }}
                           >
                             1차 승인
                           </button>
                           <button
-                            onClick={() => handleFinalize(item.settlementId)}
+                            onClick={() => handleFinalize(item.id)}
                             className="btn-primary"
                             style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem', background: '#0284c7', border: 'none' }}
                             disabled
@@ -253,7 +294,7 @@ export const AdminSettlementPanel: React.FC = () => {
                             최종 승인
                           </button>
                           <button
-                            onClick={() => handleReject(item.settlementId)}
+                            onClick={() => handleReject(item.id)}
                             className="btn-secondary"
                             style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem', background: '#dc2626', color: '#fff', border: 'none' }}
                           >
@@ -271,7 +312,7 @@ export const AdminSettlementPanel: React.FC = () => {
                         <>
                           {isSeller && (
                             <button
-                              onClick={() => handleReject(item.settlementId)}
+                              onClick={() => handleReject(item.id)}
                               className="btn-secondary"
                               style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem', background: '#dc2626', color: '#fff', border: 'none', marginRight: '0.5rem' }}
                             >
