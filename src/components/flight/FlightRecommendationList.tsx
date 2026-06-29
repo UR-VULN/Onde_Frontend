@@ -1,0 +1,203 @@
+import React from 'react';
+import type { FlightSearchParams } from '@/components/flight/FlightSearchForm';
+import type { FlightDto, AvailableSeat, FlightSearchResponse } from '@/store/useFlightStore';
+import { count_flights_in_results } from '@/utils/flightSearchPayload';
+import { FLIGHT_AIRLINES, getAirlineColor } from '@/constants/flightAirlines';
+
+interface FlightRecommendationListProps {
+  results: FlightSearchResponse | null;
+  searchParams: FlightSearchParams | null;
+  loading?: boolean;
+  hasSearched?: boolean;
+  on_select_seat: (flight: FlightDto, seat: AvailableSeat) => void;
+}
+
+function format_time(isoString: string) {
+  const d = new Date(isoString);
+  return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+function format_date(isoString: string) {
+  const d = new Date(isoString);
+  return `${d.getMonth() + 1}월 ${d.getDate()}일`;
+}
+
+function route_label(departures: string, arrivals: string): string {
+  const dep = departures.split(',')[0]?.trim() || departures;
+  const arr = arrivals.split(',')[0]?.trim() || arrivals;
+  return `${dep} → ${arr}`;
+}
+
+export const FlightRecommendationList: React.FC<FlightRecommendationListProps> = ({
+  results,
+  searchParams,
+  loading = false,
+  hasSearched = false,
+  on_select_seat,
+}) => {
+  const flightCount = count_flights_in_results(results);
+  const isSearchMode = hasSearched && !!searchParams;
+  const passengerCount = searchParams?.passengerCount || 1;
+
+  const dates = searchParams?.dates.split(',') ?? [];
+  const depDate = dates[0] ?? '';
+  const retDate = dates[1];
+
+  return (
+    <div className="px-5 lg:px-0 pb-16">
+      <div className="recommendation-section-head">
+        {isSearchMode && searchParams ? (
+          <>
+            <h4 className="font-logo font-black text-3xl text-slate-800 tracking-tight">
+              &ldquo;{route_label(searchParams.departures, searchParams.arrivals)}&rdquo; 검색 결과
+            </h4>
+            <p className="text-sm text-slate-400 font-bold uppercase tracking-widest">
+              {loading
+                ? '조회 중...'
+                : `${flightCount}편 · ${depDate}${searchParams.tripType === 'RT' && retDate ? ` ~ ${retDate}` : ''} · 성인 ${searchParams.passengerCount}명`}
+            </p>
+          </>
+        ) : (
+          <>
+            <h4 className="font-logo font-black text-3xl text-slate-800 tracking-tight">구름 위로 떠나볼까요</h4>
+            <p className="text-sm text-slate-400 font-bold uppercase tracking-widest">
+              {loading ? '불러오는 중...' : `총 ${flightCount}편`}
+            </p>
+          </>
+        )}
+      </div>
+
+      {loading && flightCount === 0 ? (
+        <p className="recommendation-section-status">항공편을 불러오는 중입니다...</p>
+      ) : !results || flightCount === 0 ? (
+        <p className="recommendation-section-status">표시할 항공편이 없습니다.</p>
+      ) : (
+        <div className="recommendation-section-content">
+          {results.journeys.map((journey) => (
+            <div key={journey.journeyIndex} className="mb-10">
+              <h5 className="text-sm font-black text-slate-700 bg-slate-100/80 px-4 py-2 rounded-2xl mb-4 inline-block">
+                {journey.description}
+              </h5>
+
+              {journey.flights.length === 0 ? (
+                <div className="bg-white p-12 rounded-[28px] border border-slate-200 shadow-sm text-center">
+                  <i className="fa-solid fa-plane-slash text-4xl text-slate-300 mb-3 block" />
+                  <p className="text-xs text-slate-500 font-bold">
+                    해당 구간에 운항 스케줄이 없습니다.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {journey.flights.map((flight) => {
+                    const airlineCode = flight.flightNumber.slice(0, 2).toUpperCase();
+                    const airline = FLIGHT_AIRLINES.find((a) => a.code === airlineCode);
+                    const airlineName = airline ? airline.name : '기타 항공사';
+                    const airlineColor = getAirlineColor(airlineCode);
+
+                    return (
+                      <div
+                        key={flight.scheduleId}
+                        className="bg-white py-4 px-6 rounded-[28px] border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6 hover:shadow-md transition-all border-l-4"
+                        style={{ borderLeftColor: airlineColor }}
+                      >
+                        <div className="flex items-center gap-6 flex-1 min-w-[280px]">
+                          <div className="flex flex-col items-center justify-center bg-slate-50 px-4 py-1.5 rounded-xl border border-slate-100 flex-shrink-0 min-w-[90px]">
+                            <span
+                              className="text-[10px] font-black px-2 py-0.5 rounded-full mb-1 tracking-tight"
+                              style={{
+                                backgroundColor: `${airlineColor}15`,
+                                color: airlineColor,
+                                border: `1px solid ${airlineColor}35`,
+                              }}
+                            >
+                              {airlineName}
+                            </span>
+                            <i className="fa-solid fa-plane text-lg mb-1.5" style={{ color: airlineColor }} />
+                            <span className="text-xs font-black text-slate-700">{flight.flightNumber}</span>
+                          </div>
+
+                          <div className="flex items-center gap-4 flex-1">
+                          <div className="text-right">
+                            <span className="text-[1.4rem] font-black text-slate-800 block tracking-normal leading-tight">{flight.departureAirport}</span>
+                            <strong className="text-lg font-black text-slate-800 block">
+                              {format_time(flight.departureTime)}
+                            </strong>
+                            <span className="text-xs font-extrabold text-slate-500">
+                              {format_date(flight.departureTime)}
+                            </span>
+                          </div>
+
+                          <div className="flex-1 flex flex-col items-center justify-center relative px-2">
+                            <span className="text-sm font-extrabold text-slate-500 mb-1">
+                              {flight.durationMinutes}분 소요
+                            </span>
+                            <div className="w-full h-[1.5px] bg-slate-200 relative flex items-center justify-center">
+                              <i className="fa-solid fa-chevron-right text-[10px] text-slate-300 absolute right-0" />
+                            </div>
+                          </div>
+
+                          <div className="text-left">
+                            <span className="text-[1.4rem] font-black text-slate-800 block tracking-normal leading-tight">{flight.arrivalAirport}</span>
+                            <strong className="text-lg font-black text-slate-800 block">
+                              {format_time(flight.arrivalTime)}
+                            </strong>
+                            <span className="text-xs font-extrabold text-slate-500">
+                              {format_date(flight.arrivalTime)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center min-w-[340px] border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-6">
+                        {flight.availableSeats.map((seat) => {
+                          const is_low_inventory = seat.remainingSeats < 5;
+                          return (
+                            <div
+                              key={seat.classType}
+                              className="flex-1 bg-slate-50/50 hover:bg-slate-50 py-2 px-3.5 rounded-2xl border border-slate-100 flex flex-col gap-1.5 relative transition-all"
+                            >
+                              <div className="flex justify-between items-center">
+                                <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                  {seat.classType}
+                                </span>
+                                {is_low_inventory ? (
+                                  <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-rose-50 text-secondary border border-rose-100 flex items-center gap-1 animate-pulse">
+                                    매진 임박 {seat.remainingSeats}석 남음
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] font-bold text-slate-500">
+                                    {seat.remainingSeats}석 남음
+                                  </span>
+                                )}
+                              </div>
+                              <div className="mt-1 flex flex-col">
+                                <span className="text-xs font-bold text-slate-400">
+                                  {passengerCount > 1 ? `총 요금 (${passengerCount}명)` : '1인 요금'}
+                                </span>
+                                <strong className="text-sm font-black text-slate-800">
+                                  ₩{(seat.basePrice * passengerCount).toLocaleString()}
+                                </strong>
+                              </div>
+                              <button
+                                type="button"
+                                className="btn-primary text-[10px] font-extrabold w-full py-1.5 px-3 mt-2"
+                                onClick={() => on_select_seat(flight, seat)}
+                              >
+                                예약하기
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
